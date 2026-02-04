@@ -28,6 +28,11 @@ class AppLocalizations {
     'signup_facebook': 'S\'inscrire avec Facebook',
     'no_account': 'Pas de compte ? ',
     'has_account': 'Déjà un compte ? ',
+    'verify_email_title': 'Vérifiez votre email',
+    'verify_email_sent': 'Un code à 6 chiffres a été envoyé à',
+    'verify_code_hint': 'Code de vérification',
+    'verify_button': 'Vérifier',
+    'resend_code': 'Renvoyer le code',
 
     // Onboarding
     'onboarding_title_1': 'Des idées instantanées',
@@ -283,6 +288,11 @@ class AppLocalizations {
     'signup_facebook': 'Sign up with Facebook',
     'no_account': 'No account? ',
     'has_account': 'Already have an account? ',
+    'verify_email_title': 'Verify your email',
+    'verify_email_sent': 'A 6-digit code was sent to',
+    'verify_code_hint': 'Verification code',
+    'verify_button': 'Verify',
+    'resend_code': 'Resend code',
 
     'onboarding_title_1': 'Instant ideas',
     'onboarding_desc_1': 'Smart generator to create business, video, product and slogan concepts in seconds.',

@@ -36,7 +36,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
     if (!context.mounted) return;
     if (success) {
-      context.go('/onboarding');
+      context.go('/verify-email', extra: _emailController.text.trim());
     }
   }
 

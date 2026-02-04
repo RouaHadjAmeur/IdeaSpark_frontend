@@ -8,6 +8,7 @@ import 'package:ideaspark/views/splash/splash_screen.dart';
 import 'package:ideaspark/views/onboarding/onboarding_screen.dart';
 import 'package:ideaspark/views/auth/login_screen.dart';
 import 'package:ideaspark/views/auth/signup_screen.dart';
+import 'package:ideaspark/views/auth/verify_email_screen.dart';
 import 'package:ideaspark/views/home/home_screen.dart';
 import 'package:ideaspark/views/criteria/criteria_screen.dart';
 import 'package:ideaspark/views/loading/loading_screen.dart';
@@ -54,6 +55,16 @@ GoRouter createAppRouter() {
         path: '/signup',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => LocaleRebuilder(builder: (_) => const SignUpScreen()),
+      ),
+      GoRoute(
+        path: '/verify-email',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final email = state.extra as String? ?? '';
+          return LocaleRebuilder(
+            builder: (_) => VerifyEmailScreen(email: email),
+          );
+        },
       ),
       GoRoute(
         path: '/loading',

@@ -16,6 +16,14 @@ class AuthViewModel extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   bool get isLoggedIn => _authService.currentUser != null;
 
+  /// Restore session from storage (SharedPreferences). Call at app startup (e.g. splash).
+  /// Returns true if a valid session was restored (user stays logged in).
+  Future<bool> restoreSession() async {
+    final loggedIn = await _authService.isLoggedIn();
+    notifyListeners();
+    return loggedIn;
+  }
+
   void clearError() {
     if (_errorMessage != null) {
       _errorMessage = null;
@@ -64,8 +72,11 @@ class AuthViewModel extends ChangeNotifier {
       _setLoading(false);
       return true;
     } catch (e) {
-      _setError(e.toString());
       _setLoading(false);
+      if (e.toString().contains('EMAIL_NOT_VERIFIED')) {
+        rethrow;
+      }
+      _setError(e.toString());
       return false;
     }
   }
@@ -102,6 +113,38 @@ class AuthViewModel extends ChangeNotifier {
   Future<void> signOut() async {
     await _authService.signOut();
     notifyListeners();
+  }
+
+  /// Verify email with the 6-digit code. Returns true on success.
+  Future<bool> verifyEmail(String email, String code) async {
+    if (code.trim().length != 6) {
+      _setError('Code must be 6 digits');
+      return false;
+    }
+    _setLoading(true);
+    try {
+      await _authService.verifyEmail(email.trim(), code.trim());
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Resend verification code to email. Returns true on success.
+  Future<bool> resendVerificationCode(String email) async {
+    _setLoading(true);
+    try {
+      await _authService.resendVerificationCode(email.trim());
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
   }
 
   String? get displayName => _authService.currentUser?.displayName;

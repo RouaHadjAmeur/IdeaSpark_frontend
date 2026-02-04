@@ -27,13 +27,20 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithEmail(BuildContext context) async {
     final vm = context.read<AuthViewModel>();
     vm.clearError();
-    final success = await vm.signInWithEmail(
-      _emailController.text,
-      _passwordController.text,
-    );
-    if (!context.mounted) return;
-    if (success) {
-      context.go('/onboarding');
+    try {
+      final success = await vm.signInWithEmail(
+        _emailController.text,
+        _passwordController.text,
+      );
+      if (!context.mounted) return;
+      if (success) {
+        context.go('/onboarding');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      if (e.toString().contains('EMAIL_NOT_VERIFIED')) {
+        context.go('/verify-email', extra: _emailController.text.trim());
+      }
     }
   }
 

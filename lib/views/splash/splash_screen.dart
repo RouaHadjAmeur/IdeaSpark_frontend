@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
+import 'package:ideaspark/view_models/auth_view_model.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -65,7 +67,20 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateNext() async {
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
-    context.go('/login');
+    final authVm = context.read<AuthViewModel>();
+    final loggedIn = await authVm.restoreSession();
+    if (!mounted) return;
+    if (loggedIn) {
+      final onboardingDone = await authVm.isOnboardingDone();
+      if (!mounted) return;
+      if (onboardingDone) {
+        context.go('/home');
+      } else {
+        context.go('/onboarding');
+      }
+    } else {
+      context.go('/login');
+    }
   }
 
   @override
