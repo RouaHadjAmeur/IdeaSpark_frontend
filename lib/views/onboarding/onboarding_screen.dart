@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/onboarding_view_model.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -14,13 +15,10 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final _pageController = PageController();
 
-  static const _pages = [
-    ('💡', 'Des idées instantanées',
-        'Générateur intelligent pour créer des concepts de business, vidéos, produits et slogans en quelques secondes.'),
-    ('🎯', 'Filtre par niche et audience',
-        'Personnalise chaque génération selon ton marché cible, ton audience et tes objectifs spécifiques.'),
-    ('🚀', 'Sauvegarde et re-génère',
-        'Garde tes meilleures idées, crée des variations et partage-les avec ton équipe.'),
+  static const _pageKeys = [
+    ('💡', 'onboarding_title_1', 'onboarding_desc_1'),
+    ('🎯', 'onboarding_title_2', 'onboarding_desc_2'),
+    ('🚀', 'onboarding_title_3', 'onboarding_desc_3'),
   ];
 
   @override
@@ -45,9 +43,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: PageView.builder(
                       controller: _pageController,
                       onPageChanged: vm.setPage,
-                      itemCount: _pages.length,
+                      itemCount: _pageKeys.length,
                       itemBuilder: (context, i) {
-                        final (emoji, title, desc) = _pages[i];
+                        final (emoji, titleKey, descKey) = _pageKeys[i];
+                        final title = context.tr(titleKey);
+                        final desc = context.tr(descKey);
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Column(
@@ -90,7 +90,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: List.generate(
-                            _pages.length,
+                            _pageKeys.length,
                             (i) => AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               margin: const EdgeInsets.symmetric(
@@ -144,8 +144,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 child: Center(
                                   child: Text(
                                     vm.isLastPage
-                                        ? 'COMMENCER'
-                                        : 'CONTINUER',
+                                        ? context.tr('start')
+                                        : context.tr('continue'),
                                     style: GoogleFonts.syne(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -166,7 +166,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               context.go('/home');
                             },
                             child: Text(
-                              'Passer',
+                              context.tr('skip'),
                               style: TextStyle(
                                 color: colorScheme.onSurfaceVariant,
                               ),

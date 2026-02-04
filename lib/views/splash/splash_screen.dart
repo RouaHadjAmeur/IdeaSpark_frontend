@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -161,7 +162,7 @@ class _SplashScreenState extends State<SplashScreen>
                               ],
                             ).createShader(bounds),
                             child: Text(
-                              'IdeaSpark',
+                              context.tr('app_name'),
                               style: TextStyle(
                                 fontFamily: 'Syne',
                                 fontSize: 48,
@@ -177,7 +178,7 @@ class _SplashScreenState extends State<SplashScreen>
                               return Opacity(
                                 opacity: 0.6 + _glowAnimation.value * 0.4,
                                 child: Text(
-                                  'Génère · Teste · Lance',
+                                  context.tr('splash_tagline'),
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: colorScheme.onSurfaceVariant,

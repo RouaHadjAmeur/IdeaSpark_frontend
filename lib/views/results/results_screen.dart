@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/models/idea_model.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/results_view_model.dart';
 
 class ResultsScreen extends StatelessWidget {
@@ -37,7 +38,7 @@ class ResultsScreen extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '${vm.resultsCount} idées générées',
+                        '${vm.resultsCount} ${context.tr('ideas_generated')}',
                         style: GoogleFonts.syne(
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
@@ -69,7 +70,7 @@ class ResultsScreen extends StatelessWidget {
                               : 0,
                         ),
                         child: _FilterChip(
-                          label: label,
+                          label: context.trOption('filter', label),
                           selected: selected,
                           onSelected: () => vm.setFilter(label),
                           colorScheme: colorScheme,
@@ -227,7 +228,7 @@ class _IdeaCard extends StatelessWidget {
                       color: colorScheme.onSurfaceVariant,
                     ),
                     label: Text(
-                      'Sauvegarder',
+                      context.tr('save'),
                       style: TextStyle(
                         fontSize: 12,
                         color: colorScheme.onSurfaceVariant,
@@ -242,7 +243,7 @@ class _IdeaCard extends StatelessWidget {
                       color: colorScheme.onSurfaceVariant,
                     ),
                     label: Text(
-                      'Copier',
+                      context.tr('copy'),
                       style: TextStyle(
                         fontSize: 12,
                         color: colorScheme.onSurfaceVariant,

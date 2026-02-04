@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -74,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       colors: [colorScheme.primary, context.accentColor],
                     ).createShader(bounds),
                     child: Text(
-                      'IdeaSpark',
+                      context.tr('app_name'),
                       style: GoogleFonts.syne(
                         fontSize: 36,
                         fontWeight: FontWeight.w800,
@@ -84,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Connexion',
+                    context.tr('login'),
                     style: GoogleFonts.syne(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
@@ -112,18 +113,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'votre@email.com',
+                    decoration: InputDecoration(
+                      labelText: context.tr('email'),
+                      hintText: context.tr('email_hint'),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Mot de passe',
-                      hintText: '••••••••',
+                    decoration: InputDecoration(
+                      labelText: context.tr('password'),
+                      hintText: context.tr('password_hint'),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -146,7 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('Se connecter'),
+                          : Text(context.tr('sign_in')),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -157,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          'ou',
+                          context.tr('or'),
                           style: TextStyle(
                             color: colorScheme.onSurfaceVariant,
                             fontSize: 14,
@@ -171,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 24),
                   _SocialButton(
                     icon: 'G',
-                    label: 'Continuer avec Google',
+                    label: context.tr('continue_google'),
                     colorScheme: colorScheme,
                     onPressed: vm.isLoading
                         ? null
@@ -180,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 12),
                   _SocialButton(
                     icon: 'f',
-                    label: 'Continuer avec Facebook',
+                    label: context.tr('continue_facebook'),
                     colorScheme: colorScheme,
                     onPressed: vm.isLoading
                         ? null
@@ -191,13 +192,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Pas de compte ? ',
+                        context.tr('no_account'),
                         style: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                       TextButton(
                         onPressed: () => context.go('/signup'),
                         child: Text(
-                          'S\'inscrire',
+                          context.tr('sign_up'),
                           style: TextStyle(color: colorScheme.primary),
                         ),
                       ),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/credits_view_model.dart';
 
 class CreditsShopScreen extends StatelessWidget {
@@ -37,7 +38,7 @@ class CreditsShopScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Boutique',
+                      context.tr('shop'),
                       style: GoogleFonts.syne(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -85,7 +86,7 @@ class CreditsShopScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Boutique Crédits',
+                  context.tr('credits_shop'),
                   style: GoogleFonts.syne(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
@@ -95,7 +96,7 @@ class CreditsShopScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Achetez des crédits pour générer des idées',
+                  context.tr('buy_credits_subtitle'),
                   style: TextStyle(
                     fontSize: 14,
                     color: colorScheme.onSurfaceVariant,
@@ -165,7 +166,7 @@ class _CreditPack extends StatelessWidget {
               ),
               transform: Matrix4.rotationZ(0.785),
               child: Text(
-                'POPULAIRE',
+                context.tr('popular'),
                 style: GoogleFonts.syne(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
@@ -251,7 +252,7 @@ class _CreditPack extends StatelessWidget {
                     backgroundColor: colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: Text('Acheter', style: TextStyle(decoration: TextDecoration.none, color: colorScheme.onPrimary)),
+                  child: Text(context.tr('buy'), style: TextStyle(decoration: TextDecoration.none, color: colorScheme.onPrimary)),
                 ),
               ),
             ],

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/payment_view_model.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -80,7 +81,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       child: Column(
                         children: [
                           Text(
-                            'Paiement',
+                            context.tr('payment'),
                             style: GoogleFonts.syne(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
@@ -89,7 +90,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Sécurisé & Crypté',
+                            context.tr('secure_encrypted'),
                             style: TextStyle(
                               fontSize: 13,
                               color: colorScheme.onSurfaceVariant,
@@ -109,13 +110,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       child: Column(
                         children: [
                           _SummaryRow(
-                            label: 'Pack sélectionné',
+                            label: context.tr('selected_pack'),
                             value: vm.packName,
                             colorScheme: colorScheme,
                           ),
                           const SizedBox(height: 12),
                           _SummaryRow(
-                            label: 'Crédits',
+                            label: context.tr('credits'),
                             value: vm.credits,
                             colorScheme: colorScheme,
                           ),
@@ -124,7 +125,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             color: colorScheme.outlineVariant,
                           ),
                           _SummaryRow(
-                            label: 'Total',
+                            label: context.tr('total'),
                             value: vm.totalPrice,
                             isTotal: true,
                             colorScheme: colorScheme,
@@ -134,7 +135,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Méthode de paiement',
+                      context.tr('payment_method'),
                       style: GoogleFonts.syne(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -144,8 +145,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(height: 16),
                     _PaymentMethod(
                       icon: '💳',
-                      title: 'Carte Bancaire',
-                      subtitle: 'Visa, Mastercard, Amex',
+                      title: context.tr('card'),
+                      subtitle: context.tr('card_subtitle'),
                       selected: vm.selectedMethod == 0,
                       onTap: () => vm.setPaymentMethod(0),
                       colorScheme: colorScheme,
@@ -153,8 +154,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(height: 12),
                     _PaymentMethod(
                       icon: '📱',
-                      title: 'Apple Pay / Google Pay',
-                      subtitle: 'Paiement rapide',
+                      title: context.tr('apple_google_pay'),
+                      subtitle: context.tr('fast_payment'),
                       selected: vm.selectedMethod == 1,
                       onTap: () => vm.setPaymentMethod(1),
                       colorScheme: colorScheme,
@@ -162,8 +163,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     const SizedBox(height: 12),
                     _PaymentMethod(
                       icon: '🅿️',
-                      title: 'PayPal',
-                      subtitle: 'Compte PayPal',
+                      title: context.tr('paypal'),
+                      subtitle: context.tr('paypal_subtitle'),
                       selected: vm.selectedMethod == 2,
                       onTap: () => vm.setPaymentMethod(2),
                       colorScheme: colorScheme,
@@ -181,17 +182,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           children: [
                             TextField(
                               controller: _cardNumber,
-                              decoration: const InputDecoration(
-                                labelText: 'Numéro de carte',
-                                hintText: '1234 5678 9012 3456',
+                              decoration: InputDecoration(
+                                labelText: context.tr('card_number'),
+                                hintText: context.tr('card_number_hint'),
                               ),
                             ),
                             const SizedBox(height: 16),
                             TextField(
                               controller: _cardName,
-                              decoration: const InputDecoration(
-                                labelText: 'Nom sur la carte',
-                                hintText: 'Mohamed Ali',
+                              decoration: InputDecoration(
+                                labelText: context.tr('name_on_card'),
+                                hintText: context.tr('name_hint'),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -200,9 +201,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 Expanded(
                                   child: TextField(
                                     controller: _expiry,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Expiration',
-                                      hintText: 'MM/YY',
+                                    decoration: InputDecoration(
+                                      labelText: context.tr('expiry'),
+                                      hintText: context.tr('expiry_hint'),
                                     ),
                                   ),
                                 ),
@@ -210,9 +211,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 Expanded(
                                   child: TextField(
                                     controller: _cvv,
-                                    decoration: const InputDecoration(
-                                      labelText: 'CVV',
-                                      hintText: '123',
+                                    decoration: InputDecoration(
+                                      labelText: context.tr('cvv'),
+                                      hintText: context.tr('cvv_hint'),
                                     ),
                                   ),
                                 ),
@@ -238,7 +239,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           backgroundColor: context.successColor,
                           padding: const EdgeInsets.symmetric(vertical: 18),
                         ),
-                        child: const Text('Confirmer le paiement'),
+                        child: Text(context.tr('confirm_payment')),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -252,7 +253,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Paiement sécurisé SSL 256-bit',
+                          context.tr('secure_ssl'),
                           style: TextStyle(
                             fontSize: 11,
                             color: colorScheme.onSurfaceVariant,

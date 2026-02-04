@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/home_view_model.dart';
 
 String _formRouteForType(String typeId) {
@@ -33,7 +34,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bonjour 👋',
+                context.tr('hello'),
                 style: GoogleFonts.syne(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
@@ -42,7 +43,7 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Quel type d\'idée veux-tu générer ?',
+                context.tr('what_idea_type'),
                 style: TextStyle(
                   fontSize: 14,
                   color: colorScheme.onSurfaceVariant,
@@ -60,7 +61,7 @@ class HomeScreen extends StatelessWidget {
                   final route = _formRouteForType(e.typeId);
                   return _GeneratorCard(
                     icon: e.icon,
-                    title: e.title,
+                    title: context.tr('gen_${e.typeId}'),
                     colorScheme: colorScheme,
                     onTap: () => context.push(route),
                   );
@@ -71,7 +72,7 @@ class HomeScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Tendances',
+                    context.tr('trends'),
                     style: GoogleFonts.syne(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -80,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   TextButton(
                     onPressed: () => context.push('/trends'),
-                    child: Text('Voir tout', style: TextStyle(color: colorScheme.primary, fontSize: 14)),
+                    child: Text(context.tr('see_all'), style: TextStyle(color: colorScheme.primary, fontSize: 14)),
                   ),
                 ],
               ),
@@ -100,7 +101,7 @@ class HomeScreen extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: () => context.push('/saved-ideas'),
                 icon: const Icon(Icons.folder_rounded, size: 20),
-                label: const Text('Bibliothèque · Mes idées sauvegardées'),
+                label: Text(context.tr('library_saved')),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: colorScheme.onSurface,
                   side: BorderSide(color: colorScheme.outlineVariant),

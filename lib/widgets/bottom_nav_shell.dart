@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 
 class BottomNavShell extends StatefulWidget {
   final String location;
@@ -61,10 +62,10 @@ class _BottomNavShellState extends State<BottomNavShell> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _NavItem(icon: Icons.home_rounded, label: 'Accueil', isSelected: index == 0, onTap: () => _onTap(0), colorScheme: colorScheme),
-                _NavItem(icon: Icons.favorite_rounded, label: 'Favoris', isSelected: index == 1, onTap: () => _onTap(1), colorScheme: colorScheme),
-                _NavItem(icon: Icons.history_rounded, label: 'Historique', isSelected: index == 2, onTap: () => _onTap(2), colorScheme: colorScheme),
-                _NavItem(icon: Icons.person_rounded, label: 'Profil', isSelected: index == 3, onTap: () => _onTap(3), colorScheme: colorScheme),
+                _NavItem(icon: Icons.home_rounded, label: context.tr('nav_home'), isSelected: index == 0, onTap: () => _onTap(0), colorScheme: colorScheme),
+                _NavItem(icon: Icons.favorite_rounded, label: context.tr('nav_favorites'), isSelected: index == 1, onTap: () => _onTap(1), colorScheme: colorScheme),
+                _NavItem(icon: Icons.history_rounded, label: context.tr('nav_history'), isSelected: index == 2, onTap: () => _onTap(2), colorScheme: colorScheme),
+                _NavItem(icon: Icons.person_rounded, label: context.tr('nav_profile'), isSelected: index == 3, onTap: () => _onTap(3), colorScheme: colorScheme),
               ],
             ),
           ),

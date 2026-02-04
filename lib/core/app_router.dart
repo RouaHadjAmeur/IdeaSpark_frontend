@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:ideaspark/core/app_localizations.dart';
+import 'package:ideaspark/view_models/locale_view_model.dart';
+import 'package:ideaspark/widgets/locale_rebuilder.dart';
 import 'package:ideaspark/views/splash/splash_screen.dart';
 import 'package:ideaspark/views/onboarding/onboarding_screen.dart';
 import 'package:ideaspark/views/auth/login_screen.dart';
@@ -34,116 +38,118 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/splash',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SplashScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const SplashScreen()),
       ),
       GoRoute(
         path: '/onboarding',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const OnboardingScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const OnboardingScreen()),
       ),
       GoRoute(
         path: '/login',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const LoginScreen()),
       ),
       GoRoute(
         path: '/signup',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SignUpScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const SignUpScreen()),
       ),
       GoRoute(
         path: '/loading',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final redirectTo = state.extra as String?;
-          return LoadingScreen(redirectTo: redirectTo);
+          return LocaleRebuilder(builder: (_) => LoadingScreen(redirectTo: redirectTo));
         },
       ),
       GoRoute(
         path: '/video-ideas-form',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const VideoIdeasFormScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const VideoIdeasFormScreen()),
       ),
       GoRoute(
         path: '/video-ideas-results',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const VideoIdeasResultsScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const VideoIdeasResultsScreen()),
       ),
       GoRoute(
         path: '/business-ideas-form',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const BusinessIdeasFormScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const BusinessIdeasFormScreen()),
       ),
       GoRoute(
         path: '/business-idea-detail',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const BusinessIdeaDetailScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const BusinessIdeaDetailScreen()),
       ),
       GoRoute(
         path: '/product-ideas-form',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ProductIdeasFormScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const ProductIdeasFormScreen()),
       ),
       GoRoute(
         path: '/product-idea-result',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ProductIdeaResultScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const ProductIdeaResultScreen()),
       ),
       GoRoute(
         path: '/slogans-form',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SlogansFormScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const SlogansFormScreen()),
       ),
       GoRoute(
         path: '/slogans-results',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SlogansResultsScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const SlogansResultsScreen()),
       ),
       GoRoute(
         path: '/saved-ideas',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SavedIdeasLibraryScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const SavedIdeasLibraryScreen()),
       ),
       GoRoute(
         path: '/trends',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const TrendsAnalysisScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const TrendsAnalysisScreen()),
       ),
       GoRoute(
         path: '/criteria',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final type = state.extra as String?;
-          return CriteriaScreen(type: type);
+          return LocaleRebuilder(builder: (_) => CriteriaScreen(type: type));
         },
       ),
       GoRoute(
         path: '/results',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const ResultsScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const ResultsScreen()),
       ),
       GoRoute(
         path: '/idea/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
-          return IdeaDetailScreen(id: id);
+          return LocaleRebuilder(builder: (_) => IdeaDetailScreen(id: id));
         },
       ),
       GoRoute(
         path: '/credits-shop',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const CreditsShopScreen(),
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const CreditsShopScreen()),
       ),
       GoRoute(
         path: '/payment',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, String>?;
-          return PaymentScreen(
-            packName: extra?['name'],
-            credits: extra?['credits'],
-            price: extra?['price'],
+          return LocaleRebuilder(
+            builder: (_) => PaymentScreen(
+              packName: extra?['name'],
+              credits: extra?['credits'],
+              price: extra?['price'],
+            ),
           );
         },
       ),
@@ -158,7 +164,7 @@ GoRouter createAppRouter() {
                 path: '/home',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: const HomeScreen(),
+                  child: LocaleRebuilder(builder: (_) => const HomeScreen()),
                 ),
               ),
             ],
@@ -169,7 +175,7 @@ GoRouter createAppRouter() {
                 path: '/favorites',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: const FavoritesScreen(),
+                  child: LocaleRebuilder(builder: (_) => const FavoritesScreen()),
                 ),
               ),
             ],
@@ -180,7 +186,7 @@ GoRouter createAppRouter() {
                 path: '/history',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: const HistoryScreen(),
+                  child: LocaleRebuilder(builder: (_) => const HistoryScreen()),
                 ),
               ),
             ],
@@ -191,7 +197,7 @@ GoRouter createAppRouter() {
                 path: '/profile',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: const ProfileScreen(),
+                  child: LocaleRebuilder(builder: (_) => const ProfileScreen()),
                 ),
               ),
             ],
@@ -209,6 +215,7 @@ class ScaffoldWithBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<LocaleViewModel>();
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: navigationShell,
@@ -225,28 +232,28 @@ class ScaffoldWithBottomNav extends StatelessWidget {
               children: [
                 _NavItem(
                   icon: Icons.home_rounded,
-                  label: 'Accueil',
+                  label: context.tr('nav_home'),
                   isSelected: navigationShell.currentIndex == 0,
                   onTap: () => navigationShell.goBranch(0),
                   colorScheme: colorScheme,
                 ),
                 _NavItem(
                   icon: Icons.favorite_rounded,
-                  label: 'Favoris',
+                  label: context.tr('nav_favorites'),
                   isSelected: navigationShell.currentIndex == 1,
                   onTap: () => navigationShell.goBranch(1),
                   colorScheme: colorScheme,
                 ),
                 _NavItem(
                   icon: Icons.history_rounded,
-                  label: 'Historique',
+                  label: context.tr('nav_history'),
                   isSelected: navigationShell.currentIndex == 2,
                   onTap: () => navigationShell.goBranch(2),
                   colorScheme: colorScheme,
                 ),
                 _NavItem(
                   icon: Icons.person_rounded,
-                  label: 'Profil',
+                  label: context.tr('nav_profile'),
                   isSelected: navigationShell.currentIndex == 3,
                   onTap: () => navigationShell.goBranch(3),
                   colorScheme: colorScheme,

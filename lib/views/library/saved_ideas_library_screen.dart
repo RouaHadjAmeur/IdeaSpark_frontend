@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 
 class SavedIdeasLibraryScreen extends StatefulWidget {
   const SavedIdeasLibraryScreen({super.key});
@@ -12,10 +13,10 @@ class SavedIdeasLibraryScreen extends StatefulWidget {
 
 class _SavedIdeasLibraryScreenState extends State<SavedIdeasLibraryScreen> {
   int _tabIndex = 0;
-  String _typeFilter = 'Tous types';
+  String _typeFilterKey = 'all_types';
 
-  static const _tabs = ['Toutes (47)', 'En cours (12)', 'Réalisées (5)'];
-  static const _typeFilters = ['Tous types', '🎬 Vidéos', '💼 Business', '🎁 Produits', '✨ Slogans'];
+  static const _tabKeys = ['all', 'in_progress', 'done_count'];
+  static const _typeFilterKeys = ['all_types', 'type_video', 'type_business', 'type_product', 'type_slogans'];
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +41,7 @@ class _SavedIdeasLibraryScreenState extends State<SavedIdeasLibraryScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Mes Idées',
+                      context.tr('my_ideas'),
                       style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
                     ),
                   ),
@@ -56,11 +57,11 @@ class _SavedIdeasLibraryScreenState extends State<SavedIdeasLibraryScreen> {
               ),
               const SizedBox(height: 20),
               Row(
-                children: List.generate(_tabs.length, (i) {
+                children: List.generate(_tabKeys.length, (i) {
                   final active = _tabIndex == i;
                   return Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(right: i < _tabs.length - 1 ? 8 : 0),
+                      padding: EdgeInsets.only(right: i < _tabKeys.length - 1 ? 8 : 0),
                       child: Material(
                         color: active ? colorScheme.primary.withValues(alpha: 0.2) : colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
@@ -75,7 +76,7 @@ class _SavedIdeasLibraryScreenState extends State<SavedIdeasLibraryScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                _tabs[i],
+                                context.tr(_tabKeys[i]),
                                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: active ? colorScheme.primary : colorScheme.onSurface),
                               ),
                             ),
@@ -90,14 +91,14 @@ class _SavedIdeasLibraryScreenState extends State<SavedIdeasLibraryScreen> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: _typeFilters.map((f) {
-                    final active = f == _typeFilter;
+                  children: _typeFilterKeys.map((key) {
+                    final active = key == _typeFilterKey;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
                       child: FilterChip(
-                        label: Text(f),
+                        label: Text(context.tr(key)),
                         selected: active,
-                        onSelected: (_) => setState(() => _typeFilter = f),
+                        onSelected: (_) => setState(() => _typeFilterKey = key),
                         backgroundColor: colorScheme.surfaceContainerHighest,
                         selectedColor: colorScheme.primary,
                         labelStyle: TextStyle(fontSize: 13, color: active ? Colors.white : colorScheme.onSurface),
@@ -138,7 +139,7 @@ class _SavedIdeasLibraryScreenState extends State<SavedIdeasLibraryScreen> {
               ),
               const SizedBox(height: 24),
               Center(
-                child: Text('47 idées sauvegardées', style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
+                child: Text(context.tr('ideas_saved_count'), style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
               ),
               const SizedBox(height: 40),
             ],
@@ -228,11 +229,11 @@ class _SavedItemCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(foregroundColor: colorScheme.onSurface, side: BorderSide(color: colorScheme.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 10)), child: const Text('👁️ Voir'))),
+              Expanded(child: OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(foregroundColor: colorScheme.onSurface, side: BorderSide(color: colorScheme.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 10)), child: Text(context.tr('view')))),
               const SizedBox(width: 8),
-              Expanded(child: OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(foregroundColor: colorScheme.onSurface, side: BorderSide(color: colorScheme.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 10)), child: const Text('✏️ Éditer'))),
+              Expanded(child: OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(foregroundColor: colorScheme.onSurface, side: BorderSide(color: colorScheme.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 10)), child: Text(context.tr('edit')))),
               const SizedBox(width: 8),
-              Expanded(child: OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(foregroundColor: colorScheme.onSurface, side: BorderSide(color: colorScheme.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 10)), child: const Text('📤 Partager'))),
+              Expanded(child: OutlinedButton(onPressed: () {}, style: OutlinedButton.styleFrom(foregroundColor: colorScheme.onSurface, side: BorderSide(color: colorScheme.outlineVariant), padding: const EdgeInsets.symmetric(vertical: 10)), child: Text(context.tr('share_action')))),
             ],
           ),
         ],

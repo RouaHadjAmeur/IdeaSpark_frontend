@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 
 class ProductIdeasFormScreen extends StatefulWidget {
   const ProductIdeasFormScreen({super.key});
@@ -35,14 +36,14 @@ class _ProductIdeasFormScreenState extends State<ProductIdeasFormScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context, colorScheme),
-              _buildChipGroup(colorScheme, 'Catégorie du produit *', _categories, _category, (v) => setState(() => _category = v)),
-              _buildInput(colorScheme, 'Niche / Industrie', _nicheController, 'Ex: Productivité, Santé, Éducation...'),
+              _buildChipGroup(colorScheme, context.tr('product_category'), _categories, _category, (v) => setState(() => _category = v)),
+              _buildInput(colorScheme, context.tr('niche'), _nicheController, context.tr('product_niche_hint')),
               Padding(
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Budget production estimé', style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
+                    Text(context.tr('estimated_budget'), style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
                         activeTrackColor: colorScheme.primary,
@@ -77,7 +78,7 @@ class _ProductIdeasFormScreenState extends State<ProductIdeasFormScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('🎁 Générer des Idées Produit'),
+                  child: Text(context.tr('generate_product')),
                 ),
               ),
               const SizedBox(height: 40),
@@ -104,7 +105,7 @@ class _ProductIdeasFormScreenState extends State<ProductIdeasFormScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Nouvelle Idée Produit',
+              context.tr('new_product_idea'),
               style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
             ),
           ),

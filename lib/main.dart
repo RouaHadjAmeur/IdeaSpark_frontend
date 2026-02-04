@@ -6,6 +6,7 @@ import 'core/app_router.dart';
 import 'view_models/auth_view_model.dart';
 import 'view_models/home_view_model.dart';
 import 'view_models/theme_view_model.dart';
+import 'view_models/locale_view_model.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,22 +29,28 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeViewModel()),
+        ChangeNotifierProvider(create: (_) => LocaleViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => HomeViewModel()),
       ],
-      child: Consumer<ThemeViewModel>(
-        builder: (context, themeVm, _) {
+      child: Consumer2<ThemeViewModel, LocaleViewModel>(
+        builder: (context, themeVm, localeVm, _) {
           return MaterialApp.router(
             title: 'IdeaSpark',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeVm.themeMode,
+            locale: localeVm.flutterLocale,
             routerConfig: _router,
             builder: (context, child) {
-              return DefaultTextStyle.merge(
-                style: const TextStyle(decoration: TextDecoration.none),
-                child: child ?? const SizedBox.shrink(),
+              // Key forces the whole route subtree to rebuild when locale changes (dynamic language switch).
+              return KeyedSubtree(
+                key: ValueKey(localeVm.locale),
+                child: DefaultTextStyle.merge(
+                  style: const TextStyle(decoration: TextDecoration.none),
+                  child: child ?? const SizedBox.shrink(),
+                ),
               );
             },
           );

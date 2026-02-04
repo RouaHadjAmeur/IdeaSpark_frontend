@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 
 class TrendsAnalysisScreen extends StatefulWidget {
   const TrendsAnalysisScreen({super.key});
@@ -12,7 +13,7 @@ class TrendsAnalysisScreen extends StatefulWidget {
 
 class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
   int _tabIndex = 0;
-  static const _tabs = ['Pour vous', 'Vidéo', 'Business', 'Produits'];
+  static const _tabKeys = ['for_you', 'video_tab', 'business_tab', 'products_tab'];
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +38,7 @@ class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Tendances Actuelles',
+                      context.tr('current_trends'),
                       style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
                     ),
                   ),
@@ -65,7 +66,7 @@ class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '5 nouvelles tendances correspondent à votre profil !',
+                        context.tr('trends_match_profile'),
                         style: TextStyle(fontSize: 13, color: context.successColor, fontWeight: FontWeight.w500),
                       ),
                     ),
@@ -74,11 +75,11 @@ class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
               ),
               const SizedBox(height: 20),
               Row(
-                children: List.generate(_tabs.length, (i) {
+                children: List.generate(_tabKeys.length, (i) {
                   final active = _tabIndex == i;
                   return Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(right: i < _tabs.length - 1 ? 8 : 0),
+                      padding: EdgeInsets.only(right: i < _tabKeys.length - 1 ? 8 : 0),
                       child: Material(
                         color: active ? colorScheme.primary.withValues(alpha: 0.2) : colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(10),
@@ -93,7 +94,7 @@ class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                _tabs[i],
+                                context.tr(_tabKeys[i]),
                                 style: TextStyle(fontSize: 13, color: active ? colorScheme.primary : colorScheme.onSurface),
                               ),
                             ),
@@ -106,28 +107,28 @@ class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                '🔥 Tendances Montantes',
+                context.tr('rising_trends'),
                 style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
               ),
               const SizedBox(height: 12),
-              _TrendItem(colorScheme: colorScheme, icon: '💪', title: 'Fitness femmes 25-35', subtitle: '↗️ Croissance +127% (7 jours)', growth: '+127%', isRising: true),
-              _TrendItem(colorScheme: colorScheme, icon: '🛍️', title: 'E-commerce Tunisie', subtitle: '↗️ Croissance +89% (7 jours)', growth: '+89%', isRising: true),
-              _TrendItem(colorScheme: colorScheme, icon: '🧠', title: 'Productivité IA', subtitle: '↗️ Croissance +156% (7 jours)', growth: '+156%', isRising: true),
+              _TrendItem(colorScheme: colorScheme, icon: '💪', title: 'Fitness femmes 25-35', subtitle: '↗️ ${context.tr("growth")} +127% (7 jours)', growth: '+127%', isRising: true),
+              _TrendItem(colorScheme: colorScheme, icon: '🛍️', title: 'E-commerce Tunisie', subtitle: '↗️ ${context.tr("growth")} +89% (7 jours)', growth: '+89%', isRising: true),
+              _TrendItem(colorScheme: colorScheme, icon: '🧠', title: 'Productivité IA', subtitle: '↗️ ${context.tr("growth")} +156% (7 jours)', growth: '+156%', isRising: true),
               const SizedBox(height: 24),
               Text(
-                '⭐ Populaires Maintenant',
+                context.tr('popular_now'),
                 style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
               ),
               const SizedBox(height: 12),
-              _TrendItem(colorScheme: colorScheme, icon: '🎥', title: 'Side Hustle 2026', subtitle: '🔥 Pic d\'intérêt actuel', growth: 'Top 5', isRising: false, accent: true),
-              _TrendItem(colorScheme: colorScheme, icon: '📱', title: 'Apps No-Code', subtitle: '🔥 Pic d\'intérêt actuel', growth: 'Top 3', isRising: false, accent: true),
+              _TrendItem(colorScheme: colorScheme, icon: '🎥', title: 'Side Hustle 2026', subtitle: context.tr('peak_interest'), growth: 'Top 5', isRising: false, accent: true),
+              _TrendItem(colorScheme: colorScheme, icon: '📱', title: 'Apps No-Code', subtitle: context.tr('peak_interest'), growth: 'Top 3', isRising: false, accent: true),
               const SizedBox(height: 24),
               Text(
-                '🌿 Potentiel Evergreen',
+                context.tr('evergreen_potential'),
                 style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
               ),
               const SizedBox(height: 12),
-              _TrendItem(colorScheme: colorScheme, icon: '💰', title: 'Investissement passif', subtitle: '📊 Intérêt stable', growth: 'Stable', isRising: false, evergreen: true),
+              _TrendItem(colorScheme: colorScheme, icon: '💰', title: 'Investissement passif', subtitle: '📊 ${context.tr("stable_interest")}', growth: 'Stable', isRising: false, evergreen: true),
               const SizedBox(height: 24),
               Center(
                 child: OutlinedButton(
@@ -137,7 +138,7 @@ class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
                     side: BorderSide(color: colorScheme.outlineVariant),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                   ),
-                  child: const Text('📊 Voir toutes les tendances'),
+                  child: Text(context.tr('see_all_trends')),
                 ),
               ),
               const SizedBox(height: 40),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/models/idea_model.dart';
 
 class HistoryScreen extends StatelessWidget {
@@ -21,7 +22,7 @@ class HistoryScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Historique',
+            context.tr('history_title'),
             style: GoogleFonts.syne(
               fontSize: 28,
               fontWeight: FontWeight.w700,
@@ -33,16 +34,16 @@ class HistoryScreen extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _FilterChip(label: 'Tous', selected: true, colorScheme: colorScheme),
+                _FilterChip(label: context.tr('filter_all'), selected: true, colorScheme: colorScheme),
                 const SizedBox(width: 8),
-                _FilterChip(label: 'Business', selected: false, colorScheme: colorScheme),
-                _FilterChip(label: 'Video', selected: false, colorScheme: colorScheme),
+                _FilterChip(label: context.tr('filter_business'), selected: false, colorScheme: colorScheme),
+                _FilterChip(label: context.tr('filter_video'), selected: false, colorScheme: colorScheme),
               ],
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            'Aujourd\'hui',
+            context.tr('today'),
             style: GoogleFonts.syne(
               fontSize: 12,
               fontWeight: FontWeight.w600,

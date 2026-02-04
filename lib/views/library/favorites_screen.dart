@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/models/idea_model.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -21,7 +22,7 @@ class FavoritesScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Favoris',
+            context.tr('favorites_title'),
             style: GoogleFonts.syne(
               fontSize: 28,
               fontWeight: FontWeight.w700,
@@ -33,13 +34,13 @@ class FavoritesScreen extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _FilterChip(label: 'Tous', selected: true, colorScheme: colorScheme),
+                _FilterChip(label: context.tr('filter_all'), selected: true, colorScheme: colorScheme),
                 const SizedBox(width: 8),
-                _FilterChip(label: 'Business', selected: false, colorScheme: colorScheme),
+                _FilterChip(label: context.tr('filter_business'), selected: false, colorScheme: colorScheme),
                 const SizedBox(width: 8),
-                _FilterChip(label: 'Video', selected: false, colorScheme: colorScheme),
+                _FilterChip(label: context.tr('filter_video'), selected: false, colorScheme: colorScheme),
                 const SizedBox(width: 8),
-                _FilterChip(label: 'Produit', selected: false, colorScheme: colorScheme),
+                _FilterChip(label: context.tr('filter_product'), selected: false, colorScheme: colorScheme),
               ],
             ),
           ),
@@ -160,12 +161,12 @@ class _IdeaCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () {},
                     icon: Icon(Icons.delete_outline_rounded, size: 16, color: colorScheme.onSurfaceVariant),
-                    label: Text('Retirer', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                    label: Text(context.tr('remove'), style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                   ),
                   TextButton.icon(
                     onPressed: () {},
                     icon: Icon(Icons.share_rounded, size: 16, color: colorScheme.onSurfaceVariant),
-                    label: Text('Partager', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                    label: Text(context.tr('share'), style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                   ),
                 ],
               ),

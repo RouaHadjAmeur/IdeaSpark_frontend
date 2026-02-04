@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 
 class VideoIdeasFormScreen extends StatefulWidget {
   const VideoIdeasFormScreen({super.key});
@@ -37,12 +38,12 @@ class _VideoIdeasFormScreenState extends State<VideoIdeasFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(context, colorScheme, 'Nouvelle Idée Vidéo'),
-              _buildInputGroup(colorScheme, 'Thématique / Niche *', _themeController, 'Ex: Fitness, Tech, Cuisine...'),
-              _buildChipGroup(colorScheme, 'Plateforme cible', _platforms, _platform, (v) => setState(() => _platform = v)),
-              _buildChipGroup(colorScheme, 'Durée souhaitée', _durations, _duration, (v) => setState(() => _duration = v)),
-              _buildChipGroup(colorScheme, 'Ton / Style', _tones, _tone, (v) => setState(() => _tone = v)),
-              _buildInputGroup(colorScheme, 'Mots-clés (optionnel)', _keywordsController, 'Séparez par des virgules'),
+              _buildHeader(context, colorScheme, context.tr('new_video_idea')),
+              _buildInputGroup(colorScheme, context.tr('theme_niche'), _themeController, context.tr('theme_hint')),
+              _buildChipGroup(colorScheme, context.tr('target_platform'), _platforms, _platform, (v) => setState(() => _platform = v)),
+              _buildChipGroup(colorScheme, context.tr('duration'), _durations, _duration, (v) => setState(() => _duration = v)),
+              _buildChipGroup(colorScheme, context.tr('tone_style'), _tones, _tone, (v) => setState(() => _tone = v)),
+              _buildInputGroup(colorScheme, context.tr('keywords_optional'), _keywordsController, context.tr('keywords_hint')),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -53,7 +54,7 @@ class _VideoIdeasFormScreenState extends State<VideoIdeasFormScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('✨ Générer des Idées'),
+                  child: Text(context.tr('generate_ideas')),
                 ),
               ),
               const SizedBox(height: 40),

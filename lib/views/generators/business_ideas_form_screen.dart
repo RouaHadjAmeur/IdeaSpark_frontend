@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 
 class BusinessIdeasFormScreen extends StatefulWidget {
   const BusinessIdeasFormScreen({super.key});
@@ -41,17 +42,17 @@ class _BusinessIdeasFormScreenState extends State<BusinessIdeasFormScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(context, colorScheme),
-              _buildInput(colorScheme, 'Secteur d\'activité *', _sectorController, 'Ex: E-commerce, Services, SaaS...'),
-              _buildChipGroup(colorScheme, 'Budget de démarrage', _budgets, _budget, (v) => setState(() => _budget = v)),
-              _buildInput(colorScheme, 'Compétences disponibles', _skillsController, 'Ex: Marketing, Développement, Design...'),
-              _buildChipGroup(colorScheme, 'Temps disponible', _times, _time, (v) => setState(() => _time = v)),
-              _buildChipGroup(colorScheme, 'Localisation', _locations, _location, (v) => setState(() => _location = v)),
+              _buildInput(colorScheme, context.tr('sector'), _sectorController, context.tr('sector_hint')),
+              _buildChipGroup(colorScheme, context.tr('startup_budget'), _budgets, _budget, (v) => setState(() => _budget = v)),
+              _buildInput(colorScheme, context.tr('skills'), _skillsController, context.tr('skills_hint')),
+              _buildChipGroup(colorScheme, context.tr('time_available'), _times, _time, (v) => setState(() => _time = v)),
+              _buildChipGroup(colorScheme, context.tr('location'), _locations, _location, (v) => setState(() => _location = v)),
               const SizedBox(height: 12),
-              Text('Préférences additionnelles', style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
+              Text(context.tr('extra_prefs'), style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
               const SizedBox(height: 12),
-              _buildSwitch(colorScheme, 'Modèle récurrent (abonnements)', _recurrent, (v) => setState(() => _recurrent = v)),
-              _buildSwitch(colorScheme, 'Scalable rapidement', _scalable, (v) => setState(() => _scalable = v)),
-              _buildSwitch(colorScheme, 'Peu de concurrence', _lowCompetition, (v) => setState(() => _lowCompetition = v)),
+              _buildSwitch(colorScheme, context.tr('recurring_model'), _recurrent, (v) => setState(() => _recurrent = v)),
+              _buildSwitch(colorScheme, context.tr('scalable'), _scalable, (v) => setState(() => _scalable = v)),
+              _buildSwitch(colorScheme, context.tr('low_competition'), _lowCompetition, (v) => setState(() => _lowCompetition = v)),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -62,7 +63,7 @@ class _BusinessIdeasFormScreenState extends State<BusinessIdeasFormScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text('💼 Générer des Idées Business'),
+                  child: Text(context.tr('generate_business')),
                 ),
               ),
               const SizedBox(height: 40),
@@ -89,7 +90,7 @@ class _BusinessIdeasFormScreenState extends State<BusinessIdeasFormScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Nouvelle Idée Business',
+              context.tr('new_business_idea'),
               style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
             ),
           ),

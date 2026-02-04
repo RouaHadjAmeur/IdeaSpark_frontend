@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -77,7 +78,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       colors: [colorScheme.primary, context.accentColor],
                     ).createShader(bounds),
                     child: Text(
-                      'IdeaSpark',
+                      context.tr('app_name'),
                       style: GoogleFonts.syne(
                         fontSize: 36,
                         fontWeight: FontWeight.w800,
@@ -87,7 +88,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Créer un compte',
+                    context.tr('signup'),
                     style: GoogleFonts.syne(
                       fontSize: 28,
                       fontWeight: FontWeight.w700,
@@ -115,27 +116,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'votre@email.com',
+                    decoration: InputDecoration(
+                      labelText: context.tr('email'),
+                      hintText: context.tr('email_hint'),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Mot de passe',
-                      hintText: '••••••••',
+                    decoration: InputDecoration(
+                      labelText: context.tr('password'),
+                      hintText: context.tr('password_hint'),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: _confirmController,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirmer le mot de passe',
-                      hintText: '••••••••',
+                    decoration: InputDecoration(
+                      labelText: context.tr('confirm_password'),
+                      hintText: context.tr('password_hint'),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -158,7 +159,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 color: Colors.white,
                               ),
                             )
-                          : const Text('S\'inscrire'),
+                          : Text(context.tr('sign_up')),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -169,7 +170,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          'ou',
+                          context.tr('or'),
                           style: TextStyle(
                             color: colorScheme.onSurfaceVariant,
                             fontSize: 14,
@@ -183,7 +184,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 24),
                   _SocialButton(
                     icon: 'G',
-                    label: 'S\'inscrire avec Google',
+                    label: context.tr('signup_google'),
                     colorScheme: colorScheme,
                     onPressed: vm.isLoading
                         ? null
@@ -192,7 +193,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 12),
                   _SocialButton(
                     icon: 'f',
-                    label: 'S\'inscrire avec Facebook',
+                    label: context.tr('signup_facebook'),
                     colorScheme: colorScheme,
                     onPressed: vm.isLoading
                         ? null
@@ -203,13 +204,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Déjà un compte ? ',
+                        context.tr('has_account'),
                         style: TextStyle(color: colorScheme.onSurfaceVariant),
                       ),
                       TextButton(
                         onPressed: () => context.go('/login'),
                         child: Text(
-                          'Se connecter',
+                          context.tr('sign_in'),
                           style: TextStyle(color: colorScheme.primary),
                         ),
                       ),

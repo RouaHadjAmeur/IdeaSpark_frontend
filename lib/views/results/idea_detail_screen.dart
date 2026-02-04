@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/widgets/variation_bottom_sheet.dart';
 
 class IdeaDetailScreen extends StatelessWidget {
@@ -59,7 +60,7 @@ class IdeaDetailScreen extends StatelessWidget {
             child: OutlinedButton.icon(
               onPressed: () {},
               icon: Icon(Icons.share_rounded, size: 18, color: colorScheme.primary),
-              label: Text('Partager', style: TextStyle(color: colorScheme.primary, decoration: TextDecoration.none)),
+              label: Text(context.tr('share'), style: TextStyle(color: colorScheme.primary, decoration: TextDecoration.none)),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: colorScheme.outlineVariant),
                 backgroundColor: colorScheme.surfaceContainerHighest,
@@ -68,13 +69,13 @@ class IdeaDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _DetailSection(
-            title: 'Pourquoi ça marche',
+            title: context.tr('why_it_works'),
             colorScheme: colorScheme,
-            content: 'Cette idée fonctionne car elle montre une transformation claire avant/après qui capte l\'attention. Le format rapide avec transitions est parfait pour TikTok et génère de l\'engagement.',
+            content: context.tr('why_content'),
           ),
           const SizedBox(height: 16),
           _DetailSection(
-            title: 'Plan d\'exécution',
+            title: context.tr('execution_plan'),
             colorScheme: colorScheme,
             child: Column(
               children: _steps.asMap().entries.map((e) {
@@ -117,7 +118,7 @@ class IdeaDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _DetailSection(
-            title: 'Hashtags suggérés',
+            title: context.tr('suggested_hashtags'),
             colorScheme: colorScheme,
             content: '#morningroutine #productivity #students #transformation #motivation #studytok #thatgirl',
           ),
@@ -130,7 +131,7 @@ class IdeaDetailScreen extends StatelessWidget {
                 backgroundColor: colorScheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text('❤️ Sauvegarder', style: TextStyle(decoration: TextDecoration.none, color: colorScheme.onPrimary)),
+              child: Text(context.tr('save_idea'), style: TextStyle(decoration: TextDecoration.none, color: colorScheme.onPrimary)),
             ),
           ),
           const SizedBox(height: 8),
@@ -149,7 +150,7 @@ class IdeaDetailScreen extends StatelessWidget {
                 foregroundColor: colorScheme.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              child: Text('🔁 Créer variations', style: TextStyle(decoration: TextDecoration.none, color: colorScheme.primary)),
+              child: Text(context.tr('create_variations'), style: TextStyle(decoration: TextDecoration.none, color: colorScheme.primary)),
             ),
           ),
         ],

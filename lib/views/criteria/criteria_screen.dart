@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/criteria_view_model.dart';
 
 class CriteriaScreen extends StatefulWidget {
@@ -54,7 +55,7 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Paramètres',
+                      context.tr('settings'),
                       style: GoogleFonts.syne(
                         fontSize: 28,
                         fontWeight: FontWeight.w700,
@@ -64,7 +65,7 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Dis-nous quoi générer',
+                      context.tr('tell_us_what'),
                       style: TextStyle(
                         fontSize: 14,
                         color: colorScheme.onSurfaceVariant,
@@ -72,7 +73,7 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _sectionLabel('Type', colorScheme),
+                    _sectionLabel(context.tr('type'), colorScheme),
                     const SizedBox(height: 8),
                     TextField(
                       controller: TextEditingController(text: vm.type),
@@ -80,47 +81,50 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
                       decoration: const InputDecoration(),
                     ),
                     const SizedBox(height: 20),
-                    _sectionLabel('Niche', colorScheme),
+                    _sectionLabel(context.tr('niche'), colorScheme),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _nicheController,
                       onChanged: vm.setNiche,
-                      decoration: const InputDecoration(
-                        hintText: 'Ex: Fitness, Beauty, Tech...',
+                      decoration: InputDecoration(
+                        hintText: context.tr('niche_hint'),
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _sectionLabel('Audience cible', colorScheme),
+                    _sectionLabel(context.tr('target_audience'), colorScheme),
                     const SizedBox(height: 8),
                     _chipsRow(
                       context,
+                      'audience',
                       CriteriaViewModel.audienceOptions,
                       vm.audience,
                       vm.setAudience,
                       colorScheme,
                     ),
                     const SizedBox(height: 20),
-                    _sectionLabel('Plateforme', colorScheme),
+                    _sectionLabel(context.tr('platform'), colorScheme),
                     const SizedBox(height: 8),
                     _chipsRow(
                       context,
+                      'platform',
                       CriteriaViewModel.platformOptions,
                       vm.platform,
                       vm.setPlatform,
                       colorScheme,
                     ),
                     const SizedBox(height: 20),
-                    _sectionLabel('Ton / Style', colorScheme),
+                    _sectionLabel(context.tr('tone_style'), colorScheme),
                     const SizedBox(height: 8),
                     _chipsRow(
                       context,
+                      'tone',
                       CriteriaViewModel.toneOptions,
                       vm.tone,
                       vm.setTone,
                       colorScheme,
                     ),
                     const SizedBox(height: 20),
-                    _sectionLabel('Niveau Créativité', colorScheme),
+                    _sectionLabel(context.tr('creativity_level'), colorScheme),
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
                         activeTrackColor: colorScheme.primary,
@@ -136,14 +140,14 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Réaliste',
+                          context.tr('realistic'),
                           style: TextStyle(
                             fontSize: 10,
                             color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                         Text(
-                          'Créatif',
+                          context.tr('creative'),
                           style: TextStyle(
                             fontSize: 10,
                             color: colorScheme.onSurfaceVariant,
@@ -177,14 +181,14 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
                         backgroundColor: colorScheme.primary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text('Générer 10 idées'),
+                      child: Text(context.tr('generate_10')),
                     ),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
                     onPressed: () => context.push('/loading'),
                     child: Text(
-                      'Surprise me ✨',
+                      context.tr('surprise_me'),
                       style: TextStyle(color: colorScheme.onSurfaceVariant),
                     ),
                   ),
@@ -211,6 +215,7 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
 
   Widget _chipsRow(
     BuildContext context,
+    String category,
     List<String> options,
     String selected,
     ValueChanged<String> onSelect,
@@ -233,7 +238,7 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
               ),
             ),
             child: Text(
-              o,
+              context.trOption(category, o),
               style: TextStyle(
                 fontSize: 12,
                 color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
