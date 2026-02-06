@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -31,6 +32,16 @@ class AppUser {
   }
 }
 
+/// Result of Google sign-in: either logged in or must verify email with code.
+class GoogleSignInResult {
+  const GoogleSignInResult({this.user, this.emailForVerification})
+      : assert(user == null || emailForVerification == null);
+  final AppUser? user;
+  final String? emailForVerification;
+  bool get loggedIn => user != null;
+  bool get requiresVerification => emailForVerification != null;
+}
+
 /// Auth service that uses the IdeaSpark NestJS backend for login/register and Google/Facebook token exchange.
 class AuthService {
   AuthService._();
@@ -44,6 +55,8 @@ class AuthService {
 
   AppUser? _currentUser;
   String? _accessToken;
+  /// When backend returns requiresVerification for Google, we keep idToken to verify with code.
+  String? _pendingGoogleIdToken;
 
   AppUser? get currentUser => _currentUser;
   String? get accessToken => _accessToken;
@@ -177,20 +190,77 @@ class AuthService {
     }
   }
 
-  /// Sign in with Google: get idToken from google_sign_in, then POST /auth/google.
-  Future<AppUser?> signInWithGoogle() async {
-    final googleSignIn = GoogleSignIn(
-      scopes: ['email', 'profile'],
-      serverClientId: null, // optional: use if you have a web client ID for server
-    );
-    final account = await googleSignIn.signIn();
-    if (account == null) return null;
-    final auth = await account.authentication;
-    final idToken = auth.idToken;
-    if (idToken == null || idToken.isEmpty) {
-      throw Exception('Could not get Google ID token');
+  /// Sign in with Google: get idToken, POST /auth/google. Backend may log in immediately or return requiresVerification + send code to email.
+  /// serverClientId must be your backend's Web client ID so the id_token audience matches and the backend can verify it.
+  Future<GoogleSignInResult?> signInWithGoogle() async {
+    try {
+      final googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+        serverClientId: ApiConfig.googleWebClientId.isEmpty
+            ? null
+            : ApiConfig.googleWebClientId,
+      );
+      final account = await googleSignIn.signIn();
+      if (account == null) return null;
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception('Could not get Google ID token');
+      }
+      final uri = Uri.parse('${ApiConfig.authBase}/google');
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': idToken}),
+      );
+      if (res.statusCode != 200) {
+        throw Exception(_errorMessage(res));
+      }
+      final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+      if (data['requiresVerification'] == true && data['email'] != null) {
+        _pendingGoogleIdToken = idToken;
+        return GoogleSignInResult(emailForVerification: data['email'] as String);
+      }
+      final user = AppUser.fromJson(data['user'] as Map<String, dynamic>? ?? {});
+      final token = data['accessToken'] as String? ?? '';
+      await _saveSession(token, user);
+      return GoogleSignInResult(user: _currentUser);
+    } on PlatformException catch (e) {
+      throw Exception('Google Sign-In: ${e.message ?? e.code}');
+    } catch (e) {
+      rethrow;
     }
-    final uri = Uri.parse('${ApiConfig.authBase}/google');
+  }
+
+  /// Verify Google sign-up with the 6-digit code sent to email. Call after signInWithGoogle() returned requiresVerification.
+  Future<void> verifyGoogleWithCode(String code) async {
+    final idToken = _pendingGoogleIdToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw Exception('No pending Google sign-in');
+    }
+    final uri = Uri.parse('${ApiConfig.authBase}/google/verify');
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'idToken': idToken, 'code': code.trim()}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
+    _pendingGoogleIdToken = null;
+    final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>? ?? {});
+    final token = data['accessToken'] as String? ?? '';
+    await _saveSession(token, user);
+  }
+
+  /// Resend verification code for pending Google sign-in.
+  Future<void> resendGoogleCode() async {
+    final idToken = _pendingGoogleIdToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw Exception('No pending Google sign-in');
+    }
+    final uri = Uri.parse('${ApiConfig.authBase}/google/resend-code');
     final res = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -199,34 +269,35 @@ class AuthService {
     if (res.statusCode != 200) {
       throw Exception(_errorMessage(res));
     }
-    final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
-    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>? ?? {});
-    final token = data['accessToken'] as String? ?? '';
-    await _saveSession(token, user);
-    return _currentUser;
   }
 
   /// Sign in with Facebook: get accessToken from flutter_facebook_auth, then POST /auth/facebook.
   Future<AppUser?> signInWithFacebook() async {
-    final result = await FacebookAuth.instance.login();
-    if (result.status != LoginStatus.success || result.accessToken == null) {
-      return null;
+    try {
+      final result = await FacebookAuth.instance.login();
+      if (result.status != LoginStatus.success || result.accessToken == null) {
+        return null;
+      }
+      final tokenValue = result.accessToken!.tokenString;
+      final uri = Uri.parse('${ApiConfig.authBase}/facebook');
+      final res = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'accessToken': tokenValue}),
+      );
+      if (res.statusCode != 200) {
+        throw Exception(_errorMessage(res));
+      }
+      final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+      final user = AppUser.fromJson(data['user'] as Map<String, dynamic>? ?? {});
+      final token = data['accessToken'] as String? ?? '';
+      await _saveSession(token, user);
+      return _currentUser;
+    } on PlatformException catch (e) {
+      throw Exception('Facebook: ${e.message ?? e.code}');
+    } catch (e) {
+      rethrow;
     }
-    final accessToken = result.accessToken!.tokenString;
-    final uri = Uri.parse('${ApiConfig.authBase}/facebook');
-    final res = await http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'accessToken': accessToken}),
-    );
-    if (res.statusCode != 200) {
-      throw Exception(_errorMessage(res));
-    }
-    final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
-    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>? ?? {});
-    final token = data['accessToken'] as String? ?? '';
-    await _saveSession(token, user);
-    return _currentUser;
   }
 
   String _errorMessage(http.Response res) {
@@ -246,6 +317,49 @@ class AuthService {
     try {
       await FacebookAuth.instance.logOut();
     } catch (_) {}
+    await _clearSession();
+  }
+
+  /// Request a verification code to be sent to the user's email before account deletion.
+  /// Requires the user to be logged in (Bearer token).
+  Future<void> requestDeleteAccountCode() async {
+    await _loadStored();
+    final token = _accessToken;
+    if (token == null || token.isEmpty) {
+      throw Exception('Not logged in');
+    }
+    final uri = Uri.parse('${ApiConfig.authBase}/delete-account/send-code');
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
+  }
+
+  /// Confirm account deletion with the 6-digit code. Clears session on success.
+  Future<void> confirmDeleteAccount(String code) async {
+    await _loadStored();
+    final token = _accessToken;
+    if (token == null || token.isEmpty) {
+      throw Exception('Not logged in');
+    }
+    final uri = Uri.parse('${ApiConfig.authBase}/delete-account/confirm');
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'code': code.trim()}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
     await _clearSession();
   }
 

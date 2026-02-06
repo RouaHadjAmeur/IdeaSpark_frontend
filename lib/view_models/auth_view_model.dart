@@ -35,14 +35,47 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<void> setOnboardingDone() => _authService.setOnboardingDone();
 
-  Future<bool> signInWithGoogle() async {
+  /// Returns null if user cancelled; otherwise either logged in or requires email verification.
+  Future<GoogleSignInResult?> signInWithGoogle() async {
     _setLoading(true);
     try {
       final result = await _authService.signInWithGoogle();
       _setLoading(false);
-      return result != null;
+      return result;
     } catch (e) {
       _setError('Erreur: ${e.toString()}');
+      _setLoading(false);
+      return null;
+    }
+  }
+
+  /// Verify Google sign-up with the 6-digit code. Returns true on success.
+  Future<bool> verifyGoogleWithCode(String code) async {
+    if (code.trim().length != 6) {
+      _setError('Code must be 6 digits');
+      return false;
+    }
+    _setLoading(true);
+    try {
+      await _authService.verifyGoogleWithCode(code.trim());
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Resend verification code for pending Google sign-in. Returns true on success.
+  Future<bool> resendGoogleCode() async {
+    _setLoading(true);
+    try {
+      await _authService.resendGoogleCode();
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
       _setLoading(false);
       return false;
     }

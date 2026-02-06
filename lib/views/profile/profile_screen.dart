@@ -7,6 +7,192 @@ import 'package:ideaspark/view_models/profile_view_model.dart';
 import 'package:ideaspark/view_models/theme_view_model.dart';
 import 'package:ideaspark/view_models/locale_view_model.dart';
 
+void _showDeleteAccountFlow(BuildContext context, ProfileViewModel vm) {
+  final colorScheme = Theme.of(context).colorScheme;
+  final tr = context.tr;
+
+  // Step 1: Confirm and request code
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(tr('delete_account_confirm_title')),
+      content: Text(tr('delete_account_confirm_message')),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(tr('cancel')),
+        ),
+        FilledButton(
+          onPressed: vm.isDeleteLoading
+              ? null
+              : () async {
+                  Navigator.of(dialogContext).pop();
+                  final ok = await vm.requestDeleteAccountCode();
+                  if (!context.mounted) return;
+                  if (ok) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(tr('delete_account_code_sent'))),
+                    );
+                    _showDeleteAccountCodeDialog(context, vm);
+                  } else if (vm.deleteErrorMessage != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(vm.deleteErrorMessage!),
+                        backgroundColor: colorScheme.error,
+                      ),
+                    );
+                  }
+                },
+          child: vm.isDeleteLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(tr('delete_account_send_code')),
+        ),
+      ],
+    ),
+  );
+}
+
+void _showDeleteAccountCodeDialog(BuildContext context, ProfileViewModel vm) {
+  final colorScheme = Theme.of(context).colorScheme;
+  final tr = context.tr;
+  final userEmail = vm.email;
+
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) => _DeleteAccountCodeDialog(
+      colorScheme: colorScheme,
+      userEmail: userEmail,
+      vm: vm,
+      tr: tr,
+      onSuccess: () {
+        Navigator.of(dialogContext).pop();
+        context.go('/login');
+      },
+      onCancel: () => Navigator.of(dialogContext).pop(),
+    ),
+  );
+}
+
+class _DeleteAccountCodeDialog extends StatefulWidget {
+  const _DeleteAccountCodeDialog({
+    required this.colorScheme,
+    required this.userEmail,
+    required this.vm,
+    required this.tr,
+    required this.onSuccess,
+    required this.onCancel,
+  });
+
+  final ColorScheme colorScheme;
+  final String userEmail;
+  final ProfileViewModel vm;
+  final String Function(String) tr;
+  final VoidCallback onSuccess;
+  final VoidCallback onCancel;
+
+  @override
+  State<_DeleteAccountCodeDialog> createState() => _DeleteAccountCodeDialogState();
+}
+
+class _DeleteAccountCodeDialogState extends State<_DeleteAccountCodeDialog> {
+  final _codeController = TextEditingController();
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: widget.vm,
+      builder: (context, _) {
+        return AlertDialog(
+          title: Text(widget.tr('delete_account_enter_code_title')),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '${widget.tr('delete_account_enter_code_message')} ${widget.userEmail}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: widget.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              if (widget.vm.deleteErrorMessage != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: widget.colorScheme.errorContainer.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    widget.vm.deleteErrorMessage!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: widget.colorScheme.onErrorContainer,
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _codeController,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                decoration: InputDecoration(
+                  labelText: widget.tr('verify_code_hint'),
+                  hintText: '123456',
+                  counterText: '',
+                  border: const OutlineInputBorder(),
+                ),
+                onSubmitted: (_) => _submit(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: widget.vm.isDeleteLoading ? null : widget.onCancel,
+              child: Text(widget.tr('cancel')),
+            ),
+            FilledButton(
+              onPressed: widget.vm.isDeleteLoading ? null : _submit,
+              style: FilledButton.styleFrom(
+                backgroundColor: widget.colorScheme.error,
+              ),
+              child: widget.vm.isDeleteLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(widget.tr('delete_account_confirm_button')),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _submit() async {
+    widget.vm.clearDeleteError();
+    final ok = await widget.vm.confirmDeleteAccount(_codeController.text);
+    if (!mounted) return;
+    if (ok) widget.onSuccess();
+  }
+}
+
 void _showLanguageSheet(BuildContext context, ColorScheme colorScheme) {
   showModalBottomSheet<void>(
     context: context,
@@ -210,6 +396,23 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   onTap: () => context.push('/credits-shop'),
+                ),
+                const SizedBox(height: 24),
+                _SettingsGroup(
+                  title: context.tr('account'),
+                  colorScheme: colorScheme,
+                  children: [
+                    _SettingRow(
+                      label: context.tr('delete_account'),
+                      colorScheme: colorScheme,
+                      trailing: Icon(
+                        Icons.delete_outline_rounded,
+                        color: colorScheme.error,
+                        size: 22,
+                      ),
+                      onTap: () => _showDeleteAccountFlow(context, vm),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 SizedBox(

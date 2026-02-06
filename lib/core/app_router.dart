@@ -60,9 +60,21 @@ GoRouter createAppRouter() {
         path: '/verify-email',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final email = state.extra as String? ?? '';
+          final extra = state.extra;
+          String email = '';
+          bool isGoogleVerification = false;
+          if (extra is Map) {
+            final emailValue = extra['email'];
+            email = emailValue is String ? emailValue : (emailValue?.toString() ?? '');
+            isGoogleVerification = extra['source'] == 'google';
+          } else if (extra is String) {
+            email = extra;
+          }
           return LocaleRebuilder(
-            builder: (_) => VerifyEmailScreen(email: email),
+            builder: (_) => VerifyEmailScreen(
+              email: email,
+              isGoogleVerification: isGoogleVerification,
+            ),
           );
         },
       ),
@@ -70,7 +82,8 @@ GoRouter createAppRouter() {
         path: '/loading',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final redirectTo = state.extra as String?;
+          final extra = state.extra;
+          final redirectTo = extra is String ? extra : null;
           return LocaleRebuilder(builder: (_) => LoadingScreen(redirectTo: redirectTo));
         },
       ),
@@ -128,7 +141,7 @@ GoRouter createAppRouter() {
         path: '/criteria',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final type = state.extra as String?;
+          final String? type = state.extra is String ? state.extra as String : null;
           return LocaleRebuilder(builder: (_) => CriteriaScreen(type: type));
         },
       ),
@@ -154,12 +167,18 @@ GoRouter createAppRouter() {
         path: '/payment',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final extra = state.extra as Map<String, String>?;
+          final raw = state.extra;
+          final extra = raw is Map ? raw : null;
+          String? getStr(dynamic m, String k) {
+            if (m == null) return null;
+            final v = m[k];
+            return v is String ? v : v?.toString();
+          }
           return LocaleRebuilder(
             builder: (_) => PaymentScreen(
-              packName: extra?['name'],
-              credits: extra?['credits'],
-              price: extra?['price'],
+              packName: getStr(extra, 'name'),
+              credits: getStr(extra, 'credits'),
+              price: getStr(extra, 'price'),
             ),
           );
         },

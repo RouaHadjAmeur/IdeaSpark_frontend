@@ -6,9 +6,14 @@ import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
-  const VerifyEmailScreen({super.key, required this.email});
+  const VerifyEmailScreen({
+    super.key,
+    required this.email,
+    this.isGoogleVerification = false,
+  });
 
   final String email;
+  final bool isGoogleVerification;
 
   @override
   State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
@@ -26,7 +31,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Future<void> _verify(BuildContext context) async {
     final vm = context.read<AuthViewModel>();
     vm.clearError();
-    final success = await vm.verifyEmail(widget.email, _codeController.text);
+    final success = widget.isGoogleVerification
+        ? await vm.verifyGoogleWithCode(_codeController.text)
+        : await vm.verifyEmail(widget.email, _codeController.text);
     if (!context.mounted) return;
     if (success) {
       context.go('/onboarding');
@@ -36,7 +43,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Future<void> _resend(BuildContext context) async {
     final vm = context.read<AuthViewModel>();
     vm.clearError();
-    await vm.resendVerificationCode(widget.email);
+    if (widget.isGoogleVerification) {
+      await vm.resendGoogleCode();
+    } else {
+      await vm.resendVerificationCode(widget.email);
+    }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(context.tr('verify_email_sent'))),

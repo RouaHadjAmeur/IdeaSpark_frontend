@@ -9,8 +9,12 @@ class ProfileViewModel extends ChangeNotifier {
   final AuthService _authService;
 
   bool _dailyReminder = false;
+  bool _isDeleteLoading = false;
+  String? _deleteErrorMessage;
 
   bool get dailyReminder => _dailyReminder;
+  bool get isDeleteLoading => _isDeleteLoading;
+  String? get deleteErrorMessage => _deleteErrorMessage;
 
   String get displayName =>
       _authService.currentUser?.displayName ?? 'Utilisateur';
@@ -27,5 +31,53 @@ class ProfileViewModel extends ChangeNotifier {
   Future<void> signOut() async {
     await _authService.signOut();
     notifyListeners();
+  }
+
+  void clearDeleteError() {
+    if (_deleteErrorMessage != null) {
+      _deleteErrorMessage = null;
+      notifyListeners();
+    }
+  }
+
+  /// Request verification code for account deletion. Returns true on success.
+  Future<bool> requestDeleteAccountCode() async {
+    _isDeleteLoading = true;
+    _deleteErrorMessage = null;
+    notifyListeners();
+    try {
+      await _authService.requestDeleteAccountCode();
+      _isDeleteLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _deleteErrorMessage = e.toString();
+      _isDeleteLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Confirm account deletion with code. Returns true on success (session is cleared).
+  Future<bool> confirmDeleteAccount(String code) async {
+    if (code.trim().length != 6) {
+      _deleteErrorMessage = 'Code must be 6 digits';
+      notifyListeners();
+      return false;
+    }
+    _isDeleteLoading = true;
+    _deleteErrorMessage = null;
+    notifyListeners();
+    try {
+      await _authService.confirmDeleteAccount(code.trim());
+      _isDeleteLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _deleteErrorMessage = e.toString();
+      _isDeleteLoading = false;
+      notifyListeners();
+      return false;
+    }
   }
 }

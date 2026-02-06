@@ -43,10 +43,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Future<void> _signUpWithGoogle(BuildContext context) async {
     final vm = context.read<AuthViewModel>();
     vm.clearError();
-    final success = await vm.signInWithGoogle();
+    final result = await vm.signInWithGoogle();
     if (!context.mounted) return;
-    if (success) {
+    if (result == null) return;
+    if (result.loggedIn) {
       context.go('/onboarding');
+    } else if (result.requiresVerification && result.emailForVerification != null) {
+      context.go('/verify-email', extra: {
+        'email': result.emailForVerification!,
+        'source': 'google',
+      });
     }
   }
 

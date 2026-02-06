@@ -11,4 +11,12 @@ class ApiConfig {
   );
 
   static String get authBase => '$baseUrl/auth';
+
+  /// OAuth 2.0 Web application client ID (same value your backend uses to verify the id_token).
+  /// Set via --dart-define=GOOGLE_WEB_CLIENT_ID=xxx or in code. Get it from Google Cloud Console →
+  /// APIs & Services → Credentials → "Web application" client, or from your backend .env (e.g. GOOGLE_CLIENT_ID).
+  static const String googleWebClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: '791353475220-dsu9gbd30rn14b0dmt6943j2kpaugct5.apps.googleusercontent.com',
+  );
 }
