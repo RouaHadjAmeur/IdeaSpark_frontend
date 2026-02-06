@@ -81,14 +81,47 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> signInWithFacebook() async {
+  /// Returns null if user cancelled; otherwise either logged in or requires email verification.
+  Future<FacebookSignInResult?> signInWithFacebook() async {
     _setLoading(true);
     try {
       final result = await _authService.signInWithFacebook();
       _setLoading(false);
-      return result != null;
+      return result;
     } catch (e) {
       _setError('Erreur: ${e.toString()}');
+      _setLoading(false);
+      return null;
+    }
+  }
+
+  /// Verify Facebook sign-up with the 6-digit code. Returns true on success.
+  Future<bool> verifyFacebookWithCode(String code) async {
+    if (code.trim().length != 6) {
+      _setError('Code must be 6 digits');
+      return false;
+    }
+    _setLoading(true);
+    try {
+      await _authService.verifyFacebookWithCode(code.trim());
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Resend verification code for pending Facebook sign-in. Returns true on success.
+  Future<bool> resendFacebookCode() async {
+    _setLoading(true);
+    try {
+      await _authService.resendFacebookCode();
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
       _setLoading(false);
       return false;
     }
@@ -171,6 +204,46 @@ class AuthViewModel extends ChangeNotifier {
     _setLoading(true);
     try {
       await _authService.resendVerificationCode(email.trim());
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Request password reset code sent to email. Returns true on success.
+  Future<bool> requestPasswordReset(String email) async {
+    if (email.trim().isEmpty) {
+      _setError('Email requis');
+      return false;
+    }
+    _setLoading(true);
+    try {
+      await _authService.requestPasswordReset(email.trim());
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Reset password with code and new password. Returns true on success.
+  Future<bool> resetPasswordWithCode(String email, String code, String newPassword) async {
+    if (code.trim().length != 6) {
+      _setError('Code must be 6 digits');
+      return false;
+    }
+    if (newPassword.length < 6) {
+      _setError('Le mot de passe doit faire au moins 6 caractères');
+      return false;
+    }
+    _setLoading(true);
+    try {
+      await _authService.resetPasswordWithCode(email.trim(), code.trim(), newPassword);
       _setLoading(false);
       return true;
     } catch (e) {

@@ -59,10 +59,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
   Future<void> _signUpWithFacebook(BuildContext context) async {
     final vm = context.read<AuthViewModel>();
     vm.clearError();
-    final success = await vm.signInWithFacebook();
+    final result = await vm.signInWithFacebook();
     if (!context.mounted) return;
-    if (success) {
+    if (result == null) return;
+    if (result.loggedIn) {
       context.go('/onboarding');
+    } else if (result.requiresVerification && result.emailForVerification != null) {
+      context.go('/verify-email', extra: {
+        'email': result.emailForVerification!,
+        'source': 'facebook',
+      });
     }
   }
 

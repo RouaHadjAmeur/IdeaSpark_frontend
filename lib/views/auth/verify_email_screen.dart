@@ -10,10 +10,12 @@ class VerifyEmailScreen extends StatefulWidget {
     super.key,
     required this.email,
     this.isGoogleVerification = false,
+    this.isFacebookVerification = false,
   });
 
   final String email;
   final bool isGoogleVerification;
+  final bool isFacebookVerification;
 
   @override
   State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
@@ -31,9 +33,14 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Future<void> _verify(BuildContext context) async {
     final vm = context.read<AuthViewModel>();
     vm.clearError();
-    final success = widget.isGoogleVerification
-        ? await vm.verifyGoogleWithCode(_codeController.text)
-        : await vm.verifyEmail(widget.email, _codeController.text);
+    bool success = false;
+    if (widget.isGoogleVerification) {
+      success = await vm.verifyGoogleWithCode(_codeController.text);
+    } else if (widget.isFacebookVerification) {
+      success = await vm.verifyFacebookWithCode(_codeController.text);
+    } else {
+      success = await vm.verifyEmail(widget.email, _codeController.text);
+    }
     if (!context.mounted) return;
     if (success) {
       context.go('/onboarding');
@@ -45,6 +52,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     vm.clearError();
     if (widget.isGoogleVerification) {
       await vm.resendGoogleCode();
+    } else if (widget.isFacebookVerification) {
+      await vm.resendFacebookCode();
     } else {
       await vm.resendVerificationCode(widget.email);
     }

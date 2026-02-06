@@ -42,6 +42,16 @@ class GoogleSignInResult {
   bool get requiresVerification => emailForVerification != null;
 }
 
+/// Result of Facebook sign-in: either logged in or must verify email with code.
+class FacebookSignInResult {
+  const FacebookSignInResult({this.user, this.emailForVerification})
+      : assert(user == null || emailForVerification == null);
+  final AppUser? user;
+  final String? emailForVerification;
+  bool get loggedIn => user != null;
+  bool get requiresVerification => emailForVerification != null;
+}
+
 /// Auth service that uses the IdeaSpark NestJS backend for login/register and Google/Facebook token exchange.
 class AuthService {
   AuthService._();
@@ -57,6 +67,8 @@ class AuthService {
   String? _accessToken;
   /// When backend returns requiresVerification for Google, we keep idToken to verify with code.
   String? _pendingGoogleIdToken;
+  /// When backend returns requiresVerification for Facebook, we keep accessToken to verify with code.
+  String? _pendingFacebookAccessToken;
 
   AppUser? get currentUser => _currentUser;
   String? get accessToken => _accessToken;
@@ -177,6 +189,60 @@ class AuthService {
     await _saveSession(token, user);
   }
 
+  /// Request a password reset code sent to email. Only for email/password accounts.
+  Future<void> requestPasswordReset(String email) async {
+    final uri = Uri.parse('${ApiConfig.authBase}/forgot-password');
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email.trim()}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
+  }
+
+  /// Reset password with the 6-digit code received by email.
+  Future<void> resetPasswordWithCode(String email, String code, String newPassword) async {
+    final uri = Uri.parse('${ApiConfig.authBase}/reset-password');
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email.trim(),
+        'code': code.trim(),
+        'newPassword': newPassword,
+      }),
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
+  }
+
+  /// Change password (authenticated). Requires current password.
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await _loadStored();
+    final token = _accessToken;
+    if (token == null || token.isEmpty) {
+      throw Exception('Not logged in');
+    }
+    final uri = Uri.parse('${ApiConfig.authBase}/change-password');
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      }),
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
+  }
+
   /// Resend verification code to email.
   Future<void> resendVerificationCode(String email) async {
     final uri = Uri.parse('${ApiConfig.authBase}/resend-code');
@@ -271,8 +337,8 @@ class AuthService {
     }
   }
 
-  /// Sign in with Facebook: get accessToken from flutter_facebook_auth, then POST /auth/facebook.
-  Future<AppUser?> signInWithFacebook() async {
+  /// Sign in with Facebook: get accessToken, POST /auth/facebook. Backend may log in or return requiresVerification + send code to email.
+  Future<FacebookSignInResult?> signInWithFacebook() async {
     try {
       final result = await FacebookAuth.instance.login();
       if (result.status != LoginStatus.success || result.accessToken == null) {
@@ -289,14 +355,57 @@ class AuthService {
         throw Exception(_errorMessage(res));
       }
       final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+      if (data['requiresVerification'] == true && data['email'] != null) {
+        _pendingFacebookAccessToken = tokenValue;
+        return FacebookSignInResult(emailForVerification: data['email'] as String);
+      }
       final user = AppUser.fromJson(data['user'] as Map<String, dynamic>? ?? {});
       final token = data['accessToken'] as String? ?? '';
       await _saveSession(token, user);
-      return _currentUser;
+      return FacebookSignInResult(user: _currentUser);
     } on PlatformException catch (e) {
       throw Exception('Facebook: ${e.message ?? e.code}');
     } catch (e) {
       rethrow;
+    }
+  }
+
+  /// Verify Facebook sign-up with the 6-digit code sent to email.
+  Future<void> verifyFacebookWithCode(String code) async {
+    final accessToken = _pendingFacebookAccessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('No pending Facebook sign-in');
+    }
+    final uri = Uri.parse('${ApiConfig.authBase}/facebook/verify');
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'accessToken': accessToken, 'code': code.trim()}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
+    _pendingFacebookAccessToken = null;
+    final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+    final user = AppUser.fromJson(data['user'] as Map<String, dynamic>? ?? {});
+    final token = data['accessToken'] as String? ?? '';
+    await _saveSession(token, user);
+  }
+
+  /// Resend verification code for pending Facebook sign-in.
+  Future<void> resendFacebookCode() async {
+    final accessToken = _pendingFacebookAccessToken;
+    if (accessToken == null || accessToken.isEmpty) {
+      throw Exception('No pending Facebook sign-in');
+    }
+    final uri = Uri.parse('${ApiConfig.authBase}/facebook/resend-code');
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'accessToken': accessToken}),
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
     }
   }
 

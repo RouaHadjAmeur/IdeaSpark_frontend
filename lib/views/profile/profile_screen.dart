@@ -193,6 +193,122 @@ class _DeleteAccountCodeDialogState extends State<_DeleteAccountCodeDialog> {
   }
 }
 
+void _showChangePasswordDialog(BuildContext context, ProfileViewModel vm) {
+  final colorScheme = Theme.of(context).colorScheme;
+  final tr = context.tr;
+  final currentController = TextEditingController();
+  final newController = TextEditingController();
+  final confirmController = TextEditingController();
+
+  showDialog<void>(
+    context: context,
+    builder: (dialogContext) => ListenableBuilder(
+      listenable: vm,
+      builder: (_, __) {
+        return AlertDialog(
+          title: Text(tr('change_password_title')),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: currentController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: tr('current_password'),
+                    hintText: tr('password_hint'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: newController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: tr('new_password'),
+                    hintText: tr('password_hint'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: tr('confirm_password'),
+                    hintText: tr('password_hint'),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                if (vm.changePasswordErrorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.errorContainer.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      vm.changePasswordErrorMessage!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: vm.isChangePasswordLoading ? null : () => Navigator.of(dialogContext).pop(),
+              child: Text(tr('cancel')),
+            ),
+            FilledButton(
+              onPressed: vm.isChangePasswordLoading
+                  ? null
+                  : () async {
+                      vm.clearChangePasswordError();
+                      final newP = newController.text;
+                      final confirm = confirmController.text;
+                      if (newP != confirm) {
+                        vm.clearChangePasswordError();
+                        if (dialogContext.mounted) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            SnackBar(
+                              content: Text(tr('passwords_do_not_match')),
+                              backgroundColor: colorScheme.error,
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      final ok = await vm.changePassword(currentController.text, newP);
+                      if (!dialogContext.mounted) return;
+                      if (ok) {
+                        Navigator.of(dialogContext).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(tr('change_password_success'))),
+                        );
+                      }
+                    },
+              child: vm.isChangePasswordLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(tr('change_password_confirm')),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
+
 void _showLanguageSheet(BuildContext context, ColorScheme colorScheme) {
   showModalBottomSheet<void>(
     context: context,
@@ -402,6 +518,16 @@ class ProfileScreen extends StatelessWidget {
                   title: context.tr('account'),
                   colorScheme: colorScheme,
                   children: [
+                    _SettingRow(
+                      label: context.tr('change_password'),
+                      colorScheme: colorScheme,
+                      trailing: Icon(
+                        Icons.lock_outline_rounded,
+                        color: colorScheme.onSurfaceVariant,
+                        size: 22,
+                      ),
+                      onTap: () => _showChangePasswordDialog(context, vm),
+                    ),
                     _SettingRow(
                       label: context.tr('delete_account'),
                       colorScheme: colorScheme,

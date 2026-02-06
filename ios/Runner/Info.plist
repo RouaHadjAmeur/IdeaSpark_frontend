@@ -60,7 +60,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>fbREPLACE_WITH_YOUR_FACEBOOK_APP_ID</string>
+				<string>fb1644012957026490</string>
 			</array>
 		</dict>
 	</array>
@@ -70,7 +70,7 @@
 		<string>fb-messenger-share-api</string>
 	</array>
 	<key>FacebookAppID</key>
-	<string>REPLACE_WITH_YOUR_FACEBOOK_APP_ID</string>
+	<string>1644012957026490</string>
 	<key>FacebookClientToken</key>
 	<string>REPLACE_WITH_YOUR_FACEBOOK_CLIENT_TOKEN</string>
 </dict>

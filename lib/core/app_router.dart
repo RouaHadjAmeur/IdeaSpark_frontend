@@ -9,6 +9,7 @@ import 'package:ideaspark/views/onboarding/onboarding_screen.dart';
 import 'package:ideaspark/views/auth/login_screen.dart';
 import 'package:ideaspark/views/auth/signup_screen.dart';
 import 'package:ideaspark/views/auth/verify_email_screen.dart';
+import 'package:ideaspark/views/auth/forgot_password_screen.dart';
 import 'package:ideaspark/views/home/home_screen.dart';
 import 'package:ideaspark/views/criteria/criteria_screen.dart';
 import 'package:ideaspark/views/loading/loading_screen.dart';
@@ -57,16 +58,23 @@ GoRouter createAppRouter() {
         builder: (context, state) => LocaleRebuilder(builder: (_) => const SignUpScreen()),
       ),
       GoRoute(
+        path: '/forgot-password',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const ForgotPasswordScreen()),
+      ),
+      GoRoute(
         path: '/verify-email',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra;
           String email = '';
           bool isGoogleVerification = false;
+          bool isFacebookVerification = false;
           if (extra is Map) {
             final emailValue = extra['email'];
             email = emailValue is String ? emailValue : (emailValue?.toString() ?? '');
             isGoogleVerification = extra['source'] == 'google';
+            isFacebookVerification = extra['source'] == 'facebook';
           } else if (extra is String) {
             email = extra;
           }
@@ -74,6 +82,7 @@ GoRouter createAppRouter() {
             builder: (_) => VerifyEmailScreen(
               email: email,
               isGoogleVerification: isGoogleVerification,
+              isFacebookVerification: isFacebookVerification,
             ),
           );
         },

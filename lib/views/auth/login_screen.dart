@@ -63,10 +63,16 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithFacebook(BuildContext context) async {
     final vm = context.read<AuthViewModel>();
     vm.clearError();
-    final success = await vm.signInWithFacebook();
+    final result = await vm.signInWithFacebook();
     if (!context.mounted) return;
-    if (success) {
+    if (result == null) return;
+    if (result.loggedIn) {
       context.go('/onboarding');
+    } else if (result.requiresVerification && result.emailForVerification != null) {
+      context.go('/verify-email', extra: {
+        'email': result.emailForVerification!,
+        'source': 'facebook',
+      });
     }
   }
 
@@ -140,7 +146,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       hintText: context.tr('password_hint'),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => context.go('/forgot-password'),
+                      child: Text(
+                        context.tr('forgot_password'),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   SizedBox(
                     height: 52,
                     child: ElevatedButton(
