@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart'; // Added for MediaType
 import '../models/video_generator_models.dart';
 import '../core/api_config.dart';
+import '../core/auth_service.dart';
 
 class VideoGeneratorRemoteDataSource {
   Future<List<VideoIdea>> generateIdeas(VideoRequest request) async {
@@ -14,12 +15,12 @@ class VideoGeneratorRemoteDataSource {
       final multipartRequest = http.MultipartRequest('POST', url);
       
       // Add text fields
-      multipartRequest.fields['platform'] = _capitalize(request.platform.name);
+      multipartRequest.fields['platform'] = _mapPlatform(request.platform);
       multipartRequest.fields['duration'] = _durationToString(request.duration);
-      multipartRequest.fields['goal'] = _capitalize(request.goal.name);
-      multipartRequest.fields['creatorType'] = _capitalize(request.creatorType.name);
-      multipartRequest.fields['tone'] = _capitalize(request.tone.name);
-      multipartRequest.fields['language'] = _capitalize(request.language.name);
+      multipartRequest.fields['goal'] = _mapGoal(request.goal);
+      multipartRequest.fields['creatorType'] = _mapCreatorType(request.creatorType);
+      multipartRequest.fields['tone'] = _mapTone(request.tone);
+      multipartRequest.fields['language'] = _mapLanguage(request.language);
       multipartRequest.fields['productName'] = request.productName;
       multipartRequest.fields['productCategory'] = request.productCategory;
       multipartRequest.fields['targetAudience'] = request.targetAudience;
@@ -62,12 +63,12 @@ class VideoGeneratorRemoteDataSource {
 
     // Standard JSON request if no image
     final body = {
-      'platform': _capitalize(request.platform.name),
+      'platform': _mapPlatform(request.platform),
       'duration': _durationToString(request.duration),
-      'goal': _capitalize(request.goal.name),
-      'creatorType': _capitalize(request.creatorType.name),
-      'tone': _capitalize(request.tone.name),
-      'language': _capitalize(request.language.name),
+      'goal': _mapGoal(request.goal),
+      'creatorType': _mapCreatorType(request.creatorType),
+      'tone': _mapTone(request.tone),
+      'language': _mapLanguage(request.language),
       'productName': request.productName,
       'productCategory': request.productCategory,
       'keyBenefits': request.keyBenefits,
@@ -78,9 +79,16 @@ class VideoGeneratorRemoteDataSource {
       'batchSize': 1,
     };
     
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
       body: jsonEncode(body),
     );
 
@@ -120,9 +128,16 @@ class VideoGeneratorRemoteDataSource {
   Future<VideoIdea> refineIdea(String ideaId, String instruction) async {
     final url = Uri.parse(ApiConfig.refineVideoIdeaUrl);
     
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+    
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
       body: jsonEncode({
         'ideaId': ideaId,
         'customInstruction': instruction,
@@ -139,9 +154,16 @@ class VideoGeneratorRemoteDataSource {
   Future<VideoIdea> approveVersion(String ideaId, int versionIndex) async {
     final url = Uri.parse(ApiConfig.approveVersionUrl);
     
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+    
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
       body: jsonEncode({
         'ideaId': ideaId,
         'versionIndex': versionIndex,
@@ -158,9 +180,16 @@ class VideoGeneratorRemoteDataSource {
   Future<VideoIdea> saveIdea(VideoIdea idea) async {
     final url = Uri.parse(ApiConfig.saveVideoIdeaUrl);
     
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+    
     final response = await http.post(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
       body: jsonEncode(idea.currentVersion.toJson()), // Save current version structure
     );
 
@@ -172,8 +201,17 @@ class VideoGeneratorRemoteDataSource {
   }
   
   Future<List<VideoIdea>> getHistory() async {
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+    
     final url = Uri.parse(ApiConfig.getHistoryUrl);
-    final response = await http.get(url);
+    final response = await http.get(
+      url,
+      headers: {
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
+    );
     
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -184,8 +222,17 @@ class VideoGeneratorRemoteDataSource {
   }
   
   Future<List<VideoIdea>> getFavorites() async {
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+    
     final url = Uri.parse(ApiConfig.getFavoritesUrl);
-    final response = await http.get(url);
+    final response = await http.get(
+      url,
+      headers: {
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
+    );
     
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -196,8 +243,17 @@ class VideoGeneratorRemoteDataSource {
   }
   
   Future<VideoIdea> toggleFavorite(String id) async {
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+    
     final url = Uri.parse('${ApiConfig.toggleFavoriteUrl}/$id');
-    final response = await http.post(url);
+    final response = await http.post(
+      url,
+      headers: {
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
+    );
     
     if (response.statusCode == 200 || response.statusCode == 201) {
       return VideoIdea.fromJson(jsonDecode(response.body));
@@ -207,8 +263,17 @@ class VideoGeneratorRemoteDataSource {
   }
   
   Future<void> deleteIdea(String id) async {
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+    
     final url = Uri.parse('${ApiConfig.deleteVideoIdeaUrl}/$id');
-    final response = await http.delete(url);
+    final response = await http.delete(
+      url,
+      headers: {
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
+      },
+    );
     
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Failed to delete idea: ${response.body}');
@@ -225,8 +290,49 @@ class VideoGeneratorRemoteDataSource {
     }
   }
   
-  String _capitalize(String s) {
-    if (s.isEmpty) return s;
-    return s[0].toUpperCase() + s.substring(1);
+  String _mapPlatform(Platform p) {
+    switch (p) {
+      case Platform.tikTok: return 'TikTok';
+      case Platform.instagramReels: return 'InstagramReels';
+      case Platform.youTubeShorts: return 'YouTubeShorts';
+      case Platform.youTubeLong: return 'YouTubeLong';
+    }
+  }
+
+  String _mapGoal(VideoGoal g) {
+    switch (g) {
+      case VideoGoal.sellProduct: return 'SellProduct';
+      case VideoGoal.brandAwareness: return 'BrandAwareness';
+      case VideoGoal.ugcReview: return 'UGCReview';
+      case VideoGoal.offerPromo: return 'OfferPromo';
+      case VideoGoal.education: return 'Education';
+      case VideoGoal.viralEngagement: return 'ViralEngagement';
+    }
+  }
+
+  String _mapCreatorType(CreatorType c) {
+    switch (c) {
+      case CreatorType.ecommerceBrand: return 'EcommerceBrand';
+      case CreatorType.influencer: return 'Influencer';
+    }
+  }
+
+  String _mapTone(VideoTone t) {
+    switch (t) {
+      case VideoTone.trendy: return 'Trendy';
+      case VideoTone.professional: return 'Professional';
+      case VideoTone.emotional: return 'Emotional';
+      case VideoTone.funny: return 'Funny';
+      case VideoTone.luxury: return 'Luxury';
+      case VideoTone.directResponse: return 'DirectResponse';
+    }
+  }
+
+  String _mapLanguage(VideoLanguage l) {
+    switch (l) {
+      case VideoLanguage.french: return 'French';
+      case VideoLanguage.english: return 'English';
+      case VideoLanguage.arabic: return 'Arabic';
+    }
   }
 }

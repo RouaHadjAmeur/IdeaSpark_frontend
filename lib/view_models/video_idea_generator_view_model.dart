@@ -42,6 +42,20 @@ class VideoIdeaGeneratorViewModel extends ChangeNotifier {
       final generatedIdeas = await _service.generateIdeas(request, useRemote: useRemote);
       // Filter out ideas with empty versions to prevent RangeError
       _ideas = generatedIdeas.where((idea) => idea.versions.isNotEmpty).toList();
+
+      // If they were generated locally (fallback), save them to backend history
+      if (_ideas.isNotEmpty && _ideas.first.id.contains('_')) {
+        debugPrint('Auto-saving local fallback ideas to backend...');
+        for (int i = 0; i < _ideas.length; i++) {
+          try {
+            final saved = await _service.saveIdea(_ideas[i]);
+            _ideas[i] = saved;
+          } catch (e) {
+            debugPrint('Error auto-saving fallback idea: $e');
+          }
+        }
+      }
+
       _errorMessage = null;
     } catch (e) {
       debugPrint('Error generating ideas: $e');
@@ -83,6 +97,19 @@ class VideoIdeaGeneratorViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      VideoIdea? targetIdea = getIdeaById(ideaId);
+      if (targetIdea == null) return;
+
+      // Handle mock IDs from local fallback
+      if (ideaId.contains('_')) { // Local IDs are timestamp_index
+        debugPrint('Saving local idea to backend before refinement: $ideaId');
+        final savedIdea = await _service.saveIdea(targetIdea);
+        // Replace in list to update ID
+        final idx = _ideas.indexWhere((i) => i.id == ideaId);
+        if (idx != -1) _ideas[idx] = savedIdea;
+        ideaId = savedIdea.id;
+      }
+
       final updatedIdea = await _service.refineIdea(ideaId, instruction);
       
       // Update the idea in our local list
@@ -107,6 +134,18 @@ class VideoIdeaGeneratorViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      VideoIdea? targetIdea = getIdeaById(ideaId);
+      if (targetIdea == null) return;
+
+      // Handle mock IDs
+      if (ideaId.contains('_')) {
+        debugPrint('Saving local idea to backend before approval: $ideaId');
+        final savedIdea = await _service.saveIdea(targetIdea);
+        final idx = _ideas.indexWhere((i) => i.id == ideaId);
+        if (idx != -1) _ideas[idx] = savedIdea;
+        ideaId = savedIdea.id;
+      }
+
       final updatedIdea = await _service.approveVersion(ideaId, versionIndex);
       
       final index = _ideas.indexWhere((i) => i.id == ideaId);
@@ -177,13 +216,24 @@ class VideoIdeaGeneratorViewModel extends ChangeNotifier {
   /// Toggle favorite status of an idea
   Future<void> toggleFavoriteStatus(String ideaId) async {
     try {
+      VideoIdea? targetIdea = getIdeaById(ideaId);
+      if (targetIdea == null) return;
+
+      // Handle mock IDs
+      if (ideaId.contains('_')) {
+        debugPrint('Saving local idea to backend before toggling favorite: $ideaId');
+        final savedIdea = await _service.saveIdea(targetIdea);
+        // IMPORTANT: update local references first so _updateIdeaInLists works with new ID
+        _updateIdeaInListsManual(ideaId, savedIdea);
+        ideaId = savedIdea.id;
+      }
+
       final updatedIdea = await _service.toggleFavorite(ideaId);
       
       // Update in all lists if present
       _updateIdeaInLists(updatedIdea);
       
       // If it was toggled from favorites screen, we might need to refresh favorites
-      // or we can just rely on the updated list if we manage it carefully.
       if (updatedIdea.isFavorite) {
          if (!_favorites.any((i) => i.id == updatedIdea.id)) {
            _favorites.insert(0, updatedIdea);
@@ -198,6 +248,18 @@ class VideoIdeaGeneratorViewModel extends ChangeNotifier {
       _errorMessage = 'Erreur lors de la modification des favoris.';
       notifyListeners();
     }
+  }
+
+  void _updateIdeaInListsManual(String oldId, VideoIdea updatedIdea) {
+    // Replace by ID because the ID itself changed
+    int idx = _ideas.indexWhere((i) => i.id == oldId);
+    if (idx != -1) _ideas[idx] = updatedIdea;
+    
+    idx = _history.indexWhere((i) => i.id == oldId);
+    if (idx != -1) _history[idx] = updatedIdea;
+    
+    idx = _favorites.indexWhere((i) => i.id == oldId);
+    if (idx != -1) _favorites[idx] = updatedIdea;
   }
 
   /// Delete an idea

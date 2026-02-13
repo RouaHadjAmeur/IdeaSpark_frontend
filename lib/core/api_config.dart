@@ -29,6 +29,15 @@ class ApiConfig {
   // Persona Endpoints
   static String get personaBase => '$baseUrl/persona';
 
+  // Slogan Generator Endpoints
+  static String get sloganGeneratorBase => '$baseUrl/SloganAi';
+  static String get generateSlogansUrl => '$sloganGeneratorBase/slogans/generate';
+  static String get saveSloganUrl => '$sloganGeneratorBase/slogans/save';
+  static String get getSloganHistoryUrl => '$sloganGeneratorBase/slogans/history';
+  static String get getSloganFavoritesUrl => '$sloganGeneratorBase/slogans/favorites';
+  static String get toggleSloganFavoriteUrl => '$sloganGeneratorBase/slogans/toggle-favorite'; // Needs /id
+  static String get deleteSloganUrl => '$sloganGeneratorBase/slogans'; // Needs /id
+
   // Feature Flags for Video Generator
   static const bool useRemoteGenerationByDefault = true; // Enable OpenAI backend
   static const bool fallbackToLocalOnError = true; // Fallback to local if remote fails

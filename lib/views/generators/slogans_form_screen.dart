@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_localizations.dart';
+import 'package:ideaspark/view_models/auth_view_model.dart';
+import 'package:ideaspark/view_models/slogan_view_model.dart';
 
 class SlogansFormScreen extends StatefulWidget {
   const SlogansFormScreen({super.key});
@@ -10,110 +13,412 @@ class SlogansFormScreen extends StatefulWidget {
   State<SlogansFormScreen> createState() => _SlogansFormScreenState();
 }
 
-class _SlogansFormScreenState extends State<SlogansFormScreen> {
-  final _brandController = TextEditingController();
-  final _sectorController = TextEditingController();
-  final _valuesController = TextEditingController();
-  final _targetController = TextEditingController();
-  String _tone = 'Inspirant';
-  String _language = '🇫🇷 Français';
+class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProviderStateMixin {
+  // Section 1: Identité et Personnalité
+  final _objectifController = TextEditingController();
+  final _adjectifController = TextEditingController();
+  final _promesseController = TextEditingController();
+  
+  // Section 2: Expérience et Valeur Utilisateur
+  final _usageController = TextEditingController();
+  final _obstacleController = TextEditingController();
+  final _resultatController = TextEditingController();
+  
+  // Section 3: Positionnement Marché
+  String _niveauGamme = 'Milieu de gamme';
+  final _faiblesseController = TextEditingController();
+  final _traitController = TextEditingController();
+  
+  // Section 4: Directives Rédactionnelles
+  String _angle = 'Action';
+  String _pilier = 'Qualité';
+  String _niveauLangue = 'Courant';
+  
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
-  static const _tones = ['Sérieux', 'Humoristique', 'Inspirant', 'Professionnel', 'Décalé'];
-  static const _languages = ['🇫🇷 Français', '🇬🇧 English', '🇪🇸 Español', '🇩🇪 Deutsch'];
+  static const _niveauxGamme = ['Entrée de gamme', 'Milieu de gamme', 'Premium', 'Luxe'];
+  static const _angles = ['Action', 'État d\'esprit'];
+  static const _piliers = ['Prix', 'Qualité', 'Rapidité'];
+  static const _niveauxLangue = ['Technique', 'Courant', 'Soutenu'];
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+    
+    _animationController.forward();
+  }
 
   @override
   void dispose() {
-    _brandController.dispose();
-    _sectorController.dispose();
-    _valuesController.dispose();
-    _targetController.dispose();
+    _animationController.dispose();
+    _objectifController.dispose();
+    _adjectifController.dispose();
+    _promesseController.dispose();
+    _usageController.dispose();
+    _obstacleController.dispose();
+    _resultatController.dispose();
+    _faiblesseController.dispose();
+    _traitController.dispose();
     super.dispose();
+  }
+
+  void _generateSlogans() async {
+    // Validation des champs obligatoires
+    if (_promesseController.text.isEmpty || _obstacleController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text('Veuillez remplir au minimum la promesse principale et l\'obstacle résolu')),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    final sloganVm = context.read<SloganViewModel>();
+    await sloganVm.generateSlogansFromCopywritingForm(
+      objectifCommunication: _objectifController.text,
+      adjectifPersonnalite: _adjectifController.text,
+      promessePrincipale: _promesseController.text,
+      usageQuotidien: _usageController.text,
+      obstacleResolu: _obstacleController.text,
+      resultatConcret: _resultatController.text,
+      niveauGamme: _niveauGamme,
+      faiblesseCorrigee: _faiblesseController.text,
+      traitDistinctif: _traitController.text,
+      angle: _angle,
+      pilierCommunication: _pilier,
+      niveauLangue: _niveauLangue,
+    );
+
+    // Vérifier les erreurs
+    if (sloganVm.error != null) {
+      if (!mounted) return;
+      
+      // Vérifier si c'est une erreur d'authentification
+      if (sloganVm.error!.contains('Authentification requise')) {
+        final authVm = context.read<AuthViewModel>();
+        final isLoggedIn = authVm.isLoggedIn;
+        
+        if (!isLoggedIn) {
+          // Rediriger vers la page de connexion
+          if (mounted) {
+            context.go('/login');
+            return;
+          }
+        }
+      }
+      
+      // Afficher l'erreur
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(child: Text(sloganVm.error!)),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Navigation vers les résultats
+    if (mounted && sloganVm.slogans.isNotEmpty) {
+      context.push('/slogans-results');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final sloganVm = context.watch<SloganViewModel>();
+
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, colorScheme),
-              _buildInput(colorScheme, context.tr('product_brand'), _brandController, context.tr('brand_hint')),
-              _buildInput(colorScheme, context.tr('sector_activity'), _sectorController, context.tr('sector_activity_hint')),
-              _buildInput(colorScheme, context.tr('brand_values'), _valuesController, context.tr('values_hint')),
-              _buildInput(colorScheme, context.tr('target_audience_short'), _targetController, context.tr('target_hint')),
-              _buildChipGroup(colorScheme, context.tr('tone_wanted'), _tones, _tone, (v) => setState(() => _tone = v)),
-              _buildChipGroup(colorScheme, context.tr('language'), _languages, _language, (v) => setState(() => _language = v)),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => context.push('/slogans-results'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  child: Text(context.tr('generate_slogans')),
+      backgroundColor: colorScheme.surface,
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(colorScheme),
+                const SizedBox(height: 32),
+                
+                // Section 1: Identité et Personnalité
+                _buildSectionHeader('Identité et Personnalité', colorScheme),
+                const SizedBox(height: 16),
+                _buildInput(
+                  'Objectif de communication',
+                  _objectifController,
+                  'Ex: Positionner la marque comme innovante',
+                  Icons.flag_rounded,
+                  colorScheme,
                 ),
-              ),
-              const SizedBox(height: 40),
-            ],
+                _buildInput(
+                  'Adjectif de personnalité',
+                  _adjectifController,
+                  'Ex: Audacieux, moderne, authentique',
+                  Icons.psychology_rounded,
+                  colorScheme,
+                ),
+                _buildInput(
+                  'Promesse principale *',
+                  _promesseController,
+                  'Ex: Simplifier votre quotidien',
+                  Icons.star_rounded,
+                  colorScheme,
+                  required: true,
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Section 2: Expérience et Valeur Utilisateur
+                _buildSectionHeader('Expérience et Valeur Utilisateur', colorScheme),
+                const SizedBox(height: 16),
+                _buildInput(
+                  'Usage quotidien',
+                  _usageController,
+                  'Ex: Gérer son budget en 5 minutes par jour',
+                  Icons.schedule_rounded,
+                  colorScheme,
+                ),
+                _buildInput(
+                  'Obstacle majeur résolu *',
+                  _obstacleController,
+                  'Ex: La difficulté à suivre ses dépenses',
+                  Icons.warning_rounded,
+                  colorScheme,
+                  required: true,
+                ),
+                _buildInput(
+                  'Résultat concret immédiat',
+                  _resultatController,
+                  'Ex: Économiser 200€ par mois',
+                  Icons.check_circle_rounded,
+                  colorScheme,
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Section 3: Positionnement Marché
+                _buildSectionHeader('Positionnement Marché', colorScheme),
+                const SizedBox(height: 16),
+                _buildChipGroup(
+                  'Niveau de gamme',
+                  _niveauxGamme,
+                  _niveauGamme,
+                  (value) => setState(() => _niveauGamme = value),
+                  colorScheme,
+                ),
+                _buildInput(
+                  'Faiblesse concurrente corrigée',
+                  _faiblesseController,
+                  'Ex: Interface complexe des concurrents',
+                  Icons.shield_rounded,
+                  colorScheme,
+                ),
+                _buildInput(
+                  'Trait de caractère distinctif',
+                  _traitController,
+                  'Ex: Approche ludique et engageante',
+                  Icons.auto_awesome_rounded,
+                  colorScheme,
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Section 4: Directives Rédactionnelles
+                _buildSectionHeader('Directives Rédactionnelles', colorScheme),
+                const SizedBox(height: 16),
+                _buildChipGroup(
+                  'Angle',
+                  _angles,
+                  _angle,
+                  (value) => setState(() => _angle = value),
+                  colorScheme,
+                ),
+                _buildChipGroup(
+                  'Pilier de communication',
+                  _piliers,
+                  _pilier,
+                  (value) => setState(() => _pilier = value),
+                  colorScheme,
+                ),
+                _buildChipGroup(
+                  'Niveau de langue',
+                  _niveauxLangue,
+                  _niveauLangue,
+                  (value) => setState(() => _niveauLangue = value),
+                  colorScheme,
+                ),
+                
+                const SizedBox(height: 32),
+                _buildGenerateButton(sloganVm, colorScheme),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              side: BorderSide(color: colorScheme.outlineVariant),
-            ),
+  Widget _buildHeader(ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Génération de Slogans',
+          style: GoogleFonts.syne(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+
+            color: colorScheme.onSurface,
+            letterSpacing: -0.5,
+            height: 1.1,
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              context.tr('new_slogans'),
-              style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
-            ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Formulaire professionnel pour créer des slogans percutants',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: colorScheme.onSurfaceVariant,
+            height: 1.4,
           ),
-          const SizedBox(width: 48),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            colorScheme.primaryContainer.withOpacity(0.5),
+            colorScheme.primaryContainer.withOpacity(0.2),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.primary.withOpacity(0.2),
+          width: 1.5,
+        ),
+      ),
+      child: Text(
+        title,
+        style: GoogleFonts.inter(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: colorScheme.onSurface,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }
 
-  Widget _buildInput(ColorScheme colorScheme, String label, TextEditingController controller, String hint) {
+  Widget _buildInput(
+    String label,
+    TextEditingController controller,
+    String hint,
+    IconData icon,
+    ColorScheme colorScheme, {
+    bool required = false,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
+          Row(
+            children: [
+              Icon(icon, size: 18, color: colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              if (required) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '*',
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: controller,
-            style: TextStyle(color: colorScheme.onSurface),
+            maxLines: 2,
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: TextStyle(
+                color: colorScheme.onSurfaceVariant.withOpacity(0.5),
+                fontSize: 13,
+              ),
               filled: true,
               fillColor: colorScheme.surfaceContainerHighest,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.outlineVariant),
+                borderSide: BorderSide(
+                  color: colorScheme.outlineVariant.withOpacity(0.5),
+                  width: 1,
+                ),
               ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.all(16),
             ),
           ),
         ],
@@ -121,34 +426,124 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> {
     );
   }
 
-  Widget _buildChipGroup(ColorScheme colorScheme, String label, List<String> options, String selected, ValueChanged<String> onSelect) {
+  Widget _buildChipGroup(
+    String label,
+    List<String> options,
+    String selected,
+    Function(String) onSelected,
+    ColorScheme colorScheme,
+  ) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 10),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: options.map((o) {
-              final isSelected = o == selected;
-              return GestureDetector(
-                onTap: () => onSelect(o),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: isSelected ? colorScheme.primary : colorScheme.outlineVariant),
-                  ),
-                  child: Text(o, style: TextStyle(fontSize: 14, color: isSelected ? Colors.white : colorScheme.onSurface)),
+            spacing: 8,
+            runSpacing: 8,
+            children: options.map((option) {
+              final isSelected = option == selected;
+              return FilterChip(
+                label: Text(option),
+                selected: isSelected,
+                onSelected: (_) => onSelected(option),
+                backgroundColor: colorScheme.surfaceContainerHighest,
+                selectedColor: colorScheme.primary,
+                checkmarkColor: Colors.white,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : colorScheme.onSurfaceVariant,
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               );
             }).toList(),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGenerateButton(SloganViewModel sloganVm, ColorScheme colorScheme) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: sloganVm.isLoading ? null : _generateSlogans,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: colorScheme.surfaceContainerHighest,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ).copyWith(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.disabled)) {
+              return colorScheme.surfaceContainerHighest;
+            }
+            return null;
+          }),
+        ),
+        child: sloganVm.isLoading
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Génération en cours...',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              )
+            : Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colorScheme.primary.withOpacity(0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '✨ Générer 10 Slogans',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
       ),
     );
   }
