@@ -1,15 +1,75 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:image_picker/image_picker.dart';
 import '../core/auth_service.dart';
+import '../models/persona_model.dart';
+import '../services/persona_service.dart';
 
 /// ViewModel for Profile / Settings screen.
 class ProfileViewModel extends ChangeNotifier {
-  ProfileViewModel({AuthService? authService})
-      : _authService = authService ?? AuthService();
+  ProfileViewModel({AuthService? authService, PersonaService? personaService})
+      : _authService = authService ?? AuthService(),
+        _personaService = personaService ?? PersonaService() {
+    _loadPersona();
+  }
 
   final AuthService _authService;
+  final PersonaService _personaService;
+
+  // Persona state
+  PersonaModel? _persona;
+  bool _isPersonaLoading = true;
+  bool _isPersonaUpdating = false;
+  String? _personaUpdateError;
+
+  PersonaModel? get persona => _persona;
+  bool get isPersonaLoading => _isPersonaLoading;
+  bool get hasPersona => _persona != null;
+  bool get isPersonaUpdating => _isPersonaUpdating;
+  String? get personaUpdateError => _personaUpdateError;
+
+  Future<void> _loadPersona() async {
+    _isPersonaLoading = true;
+    notifyListeners();
+    try {
+      final userId = _authService.currentUser?.id ?? '';
+      _persona = await _personaService.getPersona(userId);
+    } catch (_) {
+      _persona = null;
+    }
+    _isPersonaLoading = false;
+    notifyListeners();
+  }
+
+  Future<void> refreshPersona() async {
+    await _loadPersona();
+  }
+
+  /// Update a single persona field via PUT /persona.
+  Future<bool> updatePersonaField(PersonaModel updatedPersona) async {
+    _isPersonaUpdating = true;
+    _personaUpdateError = null;
+    notifyListeners();
+    try {
+      final result = await _personaService.updatePersona(updatedPersona);
+      _persona = result;
+      _isPersonaUpdating = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _personaUpdateError = e.toString();
+      _isPersonaUpdating = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void clearPersonaUpdateError() {
+    if (_personaUpdateError != null) {
+      _personaUpdateError = null;
+      notifyListeners();
+    }
+  }
 
   bool _dailyReminder = false;
   bool _isDeleteLoading = false;

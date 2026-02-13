@@ -7,6 +7,7 @@ import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/profile_view_model.dart';
 import 'package:ideaspark/view_models/theme_view_model.dart';
 import 'package:ideaspark/view_models/locale_view_model.dart';
+import 'package:ideaspark/models/persona_model.dart';
 
 void _showDeleteAccountFlow(BuildContext context, ProfileViewModel vm) {
   final colorScheme = Theme.of(context).colorScheme;
@@ -458,6 +459,8 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
+                _PersonaSection(vm: vm, colorScheme: colorScheme),
+                const SizedBox(height: 24),
                 _SettingsGroup(
                   title: context.tr('content'),
                   colorScheme: colorScheme,
@@ -589,6 +592,694 @@ class ProfileScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _PersonaSection extends StatelessWidget {
+  final ProfileViewModel vm;
+  final ColorScheme colorScheme;
+
+  const _PersonaSection({required this.vm, required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          context.tr('persona_section_title'),
+          style: GoogleFonts.syne(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Stack(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colorScheme.outlineVariant),
+              ),
+              child: vm.isPersonaLoading
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Text(
+                          context.tr('persona_loading'),
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    )
+                  : vm.hasPersona
+                      ? _PersonaDetails(persona: vm.persona!, colorScheme: colorScheme, vm: vm)
+                      : _PersonaEmpty(colorScheme: colorScheme),
+            ),
+            if (vm.isPersonaUpdating)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        if (vm.hasPersona) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: () async {
+                final userId = vm.persona?.userId ?? '';
+                await context.push('/persona-onboarding?userId=$userId');
+                if (context.mounted) {
+                  vm.refreshPersona();
+                }
+              },
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: Text(
+                context.tr('persona_retake_quiz'),
+                style: const TextStyle(fontSize: 13),
+              ),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.onSurfaceVariant,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+        ],
+        if (!vm.hasPersona && !vm.isPersonaLoading) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                await context.push('/persona-onboarding');
+                if (context.mounted) {
+                  vm.refreshPersona();
+                }
+              },
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: Text(context.tr('persona_setup_button')),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: colorScheme.primary,
+                side: BorderSide(color: colorScheme.primary),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PersonaEmpty extends StatelessWidget {
+  final ColorScheme colorScheme;
+
+  const _PersonaEmpty({required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Icon(
+          Icons.person_outline_rounded,
+          size: 40,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          context.tr('persona_not_configured'),
+          style: TextStyle(
+            fontSize: 14,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PersonaDetails extends StatelessWidget {
+  final PersonaModel persona;
+  final ColorScheme colorScheme;
+  final ProfileViewModel vm;
+
+  const _PersonaDetails({
+    required this.persona,
+    required this.colorScheme,
+    required this.vm,
+  });
+
+  // Bilingual mappings for string-based fields
+  static const Map<String, String> _nicheEn = {
+    'Business': 'Business', 'E-commerce': 'E-commerce', 'Beauté': 'Beauty',
+    'Fitness': 'Fitness', 'Tech': 'Tech', 'Lifestyle': 'Lifestyle',
+    'Éducation': 'Education', 'Autre': 'Other',
+  };
+  static const List<String> _nicheOptionsFr = [
+    'Business', 'E-commerce', 'Beauté', 'Fitness', 'Tech', 'Lifestyle', 'Éducation', 'Autre',
+  ];
+
+  static const Map<String, String> _audienceEn = {
+    'Étudiants': 'Students', 'Jeunes actifs': 'Young professionals',
+    'Femmes': 'Women', 'Hommes': 'Men', 'Entrepreneurs': 'Entrepreneurs',
+    'Mixte': 'Mixed',
+  };
+  static const List<String> _audienceOptionsFr = [
+    'Étudiants', 'Jeunes actifs', 'Femmes', 'Hommes', 'Entrepreneurs', 'Mixte',
+  ];
+
+  static const Map<String, String> _ctaEn = {
+    'Abonne-toi': 'Subscribe', 'Commente': 'Comment', 'Lien en bio': 'Link in bio',
+    'DM': 'DM', 'WhatsApp': 'WhatsApp', 'Commander': 'Order',
+  };
+  static const List<String> _ctaOptionsFr = [
+    'Abonne-toi', 'Commente', 'Lien en bio', 'DM', 'WhatsApp', 'Commander',
+  ];
+
+  static const Map<String, String> _langDisplay = {
+    'fr': 'Français', 'ar': 'Arabe', 'en': 'English', 'mix': 'Mixte',
+  };
+  static const Map<String, String> _langDisplayEn = {
+    'fr': 'French', 'ar': 'Arabic', 'en': 'English', 'mix': 'Mixed',
+  };
+  static const List<String> _langCodes = ['fr', 'ar', 'en', 'mix'];
+
+  static const Map<String, String> _mainPlatformLabels = {
+    'tiktok': 'TikTok', 'instagram': 'Instagram', 'youtube': 'YouTube', 'facebook': 'Facebook',
+  };
+  static const List<String> _mainPlatformCodes = ['tiktok', 'instagram', 'youtube', 'facebook'];
+
+  static const Map<String, String> _freqPlatformLabels = {
+    'tiktok': 'TikTok', 'instagram reels': 'Instagram Reels',
+    'instagram stories': 'Instagram Stories', 'youtube shorts': 'YouTube Shorts',
+    'youtube long': 'YouTube Long', 'facebook': 'Facebook',
+  };
+  static const List<String> _freqPlatformCodes = [
+    'tiktok', 'instagram reels', 'instagram stories', 'youtube shorts', 'youtube long', 'facebook',
+  ];
+
+  List<String> _localize(List<String> values, Map<String, String> enMap, String locale) {
+    if (locale != 'en') return values;
+    return values.map((v) => enMap[v] ?? v).toList();
+  }
+
+  String _localizeOne(String value, Map<String, String> enMap, String locale) {
+    if (locale != 'en') return value;
+    return enMap[value] ?? value;
+  }
+
+  // ── Multi-select dialog ──
+  void _showMultiSelectDialog<T>({
+    required BuildContext context,
+    required String title,
+    required List<T> options,
+    required List<T> current,
+    required String Function(T) labelBuilder,
+    required void Function(List<T>) onConfirmed,
+  }) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => _MultiSelectDialog<T>(
+        title: title,
+        options: options,
+        initialSelected: current,
+        labelBuilder: labelBuilder,
+        onConfirmed: (values) {
+          Navigator.of(ctx).pop();
+          onConfirmed(values);
+        },
+        tr: context.tr,
+      ),
+    );
+  }
+
+  Future<void> _updateField(BuildContext context, PersonaModel updated) async {
+    final ok = await vm.updatePersonaField(updated);
+    if (!context.mounted) return;
+    final cs = Theme.of(context).colorScheme;
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(context.tr('persona_update_success')),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    } else if (vm.personaUpdateError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.personaUpdateError!),
+          backgroundColor: cs.error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final locale = context.watch<LocaleViewModel>().locale;
+    final langLabel = locale == 'en'
+        ? (_langDisplayEn[persona.language] ?? persona.language)
+        : (_langDisplay[persona.language] ?? persona.language);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Profile type (dropdown)
+        _PersonaDropdownRow<ProfileType>(
+          label: context.tr('persona_profile_label'),
+          displayValue: persona.profile.localizedLabel(locale),
+          colorScheme: colorScheme,
+          options: ProfileType.values,
+          currentValue: persona.profile,
+          labelBuilder: (e) => e.localizedLabel(locale),
+          onChanged: (v) => _updateField(context, persona.copyWith(profile: v)),
+        ),
+        // Goal (dropdown)
+        _PersonaDropdownRow<ContentGoal>(
+          label: context.tr('persona_goal_label'),
+          displayValue: persona.goal.localizedLabel(locale),
+          colorScheme: colorScheme,
+          options: ContentGoal.values,
+          currentValue: persona.goal,
+          labelBuilder: (e) => e.localizedLabel(locale),
+          onChanged: (v) => _updateField(context, persona.copyWith(goal: v)),
+        ),
+        // Niches (multi-select dialog)
+        _PersonaChipsRow(
+          label: context.tr('persona_niches_label'),
+          values: _localize(persona.niches, _nicheEn, locale),
+          colorScheme: colorScheme,
+          onTap: () => _showMultiSelectDialog<String>(
+            context: context,
+            title: context.tr('persona_niches_label'),
+            options: _nicheOptionsFr,
+            current: persona.niches,
+            labelBuilder: (v) => _localizeOne(v, _nicheEn, locale),
+            onConfirmed: (v) => _updateField(context, persona.copyWith(niches: v)),
+          ),
+        ),
+        // Main platform (dropdown)
+        _PersonaDropdownRow<String>(
+          label: context.tr('persona_platform_label'),
+          displayValue: _mainPlatformLabels[persona.mainPlatform] ?? persona.mainPlatform,
+          colorScheme: colorScheme,
+          options: _mainPlatformCodes,
+          currentValue: persona.mainPlatform,
+          labelBuilder: (v) => _mainPlatformLabels[v] ?? v,
+          onChanged: (v) => _updateField(context, persona.copyWith(mainPlatform: v)),
+        ),
+        // Frequent platforms (multi-select dialog)
+        _PersonaChipsRow(
+          label: context.tr('persona_platforms_label'),
+          values: persona.platforms.map((p) => _freqPlatformLabels[p] ?? p).toList(),
+          colorScheme: colorScheme,
+          onTap: () => _showMultiSelectDialog<String>(
+            context: context,
+            title: context.tr('persona_platforms_label'),
+            options: _freqPlatformCodes,
+            current: persona.platforms,
+            labelBuilder: (v) => _freqPlatformLabels[v] ?? v,
+            onConfirmed: (v) => _updateField(context, persona.copyWith(platforms: v)),
+          ),
+        ),
+        // Content styles (multi-select dialog)
+        _PersonaChipsRow(
+          label: context.tr('persona_styles_label'),
+          values: persona.contentStyles.map((s) => s.localizedLabel(locale)).toList(),
+          colorScheme: colorScheme,
+          onTap: () => _showMultiSelectDialog<ContentStyle>(
+            context: context,
+            title: context.tr('persona_styles_label'),
+            options: ContentStyle.values,
+            current: persona.contentStyles,
+            labelBuilder: (e) => e.localizedLabel(locale),
+            onConfirmed: (v) => _updateField(context, persona.copyWith(contentStyles: v)),
+          ),
+        ),
+        // Tone (dropdown)
+        _PersonaDropdownRow<ContentTone>(
+          label: context.tr('persona_tone_label'),
+          displayValue: persona.tone.localizedLabel(locale),
+          colorScheme: colorScheme,
+          options: ContentTone.values,
+          currentValue: persona.tone,
+          labelBuilder: (e) => e.localizedLabel(locale),
+          onChanged: (v) => _updateField(context, persona.copyWith(tone: v)),
+        ),
+        // Audiences (multi-select dialog)
+        _PersonaChipsRow(
+          label: context.tr('persona_audiences_label'),
+          values: _localize(persona.audiences, _audienceEn, locale),
+          colorScheme: colorScheme,
+          onTap: () => _showMultiSelectDialog<String>(
+            context: context,
+            title: context.tr('persona_audiences_label'),
+            options: _audienceOptionsFr,
+            current: persona.audiences,
+            labelBuilder: (v) => _localizeOne(v, _audienceEn, locale),
+            onConfirmed: (v) => _updateField(context, persona.copyWith(audiences: v)),
+          ),
+        ),
+        // Audience age (dropdown)
+        _PersonaDropdownRow<AudienceAge>(
+          label: context.tr('persona_age_label'),
+          displayValue: persona.audienceAge.localizedLabel(locale),
+          colorScheme: colorScheme,
+          options: AudienceAge.values,
+          currentValue: persona.audienceAge,
+          labelBuilder: (e) => e.localizedLabel(locale),
+          onChanged: (v) => _updateField(context, persona.copyWith(audienceAge: v)),
+        ),
+        // Language (dropdown)
+        _PersonaDropdownRow<String>(
+          label: context.tr('persona_lang_label'),
+          displayValue: langLabel,
+          colorScheme: colorScheme,
+          options: _langCodes,
+          currentValue: persona.language,
+          labelBuilder: (v) => locale == 'en'
+              ? (_langDisplayEn[v] ?? v)
+              : (_langDisplay[v] ?? v),
+          onChanged: (v) => _updateField(context, persona.copyWith(language: v)),
+        ),
+        // CTAs (multi-select dialog)
+        _PersonaChipsRow(
+          label: context.tr('persona_ctas_label'),
+          values: _localize(persona.ctas, _ctaEn, locale),
+          colorScheme: colorScheme,
+          isLast: true,
+          onTap: () => _showMultiSelectDialog<String>(
+            context: context,
+            title: context.tr('persona_ctas_label'),
+            options: _ctaOptionsFr,
+            current: persona.ctas,
+            labelBuilder: (v) => _localizeOne(v, _ctaEn, locale),
+            onConfirmed: (v) => _updateField(context, persona.copyWith(ctas: v)),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dropdown row for single-select persona fields using PopupMenuButton.
+class _PersonaDropdownRow<T> extends StatelessWidget {
+  final String label;
+  final String displayValue;
+  final ColorScheme colorScheme;
+  final List<T> options;
+  final T currentValue;
+  final String Function(T) labelBuilder;
+  final ValueChanged<T> onChanged;
+
+  const _PersonaDropdownRow({
+    super.key,
+    required this.label,
+    required this.displayValue,
+    required this.colorScheme,
+    required this.options,
+    required this.currentValue,
+    required this.labelBuilder,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: PopupMenuButton<T>(
+        onSelected: (value) {
+          if (value != currentValue) onChanged(value);
+        },
+        initialValue: currentValue,
+        position: PopupMenuPosition.under,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: colorScheme.surfaceContainerHighest,
+        itemBuilder: (ctx) => options.map((opt) {
+          final isSelected = opt == currentValue;
+          return PopupMenuItem<T>(
+            value: opt,
+            height: 42,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    labelBuilder(opt),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected ? colorScheme.primary : colorScheme.onSurface,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Icon(Icons.check_rounded, size: 18, color: colorScheme.primary),
+              ],
+            ),
+          );
+        }).toList(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 90,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  displayValue,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              Icon(Icons.arrow_drop_down_rounded, size: 22, color: colorScheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dialog for multi-select persona fields with checkboxes.
+class _MultiSelectDialog<T> extends StatefulWidget {
+  final String title;
+  final List<T> options;
+  final List<T> initialSelected;
+  final String Function(T) labelBuilder;
+  final void Function(List<T>) onConfirmed;
+  final String Function(String) tr;
+
+  const _MultiSelectDialog({
+    super.key,
+    required this.title,
+    required this.options,
+    required this.initialSelected,
+    required this.labelBuilder,
+    required this.onConfirmed,
+    required this.tr,
+  });
+
+  @override
+  State<_MultiSelectDialog<T>> createState() => _MultiSelectDialogState<T>();
+}
+
+class _MultiSelectDialogState<T> extends State<_MultiSelectDialog<T>> {
+  late List<T> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = List<T>.from(widget.initialSelected);
+  }
+
+  void _toggle(T item) {
+    setState(() {
+      if (_selected.contains(item)) {
+        _selected.remove(item);
+      } else {
+        _selected.add(item);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AlertDialog(
+      backgroundColor: cs.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        widget.title,
+        style: GoogleFonts.syne(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: cs.onSurface,
+        ),
+      ),
+      contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 0),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView.builder(
+          shrinkWrap: true,
+          itemCount: widget.options.length,
+          itemBuilder: (ctx, i) {
+            final opt = widget.options[i];
+            final isSelected = _selected.contains(opt);
+            return ListTile(
+              dense: true,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              title: Text(
+                widget.labelBuilder(opt),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected ? cs.primary : cs.onSurface,
+                ),
+              ),
+              trailing: Icon(
+                isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                color: isSelected ? cs.primary : cs.onSurfaceVariant,
+                size: 22,
+              ),
+              onTap: () => _toggle(opt),
+            );
+          },
+        ),
+      ),
+      actions: [
+        if (_selected.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(
+              widget.tr('persona_min_one_required'),
+              style: TextStyle(fontSize: 12, color: cs.error),
+            ),
+          ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            MaterialLocalizations.of(context).cancelButtonLabel,
+            style: TextStyle(color: cs.onSurfaceVariant),
+          ),
+        ),
+        FilledButton(
+          onPressed: _selected.isNotEmpty
+              ? () => widget.onConfirmed(_selected)
+              : null,
+          child: Text(widget.tr('persona_confirm_selection')),
+        ),
+      ],
+    );
+  }
+}
+
+/// Chips row for multi-select persona fields - tapping opens a dialog.
+class _PersonaChipsRow extends StatelessWidget {
+  final String label;
+  final List<String> values;
+  final ColorScheme colorScheme;
+  final bool isLast;
+  final VoidCallback? onTap;
+
+  const _PersonaChipsRow({
+    required this.label,
+    required this.values,
+    required this.colorScheme,
+    this.isLast = false,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 90,
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: values.map((v) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          v,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                if (onTap != null)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Icon(Icons.arrow_drop_down_rounded, size: 22, color: colorScheme.onSurfaceVariant),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -47,7 +47,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!context.mounted) return;
     if (result == null) return;
     if (result.loggedIn) {
-      context.go('/onboarding');
+      final userId = vm.userId ?? '';
+      context.go('/persona-onboarding', extra: userId);
     } else if (result.requiresVerification && result.emailForVerification != null) {
       context.go('/verify-email', extra: {
         'email': result.emailForVerification!,
@@ -63,7 +64,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!context.mounted) return;
     if (result == null) return;
     if (result.loggedIn) {
-      context.go('/onboarding');
+      final userId = vm.userId ?? '';
+      context.go('/persona-onboarding', extra: userId);
     } else if (result.requiresVerification && result.emailForVerification != null) {
       context.go('/verify-email', extra: {
         'email': result.emailForVerification!,

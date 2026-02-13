@@ -255,6 +255,7 @@ class AuthViewModel extends ChangeNotifier {
 
   String? get displayName => _authService.currentUser?.displayName;
   String? get email => _authService.currentUser?.email;
+  String? get userId => _authService.currentUser?.id;
 
   void _setLoading(bool value) {
     if (_isLoading != value) {

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
+import 'package:ideaspark/services/persona_completion_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -74,7 +75,16 @@ class _SplashScreenState extends State<SplashScreen>
       final onboardingDone = await authVm.isOnboardingDone();
       if (!mounted) return;
       if (onboardingDone) {
-        context.go('/home');
+        // Check if persona onboarding is completed
+        final personaCompleted = await PersonaCompletionService.isPersonaCompleted();
+        if (!mounted) return;
+        if (personaCompleted) {
+          context.go('/home');
+        } else {
+          // Redirect to persona onboarding if not completed
+          final userId = authVm.userId ?? '';
+          context.go('/persona-onboarding', extra: userId);
+        }
       } else {
         context.go('/onboarding');
       }

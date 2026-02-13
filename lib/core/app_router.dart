@@ -31,8 +31,12 @@ import 'package:ideaspark/views/generators/slogans_results_screen.dart';
 import 'package:ideaspark/views/library/saved_ideas_library_screen.dart';
 import 'package:ideaspark/views/trends/trends_analysis_screen.dart';
 import 'package:ideaspark/views/profile/edit_profile_screen.dart';
+import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
 
+import '../models/video_generator_models.dart';
 import '../view_models/profile_view_model.dart';
+import '../core/auth_service.dart';
+
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 GoRouter createAppRouter() {
@@ -91,12 +95,42 @@ GoRouter createAppRouter() {
         },
       ),
       GoRoute(
+        path: '/persona-onboarding',
+        parentNavigatorKey: _rootNavigatorKey,
+        redirect: (context, state) async {
+          final authService = AuthService();
+          final isLoggedIn = await authService.isLoggedIn();
+          if (!isLoggedIn) {
+            // Redirect to login, with return path to persona onboarding
+            return '/login?returnTo=/persona-onboarding';
+          }
+          return null; // Allow access
+        },
+        builder: (context, state) {
+          final userId = state.extra is String ? state.extra as String : '';
+          return LocaleRebuilder(
+            builder: (_) => PersonaOnboardingScreen(userId: userId),
+          );
+        },
+      ),
+      GoRoute(
         path: '/loading',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra;
-          final redirectTo = extra is String ? extra : null;
-          return LocaleRebuilder(builder: (_) => LoadingScreen(redirectTo: redirectTo));
+          String? redirectTo;
+          Object? forwardData;
+          if (extra is String) {
+            redirectTo = extra;
+          } else if (extra is Map<String, dynamic>) {
+            redirectTo = extra['redirectTo'];
+            // Pass both the request and useRemoteGeneration flag
+            forwardData = {
+              'request': extra['data'],
+              'useRemoteGeneration': extra['useRemoteGeneration'] ?? true,
+            };
+          }
+          return LocaleRebuilder(builder: (_) => LoadingScreen(redirectTo: redirectTo, forwardData: forwardData));
         },
       ),
       GoRoute(
@@ -107,7 +141,25 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/video-ideas-results',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const VideoIdeasResultsScreen()),
+        builder: (context, state) {
+          VideoRequest? request;
+          bool useRemoteGeneration = true;
+
+          if (state.extra is VideoRequest) {
+            request = state.extra as VideoRequest;
+          } else if (state.extra is Map) {
+            final extra = state.extra as Map;
+            request = extra['request'] as VideoRequest?;
+            useRemoteGeneration = extra['useRemoteGeneration'] as bool? ?? true;
+          }
+
+          return LocaleRebuilder(
+            builder: (_) => VideoIdeasResultsScreen(
+              request: request,
+              useRemoteGeneration: useRemoteGeneration,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/business-ideas-form',

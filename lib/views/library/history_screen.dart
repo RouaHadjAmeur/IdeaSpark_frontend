@@ -1,99 +1,92 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
-import 'package:ideaspark/models/idea_model.dart';
+import 'package:ideaspark/models/video_generator_models.dart';
+import 'package:ideaspark/view_models/video_idea_generator_view_model.dart';
+import 'package:ideaspark/views/generators/idea_details_page.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
-  static final _sampleIdeas = [
-    IdeaModel(id: '1', type: 'Video', title: '5 Productivity Hacks Students', description: 'Liste rapide de 5 astuces de productivité pour étudiants.', score: 9.2),
-    IdeaModel(id: '2', type: 'Business', title: 'Meal Prep Service Students', description: 'Service de préparation de repas sains pour étudiants.', score: 8.5),
-  ];
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<VideoIdeaGeneratorViewModel>().fetchHistory();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr('history_title'),
-            style: GoogleFonts.syne(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+    
+    return Consumer<VideoIdeaGeneratorViewModel>(
+      builder: (context, viewModel, child) {
+        final history = viewModel.history;
+        
+        return RefreshIndicator(
+          onRefresh: () => viewModel.fetchHistory(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _FilterChip(label: context.tr('filter_all'), selected: true, colorScheme: colorScheme),
-                const SizedBox(width: 8),
-                _FilterChip(label: context.tr('filter_business'), selected: false, colorScheme: colorScheme),
-                _FilterChip(label: context.tr('filter_video'), selected: false, colorScheme: colorScheme),
+                Text(
+                  context.tr('history_title'),
+                  style: GoogleFonts.syne(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                if (viewModel.isLoading && history.isEmpty)
+                  const Center(child: CircularProgressIndicator())
+                else if (history.isEmpty)
+                   Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Text(
+                        "Aucun historique pour le moment.",
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                  )
+                else
+                  ...history.map((idea) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _IdeaCard(
+                      idea: idea,
+                      colorScheme: colorScheme,
+                      onTap: () {
+                         Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => IdeaDetailsPage(ideaId: idea.id),
+                          ),
+                        );
+                      },
+                    ),
+                  )),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            context.tr('today'),
-            style: GoogleFonts.syne(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ..._sampleIdeas.map((idea) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _IdeaCard(
-              idea: idea,
-              colorScheme: colorScheme,
-              onTap: () => context.push('/idea/${idea.id}'),
-            ),
-          )),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final ColorScheme colorScheme;
-
-  const _FilterChip({required this.label, required this.selected, required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: FilterChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) {},
-        backgroundColor: colorScheme.surfaceContainerHighest,
-        selectedColor: colorScheme.primary,
-        checkmarkColor: Colors.white,
-        labelStyle: TextStyle(
-          color: selected ? Colors.white : colorScheme.onSurfaceVariant,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-}
 
 class _IdeaCard extends StatelessWidget {
-  final IdeaModel idea;
+  final VideoIdea idea;
   final ColorScheme colorScheme;
   final VoidCallback onTap;
 
@@ -126,7 +119,7 @@ class _IdeaCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      idea.type,
+                      context.tr('type_video'), // Assuming history is mostly video for now
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -134,19 +127,13 @@ class _IdeaCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Text(
-                    '${idea.score}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: context.accentColor,
-                    ),
-                  ),
+                  if (idea.isApproved)
+                    const Icon(Icons.verified, color: Colors.blue, size: 16),
                 ],
               ),
               const SizedBox(height: 12),
               Text(
-                idea.title,
+                idea.currentVersion.title,
                 style: GoogleFonts.syne(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -155,7 +142,9 @@ class _IdeaCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                idea.description,
+                idea.currentVersion.caption,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant, height: 1.5),
               ),
             ],

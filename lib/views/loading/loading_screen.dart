@@ -5,8 +5,11 @@ import 'package:google_fonts/google_fonts.dart';
 class LoadingScreen extends StatefulWidget {
   /// After loading, replace with this route. If null, defaults to /results.
   final String? redirectTo;
+  
+  /// The extra data to forward to the destination route.
+  final Object? forwardData;
 
-  const LoadingScreen({super.key, this.redirectTo});
+  const LoadingScreen({super.key, this.redirectTo, this.forwardData});
 
   @override
   State<LoadingScreen> createState() => _LoadingScreenState();
@@ -24,7 +27,7 @@ class _LoadingScreenState extends State<LoadingScreen> with SingleTickerProvider
     )..repeat();
     final target = widget.redirectTo ?? '/results';
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) context.replace(target);
+      if (mounted) context.replace(target, extra: widget.forwardData);
     });
   }
 

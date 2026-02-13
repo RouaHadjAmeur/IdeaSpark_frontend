@@ -1,94 +1,103 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
-import 'package:ideaspark/models/idea_model.dart';
+import 'package:ideaspark/models/video_generator_models.dart';
+import 'package:ideaspark/view_models/video_idea_generator_view_model.dart';
+import 'package:ideaspark/views/generators/idea_details_page.dart';
 
-class FavoritesScreen extends StatelessWidget {
+class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
 
-  static final _sampleIdeas = [
-    IdeaModel(id: '1', type: 'Video', title: '5 Productivity Hacks Students', description: 'Liste rapide de 5 astuces de productivité pour étudiants avec démonstration visuelle.', score: 9.2),
-    IdeaModel(id: '2', type: 'Business', title: 'Meal Prep Service Students', description: 'Service de préparation de repas sains et abordables pour étudiants universitaires.', score: 8.5),
-  ];
+  @override
+  State<FavoritesScreen> createState() => _FavoritesScreenState();
+}
+
+class _FavoritesScreenState extends State<FavoritesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<VideoIdeaGeneratorViewModel>().fetchFavorites();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.tr('favorites_title'),
-            style: GoogleFonts.syne(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
+    
+    return Consumer<VideoIdeaGeneratorViewModel>(
+      builder: (context, viewModel, child) {
+        final favorites = viewModel.favorites;
+        
+        return RefreshIndicator(
+          onRefresh: () => viewModel.fetchFavorites(),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _FilterChip(label: context.tr('filter_all'), selected: true, colorScheme: colorScheme),
-                const SizedBox(width: 8),
-                _FilterChip(label: context.tr('filter_business'), selected: false, colorScheme: colorScheme),
-                const SizedBox(width: 8),
-                _FilterChip(label: context.tr('filter_video'), selected: false, colorScheme: colorScheme),
-                const SizedBox(width: 8),
-                _FilterChip(label: context.tr('filter_product'), selected: false, colorScheme: colorScheme),
+                Text(
+                  context.tr('favorites_title'),
+                  style: GoogleFonts.syne(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                if (viewModel.isLoading && favorites.isEmpty)
+                  const Center(child: CircularProgressIndicator())
+                else if (favorites.isEmpty)
+                   Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Text(
+                        "Aucun favori pour le moment.",
+                        style: TextStyle(color: colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                  )
+                else
+                  ...favorites.map((idea) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: _IdeaCard(
+                      idea: idea,
+                      colorScheme: colorScheme,
+                      onTap: () {
+                         Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => IdeaDetailsPage(ideaId: idea.id),
+                          ),
+                        );
+                      },
+                      onToggleFavorite: () => viewModel.toggleFavoriteStatus(idea.id),
+                    ),
+                  )),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          ..._sampleIdeas.map((idea) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _IdeaCard(
-              idea: idea,
-              colorScheme: colorScheme,
-              onTap: () => context.push('/idea/${idea.id}'),
-            ),
-          )),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final ColorScheme colorScheme;
-
-  const _FilterChip({required this.label, required this.selected, required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) {},
-      backgroundColor: colorScheme.surfaceContainerHighest,
-      selectedColor: colorScheme.primary,
-      checkmarkColor: Colors.white,
-      labelStyle: TextStyle(
-        color: selected ? Colors.white : colorScheme.onSurfaceVariant,
-        fontSize: 12,
-      ),
-    );
-  }
-}
 
 class _IdeaCard extends StatelessWidget {
-  final IdeaModel idea;
+  final VideoIdea idea;
   final ColorScheme colorScheme;
   final VoidCallback onTap;
+  final VoidCallback onToggleFavorite;
 
-  const _IdeaCard({required this.idea, required this.colorScheme, required this.onTap});
+  const _IdeaCard({
+    required this.idea, 
+    required this.colorScheme, 
+    required this.onTap,
+    required this.onToggleFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +126,7 @@ class _IdeaCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      idea.type,
+                      context.tr('type_video'),
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -125,25 +134,13 @@ class _IdeaCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Row(
-                    children: [
-                      Icon(Icons.local_fire_department_rounded, size: 16, color: context.accentColor),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${idea.score}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: context.accentColor,
-                        ),
-                      ),
-                    ],
-                  ),
+                   if (idea.isApproved)
+                    const Icon(Icons.verified, color: Colors.blue, size: 16),
                 ],
               ),
               const SizedBox(height: 12),
               Text(
-                idea.title,
+                idea.currentVersion.title,
                 style: GoogleFonts.syne(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -152,19 +149,23 @@ class _IdeaCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                idea.description,
+                idea.currentVersion.caption,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant, height: 1.5),
               ),
               const SizedBox(height: 16),
               Row(
                 children: [
                   TextButton.icon(
-                    onPressed: () {},
-                    icon: Icon(Icons.delete_outline_rounded, size: 16, color: colorScheme.onSurfaceVariant),
-                    label: Text(context.tr('remove'), style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
+                    onPressed: onToggleFavorite,
+                    icon: Icon(Icons.favorite, size: 16, color: colorScheme.primary),
+                    label: Text(context.tr('remove'), style: TextStyle(fontSize: 12, color: colorScheme.primary)),
                   ),
                   TextButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      // Basic sharing logic
+                    },
                     icon: Icon(Icons.share_rounded, size: 16, color: colorScheme.onSurfaceVariant),
                     label: Text(context.tr('share'), style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
                   ),

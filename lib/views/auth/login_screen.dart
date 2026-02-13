@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
+import 'package:ideaspark/services/persona_completion_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,7 +35,24 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!context.mounted) return;
       if (success) {
-        context.go('/onboarding');
+        // Check if there's a returnTo parameter
+        final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
+        if (returnTo != null && returnTo.isNotEmpty) {
+          // Redirect to the requested page
+          final userId = vm.userId ?? '';
+          context.go(returnTo, extra: userId);
+        } else {
+          // Default behavior: check if persona is completed
+          final personaCompleted = await PersonaCompletionService.isPersonaCompleted();
+          if (!context.mounted) return;
+
+          if (personaCompleted) {
+            context.go('/home');
+          } else {
+            final userId = vm.userId ?? '';
+            context.go('/persona-onboarding', extra: userId);
+          }
+        }
       }
     } catch (e) {
       if (!context.mounted) return;
@@ -51,7 +69,24 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!context.mounted) return;
     if (result == null) return;
     if (result.loggedIn) {
-      context.go('/onboarding');
+      // Check if there's a returnTo parameter
+      final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
+      if (returnTo != null && returnTo.isNotEmpty) {
+        // Redirect to the requested page
+        final userId = vm.userId ?? '';
+        context.go(returnTo, extra: userId);
+      } else {
+        // Default behavior: check if persona is completed
+        final personaCompleted = await PersonaCompletionService.isPersonaCompleted();
+        if (!context.mounted) return;
+
+        if (personaCompleted) {
+          context.go('/home');
+        } else {
+          final userId = vm.userId ?? '';
+          context.go('/persona-onboarding', extra: userId);
+        }
+      }
     } else if (result.requiresVerification && result.emailForVerification != null) {
       context.go('/verify-email', extra: {
         'email': result.emailForVerification!,
@@ -67,7 +102,24 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!context.mounted) return;
     if (result == null) return;
     if (result.loggedIn) {
-      context.go('/onboarding');
+      // Check if there's a returnTo parameter
+      final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
+      if (returnTo != null && returnTo.isNotEmpty) {
+        // Redirect to the requested page
+        final userId = vm.userId ?? '';
+        context.go(returnTo, extra: userId);
+      } else {
+        // Default behavior: check if persona is completed
+        final personaCompleted = await PersonaCompletionService.isPersonaCompleted();
+        if (!context.mounted) return;
+
+        if (personaCompleted) {
+          context.go('/home');
+        } else {
+          final userId = vm.userId ?? '';
+          context.go('/persona-onboarding', extra: userId);
+        }
+      }
     } else if (result.requiresVerification && result.emailForVerification != null) {
       context.go('/verify-email', extra: {
         'email': result.emailForVerification!,

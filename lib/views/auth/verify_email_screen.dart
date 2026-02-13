@@ -43,7 +43,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
     if (!context.mounted) return;
     if (success) {
-      context.go('/onboarding');
+      final userId = vm.userId ?? '';
+      context.go('/persona-onboarding', extra: userId);
     }
   }
 

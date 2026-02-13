@@ -8,11 +8,30 @@ class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // Pour Android Emulator, on utilise 10.0.2.2 au lieu de localhost
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'http://localhost:3000',
   );
 
   static String get authBase => '$baseUrl/auth';
   static String get usersBase => '$baseUrl/users';
+
+  // Video Generator Endpoints
+  static String get videoGeneratorBase => '$baseUrl/video-generator';
+  static String get generateVideoIdeasUrl => '$videoGeneratorBase/generate';
+  static String get analyzeVideoImageUrl => '$videoGeneratorBase/analyze-image';
+  static String get refineVideoIdeaUrl => '$videoGeneratorBase/refine';
+  static String get approveVersionUrl => '$videoGeneratorBase/approve';
+  static String get saveVideoIdeaUrl => '$videoGeneratorBase/save';
+  static String get getHistoryUrl => '$videoGeneratorBase/history';
+  static String get getFavoritesUrl => '$videoGeneratorBase/favorites';
+  static String get toggleFavoriteUrl => '$videoGeneratorBase/toggle-favorite'; // Needs /id
+  static String get deleteVideoIdeaUrl => '$videoGeneratorBase'; // Needs /id
+
+  // Persona Endpoints
+  static String get personaBase => '$baseUrl/persona';
+
+  // Feature Flags for Video Generator
+  static const bool useRemoteGenerationByDefault = true; // Enable OpenAI backend
+  static const bool fallbackToLocalOnError = true; // Fallback to local if remote fails
 
   /// OAuth 2.0 Web application client ID (same value your backend uses to verify the id_token).
   /// Set via --dart-define=GOOGLE_WEB_CLIENT_ID=xxx or in code. Get it from Google Cloud Console →

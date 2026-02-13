@@ -8,6 +8,8 @@ import 'view_models/auth_view_model.dart';
 import 'view_models/home_view_model.dart';
 import 'view_models/theme_view_model.dart';
 import 'view_models/locale_view_model.dart';
+import 'services/video_generator_service.dart';
+import 'view_models/video_idea_generator_view_model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +39,13 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
         ChangeNotifierProvider(create: (_) => LocaleViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => HomeViewModel()),
+        Provider(create: (_) => VideoIdeaGeneratorService()),
+        ChangeNotifierProxyProvider<VideoIdeaGeneratorService, VideoIdeaGeneratorViewModel>(
+          create: (context) => VideoIdeaGeneratorViewModel(
+            service: Provider.of<VideoIdeaGeneratorService>(context, listen: false),
+          ),
+          update: (context, service, previous) => previous ?? VideoIdeaGeneratorViewModel(service: service),
+        ),
       ],
       child: Consumer2<ThemeViewModel, LocaleViewModel>(
         builder: (context, themeVm, localeVm, _) {
