@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../core/auth_service.dart';
+import '../services/auth_service.dart';
 
 /// ViewModel for authentication (Login, SignUp).
 /// Uses static [AuthService] — no Firebase.

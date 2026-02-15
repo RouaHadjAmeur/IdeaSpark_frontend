@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:ideaspark/core/app_localizations.dart';
-import 'package:ideaspark/core/favorites_storage_service.dart';
+import 'package:ideaspark/services/favorites_storage_service.dart';
 
 import 'package:ideaspark/models/slogan_model.dart';
 import 'package:ideaspark/models/video_generator_models.dart';
@@ -156,10 +156,10 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                               textAlign: TextAlign.center,
                             ),
                           ],
-                        ),
+                        ), 
                       ),
                     )
-                  else
+                  else    
                     ...favoriteSlogans.map((slogan) => Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: _SloganCard(
@@ -483,7 +483,7 @@ class _VideoIdeaCard extends StatelessWidget {
                       ),
                     ),
                 ],
-              ),
+              ), 
               const SizedBox(height: 12),
               Text(
                 idea.currentVersion.title,
@@ -517,7 +517,6 @@ class _VideoIdeaCard extends StatelessWidget {
                   ),
                   TextButton.icon(
                     onPressed: () {
-                      // TODO: implement sharing if you want
                     },
                     icon: Icon(Icons.share_rounded, size: 16, color: colorScheme.onSurfaceVariant),
                     label: Text(

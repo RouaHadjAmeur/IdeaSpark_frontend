@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import '../core/auth_service.dart';
+import '../services/auth_service.dart';
 
 /// ViewModel for Onboarding flow.
 class OnboardingViewModel extends ChangeNotifier {

@@ -35,7 +35,7 @@ import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
 
 import '../models/video_generator_models.dart';
 import '../view_models/profile_view_model.dart';
-import '../core/auth_service.dart';
+import '../services/auth_service.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/persona_model.dart';
 import '../core/api_config.dart';
-import '../core/auth_service.dart';
+import 'auth_service.dart';
 import 'persona_completion_service.dart';
 
 /// Service for managing user persona data

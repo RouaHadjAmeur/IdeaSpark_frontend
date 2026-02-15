@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/slogan_model.dart';
-import '../core/slogan_service.dart';
-import '../core/favorites_storage_service.dart';
+import '../services/slogan_service.dart';
+import '../services/favorites_storage_service.dart';
 
 class SloganViewModel extends ChangeNotifier {
   List<SloganModel> _slogans = [];

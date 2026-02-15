@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import '../core/auth_service.dart';
+import '../services/auth_service.dart';
 import '../models/persona_model.dart';
 import '../services/persona_service.dart';
 

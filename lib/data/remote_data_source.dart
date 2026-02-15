@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart'; // Added for MediaType
 import '../models/video_generator_models.dart';
 import '../core/api_config.dart';
-import '../core/auth_service.dart';
+import '../services/auth_service.dart';
 
 class VideoGeneratorRemoteDataSource {
   Future<List<VideoIdea>> generateIdeas(VideoRequest request) async {

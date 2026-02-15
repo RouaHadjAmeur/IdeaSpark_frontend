@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'api_config.dart';
+import '../core/api_config.dart';
 import 'auth_service.dart';
-import 'mock_slogan_data.dart';
+import '../core/mock_slogan_data.dart';
 import '../models/slogan_model.dart';
 
 class SloganService {
@@ -116,7 +116,7 @@ class SloganService {
     required String angle,
     required String pilierCommunication,
     required String niveauLangue,
-    bool useMockData = true, // TEMPORAIRE: Activé pour tester l'interface
+    bool useMockData = false,
   }) async {
     // Mode développement : utiliser les données mockées
     if (useMockData) {
@@ -225,7 +225,7 @@ class SloganService {
   }) {
     return """
 Tu es un expert en conception-rédaction (copywriting) et en stratégie de marque. 
-Ton objectif est de générer 10 slogans percutants en utilisant les données précises fournies.
+Ton objectif est de générer 3 slogans percutants en utilisant les données précises fournies.
 
 1. Identité et Personnalité :
 - Objectif de communication : ${objectifCommunication.isNotEmpty ? objectifCommunication : 'Non spécifié'}
@@ -267,7 +267,7 @@ Réponds UNIQUEMENT avec un objet JSON valide dans ce format:
   ]
 }
 
-Génère 10 slogans VARIÉS et CRÉATIFS.
+Génère 3 slogans VARIÉS et CRÉATIFS.
 """;
   }
 

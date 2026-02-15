@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
-import 'api_config.dart';
+import '../core/api_config.dart';
 
 /// User model matching backend User entity (id, email, name, profilePicture).
 class AppUser {
