@@ -24,7 +24,7 @@ class ApiConfig {
   static String get getHistoryUrl => '$videoGeneratorBase/history';
   static String get getFavoritesUrl => '$videoGeneratorBase/favorites';
   static String get toggleFavoriteUrl => '$videoGeneratorBase/toggle-favorite'; // Needs /id
-  static String get deleteVideoIdeaUrl => '$videoGeneratorBase'; // Needs /id
+  static String get deleteVideoIdeaUrl => videoGeneratorBase; // Needs /id
 
   // Persona Endpoints
   static String get personaBase => '$baseUrl/persona';
@@ -37,6 +37,50 @@ class ApiConfig {
   static String get getSloganFavoritesUrl => '$sloganGeneratorBase/slogans/favorites';
   static String get toggleSloganFavoriteUrl => '$sloganGeneratorBase/slogans/toggle-favorite'; // Needs /id
   static String get deleteSloganUrl => '$sloganGeneratorBase/slogans'; // Needs /id
+
+  // Brands Endpoints
+  static String get brandsBase => '$baseUrl/brands';
+  static String get createBrandUrl => brandsBase;
+  static String get getBrandsUrl => brandsBase;
+  static String brandByIdUrl(String id) => '$brandsBase/$id';
+
+  // Plans Endpoints
+  static String get plansBase => '$baseUrl/plans';
+  static String get createPlanUrl => plansBase;
+  static String getPlansUrl({String? brandId}) =>
+      brandId != null ? '$plansBase?brandId=$brandId' : plansBase;
+  static String planByIdUrl(String id) => '$plansBase/$id';
+  static String generatePlanUrl(String id) => '$plansBase/$id/generate';
+  static String activatePlanUrl(String id) => '$plansBase/$id/activate';
+  static String get dashboardAlertsUrl => '$plansBase/dashboard-alerts';
+  static String addPlanToCalendarUrl(String id) => '$plansBase/$id/add-to-calendar';
+  static String getPlanCalendarUrl(String id) => '$plansBase/$id/calendar';
+  static String regeneratePlanUrl(String id) => '$plansBase/$id/regenerate';
+  static String updateCampaignCopyUrl(String id) => '$plansBase/$id/campaign-copy';
+
+  // Content Blocks Endpoints
+  static String get contentBlocksBase => '$baseUrl/content-blocks';
+  static String get createContentBlockUrl => contentBlocksBase;
+  static String listContentBlocksUrl({String? brandId, String? planId, String? status}) {
+    final params = <String, String>{};
+    if (brandId != null) params['brandId'] = brandId;
+    if (planId  != null) params['planId']  = planId;
+    if (status  != null) params['status']  = status;
+    final query = params.entries.map((e) => '${e.key}=${e.value}').join('&');
+    return query.isEmpty ? contentBlocksBase : '$contentBlocksBase?$query';
+  }
+  static String contentBlockByIdUrl(String id)        => '$contentBlocksBase/$id';
+  static String updateBlockStatusUrl(String id)       => '$contentBlocksBase/$id/status';
+  static String attachBlockToPlanUrl(String id)       => '$contentBlocksBase/$id/attach-plan';
+  static String scheduleBlockUrl(String id)           => '$contentBlocksBase/$id/schedule';
+  static String replaceBlockUrl(String id)            => '$contentBlocksBase/$id/replace';
+
+  // AI Video Ideas (ContentBlock-compatible output)
+  static String get aiVideoIdeasBase    => '$baseUrl/ai/video-ideas';
+  static String get generateAiVideoIdeaUrl => '$aiVideoIdeasBase/generate';
+
+  // AI Slogan Campaign
+  static String get generateCampaignSloganUrl => '$sloganGeneratorBase/campaign';
 
   // Feature Flags for Video Generator
   static const bool useRemoteGenerationByDefault = true; // Enable OpenAI backend

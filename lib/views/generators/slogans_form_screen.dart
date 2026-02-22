@@ -168,7 +168,7 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProvid
         child: SlideTransition(
           position: _slideAnimation,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

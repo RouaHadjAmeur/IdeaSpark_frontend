@@ -225,7 +225,7 @@ class SloganService {
   }) {
     return """
 Tu es un expert en conception-rédaction (copywriting) et en stratégie de marque. 
-Ton objectif est de générer 3 slogans percutants en utilisant les données précises fournies.
+Ton objectif est de générer 10 slogans percutants en utilisant les données précises fournies.
 
 1. Identité et Personnalité :
 - Objectif de communication : ${objectifCommunication.isNotEmpty ? objectifCommunication : 'Non spécifié'}
@@ -267,7 +267,7 @@ Réponds UNIQUEMENT avec un objet JSON valide dans ce format:
   ]
 }
 
-Génère 3 slogans VARIÉS et CRÉATIFS.
+Génère 10 slogans VARIÉS et CRÉATIFS.
 """;
   }
 

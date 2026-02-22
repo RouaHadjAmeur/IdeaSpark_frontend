@@ -337,7 +337,7 @@ void _showLanguageSheet(BuildContext context, ColorScheme colorScheme) {
               ),
               const SizedBox(height: 16),
               ListTile(
-                title: const Text('Français'),
+                title: Text(ctx.tr('french')),
                 trailing: localeVm.locale == 'fr' ? Icon(Icons.check_rounded, color: colorScheme.primary) : null,
                 onTap: () async {
                   await localeVm.setLocale('fr');
@@ -345,7 +345,7 @@ void _showLanguageSheet(BuildContext context, ColorScheme colorScheme) {
                 },
               ),
               ListTile(
-                title: const Text('English'),
+                title: Text(ctx.tr('english')),
                 trailing: localeVm.locale == 'en' ? Icon(Icons.check_rounded, color: colorScheme.primary) : null,
                 onTap: () async {
                   await localeVm.setLocale('en');

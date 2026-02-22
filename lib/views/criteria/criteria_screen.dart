@@ -34,26 +34,10 @@ class _CriteriaScreenState extends State<CriteriaScreen> {
           Consumer<CriteriaViewModel>(
             builder: (context, vm, _) {
               return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 60, 20, 180),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 180),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => context.pop(),
-                          icon: Icon(
-                            Icons.arrow_back_rounded,
-                            color: colorScheme.onSurface,
-                          ),
-                          style: IconButton.styleFrom(
-                            backgroundColor: colorScheme.surfaceContainerHighest,
-                            side: BorderSide(color: colorScheme.outlineVariant),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
                     Text(
                       context.tr('settings'),
                       style: GoogleFonts.syne(

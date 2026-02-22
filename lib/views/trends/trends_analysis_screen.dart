@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
@@ -27,15 +26,6 @@ class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
             children: [
               Row(
                 children: [
-                  IconButton(
-                    onPressed: () => context.pop(),
-                    icon: Icon(Icons.menu_rounded, color: colorScheme.onSurface),
-                    style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.surfaceContainerHighest,
-                      side: BorderSide(color: colorScheme.outlineVariant),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       context.tr('current_trends'),

@@ -60,23 +60,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        IconButton(
-                          onPressed: () => context.pop(),
-                          icon: Icon(
-                            Icons.arrow_back_rounded,
-                            color: colorScheme.onSurface,
-                          ),
-                          style: IconButton.styleFrom(
-                            backgroundColor: colorScheme.surfaceContainerHighest,
-                            side: BorderSide(color: colorScheme.outlineVariant),
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
                     Center(
                       child: Column(
                         children: [

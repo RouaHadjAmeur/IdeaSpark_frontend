@@ -87,6 +87,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             backgroundColor: colorScheme.surface,
             scrolledUnderElevation: 0,
+            automaticallyImplyLeading: false,
           ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(24),

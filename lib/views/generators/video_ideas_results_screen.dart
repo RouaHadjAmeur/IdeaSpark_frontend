@@ -136,36 +136,25 @@ class _VideoIdeasResultsView extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Display all idea cards
+                  // Display all idea cards with full action panel
                   ...viewModel.ideas.map(
                     (idea) => Padding(
                       padding: const EdgeInsets.only(bottom: 20.0),
-                      child: VideoResultCard(idea: idea),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Regenerate button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        // Regenerate: Go back to loading with SAME request
-                        context.replace('/loading', extra: {
+                      child: VideoResultCard(
+                        idea: idea,
+                        request: viewModel.lastRequest,
+                        isFavorite: idea.isFavorite,
+                        onFavoriteToggle: () =>
+                            viewModel.toggleFavoriteStatus(idea.id),
+                        onRegenerate: () => context.replace('/loading', extra: {
                           'redirectTo': '/video-ideas-results',
                           'data': viewModel.lastRequest,
                           'useRemoteGeneration': useRemoteGeneration,
-                        });
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colorScheme.onSurface,
-                        side: BorderSide(color: colorScheme.outlineVariant),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        }),
                       ),
-                      child: const Text('🔄 Générer Plus d\'Idées'),
                     ),
                   ),
+
                   const SizedBox(height: 40),
                 ],
               ),
@@ -180,28 +169,13 @@ class _VideoIdeasResultsView extends StatelessWidget {
       BuildContext context, ColorScheme colorScheme, String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              side: BorderSide(color: colorScheme.outlineVariant),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.syne(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ),
-        ],
+      child: Text(
+        title,
+        style: GoogleFonts.syne(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: colorScheme.onSurface,
+        ),
       ),
     );
   }

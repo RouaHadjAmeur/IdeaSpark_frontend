@@ -19,6 +19,7 @@ class HomeViewModel extends ChangeNotifier {
     GeneratorItem(icon: '🎥', title: 'Video Ideas', typeId: 'video'),
     GeneratorItem(icon: '🛍️', title: 'Product Ideas', typeId: 'product'),
     GeneratorItem(icon: '✨', title: 'Slogans & Names', typeId: 'slogans'),
+
   ];
 
   static final List<String> trending = const [

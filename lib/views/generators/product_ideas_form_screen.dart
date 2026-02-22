@@ -92,25 +92,9 @@ class _ProductIdeasFormScreenState extends State<ProductIdeasFormScreen> {
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              side: BorderSide(color: colorScheme.outlineVariant),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              context.tr('new_product_idea'),
-              style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
-            ),
-          ),
-          const SizedBox(width: 48),
-        ],
+      child: Text(
+        context.tr('new_product_idea'),
+        style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
       ),
     );
   }

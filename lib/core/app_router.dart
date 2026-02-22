@@ -32,8 +32,24 @@ import 'package:ideaspark/views/library/saved_ideas_library_screen.dart';
 import 'package:ideaspark/views/trends/trends_analysis_screen.dart';
 import 'package:ideaspark/views/profile/edit_profile_screen.dart';
 import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/dashboard_v2_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/brands_list_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/brand_workspace_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/calendar_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/plan_project_flow.dart';
+import 'package:ideaspark/views/strategic_content_manager/ai_campaign_roadmap_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/insights_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/create_edit_brand_screen.dart';
+import 'package:ideaspark/views/execution_hub/execution_hub_screen.dart';
+import 'package:ideaspark/views/execution_hub/project_board_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/plan_detail_screen.dart';
+import 'package:ideaspark/widgets/bottom_nav_v2.dart';
+import 'package:ideaspark/widgets/sidebar_navigation.dart';
+import 'package:ideaspark/widgets/page_shell.dart';
 
 import '../models/video_generator_models.dart';
+import '../models/brand.dart';
+import '../models/plan.dart';
 import '../view_models/profile_view_model.dart';
 import '../services/auth_service.dart';
 
@@ -136,7 +152,9 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/video-ideas-form',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const VideoIdeasFormScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const VideoIdeasFormScreen()),
+        ),
       ),
       GoRoute(
         path: '/video-ideas-results',
@@ -153,10 +171,12 @@ GoRouter createAppRouter() {
             useRemoteGeneration = extra['useRemoteGeneration'] as bool? ?? true;
           }
 
-          return LocaleRebuilder(
-            builder: (_) => VideoIdeasResultsScreen(
-              request: request,
-              useRemoteGeneration: useRemoteGeneration,
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => VideoIdeasResultsScreen(
+                request: request,
+                useRemoteGeneration: useRemoteGeneration,
+              ),
             ),
           );
         },
@@ -164,68 +184,92 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/business-ideas-form',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const BusinessIdeasFormScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const BusinessIdeasFormScreen()),
+        ),
       ),
       GoRoute(
         path: '/business-idea-detail',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const BusinessIdeaDetailScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const BusinessIdeaDetailScreen()),
+        ),
       ),
       GoRoute(
         path: '/product-ideas-form',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const ProductIdeasFormScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ProductIdeasFormScreen()),
+        ),
       ),
       GoRoute(
         path: '/product-idea-result',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const ProductIdeaResultScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ProductIdeaResultScreen()),
+        ),
       ),
       GoRoute(
         path: '/slogans-form',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const SlogansFormScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const SlogansFormScreen()),
+        ),
       ),
       GoRoute(
         path: '/slogans-results',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const SlogansResultsScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const SlogansResultsScreen()),
+        ),
       ),
       GoRoute(
         path: '/saved-ideas',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const SavedIdeasLibraryScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const SavedIdeasLibraryScreen()),
+        ),
       ),
       GoRoute(
         path: '/trends',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const TrendsAnalysisScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const TrendsAnalysisScreen()),
+        ),
       ),
       GoRoute(
         path: '/criteria',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final String? type = state.extra is String ? state.extra as String : null;
-          return LocaleRebuilder(builder: (_) => CriteriaScreen(type: type));
+          return PageShell(
+            child: LocaleRebuilder(builder: (_) => CriteriaScreen(type: type)),
+          );
         },
       ),
       GoRoute(
         path: '/results',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const ResultsScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ResultsScreen()),
+        ),
       ),
       GoRoute(
         path: '/idea/:id',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
-          return LocaleRebuilder(builder: (_) => IdeaDetailScreen(id: id));
+          return PageShell(
+            child: LocaleRebuilder(builder: (_) => IdeaDetailScreen(id: id)),
+          );
         },
       ),
       GoRoute(
         path: '/credits-shop',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(builder: (_) => const CreditsShopScreen()),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const CreditsShopScreen()),
+        ),
       ),
       GoRoute(
         path: '/payment',
@@ -238,28 +282,65 @@ GoRouter createAppRouter() {
             final v = m[k];
             return v is String ? v : v?.toString();
           }
-          return LocaleRebuilder(
-            builder: (_) => PaymentScreen(
-              packName: getStr(extra, 'name'),
-              credits: getStr(extra, 'credits'),
-              price: getStr(extra, 'price'),
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => PaymentScreen(
+                packName: getStr(extra, 'name'),
+                credits: getStr(extra, 'credits'),
+                price: getStr(extra, 'price'),
+              ),
             ),
           );
         },
       ),
       GoRoute(
+        path: '/project-board',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final plan = state.extra as Plan;
+          return ProjectBoardScreen(plan: plan);
+        },
+      ),
+      GoRoute(
+        path: '/brand-workspace',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final brand = state.extra as Brand?;
+          if (brand == null) return const SizedBox.shrink();
+          return BrandWorkspaceScreen(brand: brand);
+        },
+      ),
+      GoRoute(
+        path: '/brand-form',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final brand = state.extra is Brand ? state.extra as Brand : null;
+          return CreateEditBrandScreen(brand: brand);
+        },
+      ),
+      GoRoute(
+        path: '/plan-detail',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final plan = state.extra as Plan;
+          return PlanDetailScreen(plan: plan);
+        },
+      ),
+      GoRoute(
         path: '/edit-profile',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => LocaleRebuilder(
-          builder: (_) => ChangeNotifierProvider(
-            create: (_) => ProfileViewModel(),
-            child: const EditProfileScreen(),
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(
+            builder: (_) => ChangeNotifierProvider(
+              create: (_) => ProfileViewModel(),
+              child: const EditProfileScreen(),
+            ),
           ),
         ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return ScaffoldWithBottomNav(navigationShell: navigationShell);
+          return MainNavigationShell(navigationShell: navigationShell);
         },
         branches: [
           StatefulShellBranch(
@@ -268,11 +349,64 @@ GoRouter createAppRouter() {
                 path: '/home',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: LocaleRebuilder(builder: (_) => const HomeScreen()),
+                  child: const HomeScreen(),
                 ),
               ),
             ],
           ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/brands-list',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const BrandsListScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/calendar',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const CalendarScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/projects',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const ExecutionHubScreen(),
+                ),
+              ),
+              GoRoute(
+                path: '/projects-flow',
+                builder: (context, state) => const PlanProjectFlow(),
+              ),
+              GoRoute(
+                path: '/ai-campaign-roadmap',
+                builder: (context, state) => const AICampaignRoadmapScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/insights',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const InsightsScreen(),
+                ),
+              ),
+            ],
+          ),
+          // Additional branches for legacy screens that should have the shell
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -312,106 +446,40 @@ GoRouter createAppRouter() {
   );
 }
 
-class ScaffoldWithBottomNav extends StatelessWidget {
-  const ScaffoldWithBottomNav({super.key, required this.navigationShell});
+class MainNavigationShell extends StatelessWidget {
+  const MainNavigationShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
   Widget build(BuildContext context) {
     context.watch<LocaleViewModel>();
-    final colorScheme = Theme.of(context).colorScheme;
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
+    if (isMobile) {
+      return Scaffold(
+        drawer: const SidebarNavigation(),
+        body: navigationShell,
+        bottomNavigationBar: BottomNavV2(
+          currentIndex: navigationShell.currentIndex,
+          onTap: (index) => navigationShell.goBranch(index),
+        ),
+      );
+    }
+
     return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: context.tr('nav_home'),
-                  isSelected: navigationShell.currentIndex == 0,
-                  onTap: () => navigationShell.goBranch(0),
-                  colorScheme: colorScheme,
-                ),
-                _NavItem(
-                  icon: Icons.favorite_rounded,
-                  label: context.tr('nav_favorites'),
-                  isSelected: navigationShell.currentIndex == 1,
-                  onTap: () => navigationShell.goBranch(1),
-                  colorScheme: colorScheme,
-                ),
-                _NavItem(
-                  icon: Icons.history_rounded,
-                  label: context.tr('nav_history'),
-                  isSelected: navigationShell.currentIndex == 2,
-                  onTap: () => navigationShell.goBranch(2),
-                  colorScheme: colorScheme,
-                ),
-                _NavItem(
-                  icon: Icons.person_rounded,
-                  label: context.tr('nav_profile'),
-                  isSelected: navigationShell.currentIndex == 3,
-                  onTap: () => navigationShell.goBranch(3),
-                  colorScheme: colorScheme,
-                ),
-              ],
-            ),
+      body: Row(
+        children: [
+          const SidebarNavigation(),
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
-        ),
+          Expanded(child: navigationShell),
+        ],
       ),
     );
   }
 }
 
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final ColorScheme colorScheme;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-    required this.colorScheme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 24,
-              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

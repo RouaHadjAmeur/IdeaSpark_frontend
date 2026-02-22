@@ -18,24 +18,12 @@ class ResultsScreen extends StatelessWidget {
       child: Consumer<ResultsViewModel>(
         builder: (context, vm, _) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => context.pop(),
-                      icon: Icon(
-                        Icons.arrow_back_rounded,
-                        color: colorScheme.onSurface,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: colorScheme.surfaceContainerHighest,
-                        side: BorderSide(color: colorScheme.outlineVariant),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '${vm.resultsCount} ${context.tr('ideas_generated')}',

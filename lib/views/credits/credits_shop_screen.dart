@@ -20,33 +20,20 @@ class CreditsShopScreen extends StatelessWidget {
           return DefaultTextStyle(
             style: const TextStyle(decoration: TextDecoration.none),
             child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 40),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => context.pop(),
-                      icon: Icon(
-                        Icons.arrow_back_rounded,
-                        color: colorScheme.onSurface,
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: colorScheme.surfaceContainerHighest,
-                        side: BorderSide(color: colorScheme.outlineVariant),
-                      ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    context.tr('shop'),
+                    style: GoogleFonts.syne(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurface,
+                      decoration: TextDecoration.none,
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      context.tr('shop'),
-                      style: GoogleFonts.syne(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Container(

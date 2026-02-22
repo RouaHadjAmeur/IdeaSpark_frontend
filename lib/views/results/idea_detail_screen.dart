@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/widgets/variation_bottom_sheet.dart';
@@ -23,27 +22,10 @@ class IdeaDetailScreen extends StatelessWidget {
     return DefaultTextStyle(
       style: TextStyle(decoration: TextDecoration.none),
       child: SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 180),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 180),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => context.pop(),
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: colorScheme.onSurface,
-                ),
-                style: IconButton.styleFrom(
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  side: BorderSide(color: colorScheme.outlineVariant),
-                ),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ),
-          const SizedBox(height: 8),
           Text(
             'Morning Routine Transformation',
             style: GoogleFonts.syne(

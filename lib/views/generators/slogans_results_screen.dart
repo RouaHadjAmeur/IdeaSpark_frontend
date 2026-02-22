@@ -175,27 +175,9 @@ class _SlogansResultsScreenState extends State<SlogansResultsScreen> with Ticker
   }
 
   Widget _buildErrorHeader(BuildContext context, ColorScheme colorScheme) {
-    return Row(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
-          ),
-          child: IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            'Erreur',
-            style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
-          ),
-        ),
-      ],
+    return Text(
+      'Erreur',
+      style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
     );
   }
 
@@ -247,63 +229,35 @@ class _SlogansResultsScreenState extends State<SlogansResultsScreen> with Ticker
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme, int count) {
     return Padding(
       padding: const EdgeInsets.only(top: 8, bottom: 8),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.shadow.withOpacity(0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              onPressed: () => context.pop(),
-              icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.transparent,
+          Row(
+            children: [
+              Text(
+                '✨ ',
+                style: const TextStyle(fontSize: 22),
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      '✨ ',
-                      style: const TextStyle(fontSize: 22),
-                    ),
-                    Expanded(
-                      child: Text(
-                        '$count Slogans générés',
-                        style: GoogleFonts.syne(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: colorScheme.onSurface,
-                          letterSpacing: -0.5,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  'Trouvez votre slogan parfait',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.onSurfaceVariant.withOpacity(0.7),
-                    fontWeight: FontWeight.w400,
+              Expanded(
+                child: Text(
+                  '$count Slogans générés',
+                  style: GoogleFonts.syne(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurface,
+                    letterSpacing: -0.5,
                   ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
+              ),
+            ],
+          ),
+          Text(
+            'Trouvez votre slogan parfait',
+            style: TextStyle(
+              fontSize: 13,
+              color: colorScheme.onSurfaceVariant.withOpacity(0.7),
+              fontWeight: FontWeight.w400,
             ),
           ),
         ],

@@ -7,11 +7,10 @@ import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/services/favorites_storage_service.dart';
 
 import 'package:ideaspark/models/slogan_model.dart';
-import 'package:ideaspark/models/video_generator_models.dart';
 
 import 'package:ideaspark/view_models/video_idea_generator_view_model.dart';
 import 'package:ideaspark/view_models/slogan_view_model.dart';
-import 'package:ideaspark/views/generators/idea_details_page.dart';
+import 'package:ideaspark/views/generators/components/video_result_card.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -227,18 +226,12 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                     )
                   else
                     ...videoFavorites.map((idea) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _VideoIdeaCard(
+                          padding: const EdgeInsets.only(bottom: 20),
+                          child: VideoResultCard(
                             idea: idea,
-                            colorScheme: colorScheme,
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => IdeaDetailsPage(ideaId: idea.id),
-                                ),
-                              );
-                            },
-                            onToggleFavorite: () => videoVm.toggleFavoriteStatus(idea.id),
+                            isFavorite: idea.isFavorite,
+                            onFavoriteToggle: () =>
+                                videoVm.toggleFavoriteStatus(idea.id),
                           ),
                         )),
                 ],
@@ -406,130 +399,3 @@ class _SloganCard extends StatelessWidget {
   }
 }
 
-// --------------------
-// VIDEO IDEA CARD (adapted from your 2nd version)
-// --------------------
-class _VideoIdeaCard extends StatelessWidget {
-  final VideoIdea idea;
-  final ColorScheme colorScheme;
-  final VoidCallback onTap;
-  final VoidCallback onToggleFavorite;
-
-  const _VideoIdeaCard({
-    required this.idea,
-    required this.colorScheme,
-    required this.onTap,
-    required this.onToggleFavorite,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      context.tr('type_video'),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  if (idea.isApproved)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.verified, color: Colors.blue, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            'APPROUVÉ',
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.blue,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ), 
-              const SizedBox(height: 12),
-              Text(
-                idea.currentVersion.title,
-                style: GoogleFonts.syne(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                idea.currentVersion.caption,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  TextButton.icon(
-                    onPressed: onToggleFavorite,
-                    icon: Icon(Icons.favorite, size: 16, color: colorScheme.primary),
-                    label: Text(
-                      context.tr('remove'),
-                      style: TextStyle(fontSize: 12, color: colorScheme.primary),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                    },
-                    icon: Icon(Icons.share_rounded, size: 16, color: colorScheme.onSurfaceVariant),
-                    label: Text(
-                      context.tr('share'),
-                      style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}

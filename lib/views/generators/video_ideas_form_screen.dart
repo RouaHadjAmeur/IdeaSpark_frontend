@@ -444,28 +444,13 @@ class _VideoIdeasFormView extends StatelessWidget {
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme, String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => context.pop(),
-            icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
-            style: IconButton.styleFrom(
-              backgroundColor: colorScheme.surfaceContainerHighest,
-              side: BorderSide(color: colorScheme.outlineVariant),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.syne(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ),
-        ],
+      child: Text(
+        title,
+        style: GoogleFonts.syne(
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
+          color: colorScheme.onSurface,
+        ),
       ),
     );
   }
