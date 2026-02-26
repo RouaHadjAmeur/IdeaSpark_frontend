@@ -6,6 +6,7 @@ import 'package:ideaspark/core/app_localizations.dart';
 import '../../models/video_generator_models.dart';
 import '../../view_models/video_idea_form_view_model.dart';
 import '../../services/video_generator_service.dart';
+import '../../services/slogan_service.dart';
 import '../../widgets/chip_group_selector.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -24,8 +25,24 @@ class VideoIdeasFormScreen extends StatelessWidget {
   }
 }
 
-class _VideoIdeasFormView extends StatelessWidget {
+class _VideoIdeasFormView extends StatefulWidget {
   const _VideoIdeasFormView();
+
+  @override
+  State<_VideoIdeasFormView> createState() => _VideoIdeasFormViewState();
+}
+
+class _VideoIdeasFormViewState extends State<_VideoIdeasFormView> {
+  bool _usePromptRefiner = false;
+  final TextEditingController _promptController = TextEditingController();
+  bool _isRefiningPrompt = false;
+  String? _refinedPrompt;
+
+  @override
+  void dispose() {
+    _promptController.dispose();
+    super.dispose();
+  }
 
   void _handleGenerate(BuildContext context, VideoIdeaFormViewModel viewModel) {
     final error = viewModel.validateForm();
@@ -92,278 +109,314 @@ class _VideoIdeasFormView extends StatelessWidget {
                     ),
                   ),
 
-                  // Image Picker & Analysis Section
-                  _buildImagePicker(context, viewModel, colorScheme),
-
-                  // Section: Informations de Base
-                  _buildSectionHeader(colorScheme, "📝 Informations de Base"),
-
-                  _buildInputGroup(
-                    colorScheme,
-                    "Nom du Produit *",
-                    "Ex: CrèmeLuxe, PowerBank Pro, ThéBio...",
-                    viewModel.productName,
-                    viewModel.updateProductName,
-                    helperText: "Le nom complet de votre produit",
-                  ),
-
-                  _buildInputGroupWithSuggestions(
-                    context,
-                    colorScheme,
-                    "Catégorie du Produit",
-                    "Ex: Beauté, Tech...",
-                    viewModel.productCategory,
-                    viewModel.updateProductCategory,
-                    VideoIdeaFormViewModel.categorySuggestions,
-                  ),
-
-                  _buildInputGroup(
-                    colorScheme,
-                    "Description du Produit",
-                    "Décrivez brièvement votre produit...",
-                    viewModel.useCases,
-                    viewModel.updateUseCases,
-                    maxLines: 3,
-                    helperText: "Expliquez comment utiliser le produit et ses cas d'usage",
-                  ),
-
-                  // Enhanced Product Details Section
-                  _buildExpandableSection(
-                    context,
-                    colorScheme,
-                    "📦 Détails du Produit",
-                    "Ingrédients, caractéristiques, avantages uniques",
-                    [
-                      _buildInputGroup(
-                        colorScheme,
-                        "Ingrédients / Composants",
-                        "Ex: Vitamine C, Acide Hyaluronique, Aloe Vera",
-                        viewModel.ingredients,
-                        viewModel.updateIngredients,
-                        maxLines: 2,
-                        helperText: "Séparés par des virgules",
-                      ),
-                      _buildInputGroup(
-                        colorScheme,
-                        "Caractéristiques Techniques",
-                        "Ex: Étanche, 5000mAh, Bluetooth 5.0",
-                        viewModel.productFeatures,
-                        viewModel.updateProductFeatures,
-                        maxLines: 2,
-                        helperText: "Séparées par des virgules",
-                      ),
-                      _buildInputGroup(
-                        colorScheme,
-                        "Point de Vente Unique (USP)",
-                        "Ex: Seul produit certifié bio au Maroc",
-                        viewModel.uniqueSellingPoint,
-                        viewModel.updateUniqueSellingPoint,
-                        maxLines: 2,
-                        helperText: "Ce qui différencie votre produit",
-                      ),
-                    ],
-                  ),
-
-                  // Target Audience Section
-                  _buildExpandableSection(
-                    context,
-                    colorScheme,
-                    "🎯 Audience Cible",
-                    "Définissez précisément votre public",
-                    [
-                      _buildInputGroupWithSuggestions(
-                        context,
-                        colorScheme,
-                        "Type d'Audience",
-                        "Ex: Étudiants, Mamans...",
-                        viewModel.targetAudience,
-                        viewModel.updateTargetAudience,
-                        VideoIdeaFormViewModel.audienceSuggestions,
-                      ),
-                      _buildInputGroupWithSuggestions(
-                        context,
-                        colorScheme,
-                        "Tranche d'Âge",
-                        "Ex: 18-24 ans",
-                        viewModel.ageRange,
-                        viewModel.updateAgeRange,
-                        VideoIdeaFormViewModel.ageRangeSuggestions,
-                      ),
-                      _buildInputGroup(
-                        colorScheme,
-                        "Preuve Sociale",
-                        "Ex: 10k+ clients satisfaits, Note 4.8/5",
-                        viewModel.socialProof,
-                        viewModel.updateSocialProof,
-                        helperText: "Témoignages, avis, statistiques",
-                      ),
-                    ],
-                  ),
-
-                  // Section: Paramètres Vidéo
-                  _buildSectionHeader(colorScheme, "🎬 Paramètres Vidéo"),
-
-                  ChipGroupSelector<Platform>(
-                    label: "Plateforme",
-                    options: Platform.values,
-                    selectedValue: viewModel.selectedPlatform,
-                    onSelected: viewModel.selectPlatform,
-                    labelBuilder: (p) => VideoIdeaFormViewModel.platformLabels[p] ?? p.name,
-                    colorScheme: colorScheme,
-                  ),
-
-                  ChipGroupSelector<DurationOption>(
-                    label: "Durée",
-                    options: DurationOption.values,
-                    selectedValue: viewModel.selectedDuration,
-                    onSelected: viewModel.selectDuration,
-                    labelBuilder: (d) => VideoIdeaFormViewModel.durationLabels[d] ?? d.name,
-                    colorScheme: colorScheme,
-                  ),
-
-                  ChipGroupSelector<VideoGoal>(
-                    label: "Objectif",
-                    options: VideoGoal.values,
-                    selectedValue: viewModel.selectedGoal,
-                    onSelected: viewModel.selectGoal,
-                    labelBuilder: (g) => VideoIdeaFormViewModel.goalLabels[g] ?? g.name,
-                    colorScheme: colorScheme,
-                  ),
-
-                  ChipGroupSelector<VideoTone>(
-                    label: "Ton",
-                    options: VideoTone.values,
-                    selectedValue: viewModel.selectedTone,
-                    onSelected: viewModel.selectTone,
-                    labelBuilder: (t) => VideoIdeaFormViewModel.toneLabels[t] ?? t.name,
-                    colorScheme: colorScheme,
-                  ),
-
-                  _buildInputGroup(
-                    colorScheme,
-                    "Bénéfices Clés ✨",
-                    "Ex: Résultats en 7 jours, Sans produits chimiques, Garantie 30j",
-                    viewModel.keyBenefits,
-                    viewModel.updateKeyBenefits,
-                    maxLines: 2,
-                    helperText: "Séparés par des virgules - Listez 3-5 bénéfices principaux",
-                  ),
-
-                  _buildInputGroup(
-                    colorScheme,
-                    "Problème Résolu 🎯",
-                    "Ex: Acné persistante, Fatigue chronique, Manque de temps",
-                    viewModel.painPoint,
-                    viewModel.updatePainPoint,
-                    maxLines: 2,
-                    helperText: "Quel problème votre produit résout-il ?",
-                  ),
-
-                  // Pricing Section
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primaryContainer.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.monetization_on, color: colorScheme.primary, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              "Tarification & Offre",
-                              style: GoogleFonts.syne(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: colorScheme.onSurface,
-                              ),
-                            ),
-                          ],
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Mode Prompt Refiner',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurfaceVariant,
                         ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Prix",
-                                    style: GoogleFonts.syne(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    onChanged: viewModel.updatePrice,
-                                    style: TextStyle(color: colorScheme.onSurface),
-                                    controller: TextEditingController(text: viewModel.price)
-                                      ..selection = TextSelection.collapsed(offset: viewModel.price.length),
-                                    decoration: InputDecoration(
-                                      hintText: "99.99 DT",
-                                      prefixText: "💰 ",
-                                      filled: true,
-                                      fillColor: colorScheme.surface,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: colorScheme.outlineVariant),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Offre Spéciale",
-                                    style: GoogleFonts.syne(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    onChanged: viewModel.updateOffer,
-                                    style: TextStyle(color: colorScheme.onSurface),
-                                    controller: TextEditingController(text: viewModel.offer)
-                                      ..selection = TextSelection.collapsed(offset: viewModel.offer.length),
-                                    decoration: InputDecoration(
-                                      hintText: "-30%",
-                                      prefixText: "🎁 ",
-                                      filled: true,
-                                      fillColor: colorScheme.surface,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: colorScheme.outlineVariant),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                      ),
+                      Switch(
+                        value: _usePromptRefiner,
+                        onChanged: (value) {
+                          setState(() {
+                            _usePromptRefiner = value;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (_usePromptRefiner) ...[
+                    _buildPromptInput(colorScheme),
+                    const SizedBox(height: 12),
+                    _buildRefineButton(colorScheme),
+                    if (_refinedPrompt != null && _refinedPrompt!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _buildRefinedPromptPreview(colorScheme),
+                    ],
+                    const SizedBox(height: 24),
+                  ],
+
+                  if (!_usePromptRefiner) ...[
+                    // Image Picker & Analysis Section
+                    _buildImagePicker(context, viewModel, colorScheme),
+
+                    // Section: Informations de Base
+                    _buildSectionHeader(colorScheme, "📝 Informations de Base"),
+
+                    _buildInputGroup(
+                      colorScheme,
+                      "Nom du Produit *",
+                      "Ex: CrèmeLuxe, PowerBank Pro, ThéBio...",
+                      viewModel.productName,
+                      viewModel.updateProductName,
+                      helperText: "Le nom complet de votre produit",
+                    ),
+
+                    _buildInputGroupWithSuggestions(
+                      context,
+                      colorScheme,
+                      "Catégorie du Produit",
+                      "Ex: Beauté, Tech...",
+                      viewModel.productCategory,
+                      viewModel.updateProductCategory,
+                      VideoIdeaFormViewModel.categorySuggestions,
+                    ),
+
+                    _buildInputGroup(
+                      colorScheme,
+                      "Description du Produit",
+                      "Décrivez brièvement votre produit...",
+                      viewModel.useCases,
+                      viewModel.updateUseCases,
+                      maxLines: 3,
+                      helperText: "Expliquez comment utiliser le produit et ses cas d'usage",
+                    ),
+
+                    // Enhanced Product Details Section
+                    _buildExpandableSection(
+                      context,
+                      colorScheme,
+                      "📦 Détails du Produit",
+                      "Ingrédients, caractéristiques, avantages uniques",
+                      [
+                        _buildInputGroup(
+                          colorScheme,
+                          "Ingrédients / Composants",
+                          "Ex: Vitamine C, Acide Hyaluronique, Aloe Vera",
+                          viewModel.ingredients,
+                          viewModel.updateIngredients,
+                          maxLines: 2,
+                          helperText: "Séparés par des virgules",
+                        ),
+                        _buildInputGroup(
+                          colorScheme,
+                          "Caractéristiques Techniques",
+                          "Ex: Étanche, 5000mAh, Bluetooth 5.0",
+                          viewModel.productFeatures,
+                          viewModel.updateProductFeatures,
+                          maxLines: 2,
+                          helperText: "Séparées par des virgules",
+                        ),
+                        _buildInputGroup(
+                          colorScheme,
+                          "Point de Vente Unique (USP)",
+                          "Ex: Seul produit certifié bio au Maroc",
+                          viewModel.uniqueSellingPoint,
+                          viewModel.updateUniqueSellingPoint,
+                          maxLines: 2,
+                          helperText: "Ce qui différencie votre produit",
                         ),
                       ],
                     ),
-                  ),
+
+                    // Target Audience Section
+                    _buildExpandableSection(
+                      context,
+                      colorScheme,
+                      "🎯 Audience Cible",
+                      "Définissez précisément votre public",
+                      [
+                        _buildInputGroupWithSuggestions(
+                          context,
+                          colorScheme,
+                          "Type d'Audience",
+                          "Ex: Étudiants, Mamans...",
+                          viewModel.targetAudience,
+                          viewModel.updateTargetAudience,
+                          VideoIdeaFormViewModel.audienceSuggestions,
+                        ),
+                        _buildInputGroupWithSuggestions(
+                          context,
+                          colorScheme,
+                          "Tranche d'Âge",
+                          "Ex: 18-24 ans",
+                          viewModel.ageRange,
+                          viewModel.updateAgeRange,
+                          VideoIdeaFormViewModel.ageRangeSuggestions,
+                        ),
+                        _buildInputGroup(
+                          colorScheme,
+                          "Preuve Sociale",
+                          "Ex: 10k+ clients satisfaits, Note 4.8/5",
+                          viewModel.socialProof,
+                          viewModel.updateSocialProof,
+                          helperText: "Témoignages, avis, statistiques",
+                        ),
+                      ],
+                    ),
+
+                    // Section: Paramètres Vidéo
+                    _buildSectionHeader(colorScheme, "🎬 Paramètres Vidéo"),
+
+                    ChipGroupSelector<Platform>(
+                      label: "Plateforme",
+                      options: Platform.values,
+                      selectedValue: viewModel.selectedPlatform,
+                      onSelected: viewModel.selectPlatform,
+                      labelBuilder: (p) => VideoIdeaFormViewModel.platformLabels[p] ?? p.name,
+                      colorScheme: colorScheme,
+                    ),
+
+                    ChipGroupSelector<DurationOption>(
+                      label: "Durée",
+                      options: DurationOption.values,
+                      selectedValue: viewModel.selectedDuration,
+                      onSelected: viewModel.selectDuration,
+                      labelBuilder: (d) => VideoIdeaFormViewModel.durationLabels[d] ?? d.name,
+                      colorScheme: colorScheme,
+                    ),
+
+                    ChipGroupSelector<VideoGoal>(
+                      label: "Objectif",
+                      options: VideoGoal.values,
+                      selectedValue: viewModel.selectedGoal,
+                      onSelected: viewModel.selectGoal,
+                      labelBuilder: (g) => VideoIdeaFormViewModel.goalLabels[g] ?? g.name,
+                      colorScheme: colorScheme,
+                    ),
+
+                    ChipGroupSelector<VideoTone>(
+                      label: "Ton",
+                      options: VideoTone.values,
+                      selectedValue: viewModel.selectedTone,
+                      onSelected: viewModel.selectTone,
+                      labelBuilder: (t) => VideoIdeaFormViewModel.toneLabels[t] ?? t.name,
+                      colorScheme: colorScheme,
+                    ),
+
+                    _buildInputGroup(
+                      colorScheme,
+                      "Bénéfices Clés ✨",
+                      "Ex: Résultats en 7 jours, Sans produits chimiques, Garantie 30j",
+                      viewModel.keyBenefits,
+                      viewModel.updateKeyBenefits,
+                      maxLines: 2,
+                      helperText: "Séparés par des virgules - Listez 3-5 bénéfices principaux",
+                    ),
+
+                    _buildInputGroup(
+                      colorScheme,
+                      "Problème Résolu 🎯",
+                      "Ex: Acné persistante, Fatigue chronique, Manque de temps",
+                      viewModel.painPoint,
+                      viewModel.updatePainPoint,
+                      maxLines: 2,
+                      helperText: "Quel problème votre produit résout-il ?",
+                    ),
+
+                    // Pricing Section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.monetization_on, color: colorScheme.primary, size: 20),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Tarification & Offre",
+                                style: GoogleFonts.syne(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: colorScheme.onSurface,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Prix",
+                                      style: GoogleFonts.syne(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextField(
+                                      onChanged: viewModel.updatePrice,
+                                      style: TextStyle(color: colorScheme.onSurface),
+                                      controller: TextEditingController(text: viewModel.price)
+                                        ..selection = TextSelection.collapsed(offset: viewModel.price.length),
+                                      decoration: InputDecoration(
+                                        hintText: "99.99 DT",
+                                        prefixText: "💰 ",
+                                        filled: true,
+                                        fillColor: colorScheme.surface,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Offre Spéciale",
+                                      style: GoogleFonts.syne(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextField(
+                                      onChanged: viewModel.updateOffer,
+                                      style: TextStyle(color: colorScheme.onSurface),
+                                      controller: TextEditingController(text: viewModel.offer)
+                                        ..selection = TextSelection.collapsed(offset: viewModel.offer.length),
+                                      decoration: InputDecoration(
+                                        hintText: "-30%",
+                                        prefixText: "🎁 ",
+                                        filled: true,
+                                        fillColor: colorScheme.surface,
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: colorScheme.outlineVariant),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
 
                   // Generation Mode Toggle
                   Container(
@@ -418,8 +471,14 @@ class _VideoIdeasFormView extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: viewModel.canGenerate()
-                          ? () => _handleGenerate(context, viewModel)
+                      onPressed: (viewModel.canGenerate() || _usePromptRefiner)
+                          ? () {
+                              if (_usePromptRefiner) {
+                                _handleGenerateFromPrompt(context, viewModel);
+                              } else {
+                                _handleGenerate(context, viewModel);
+                              }
+                            }
                           : null,
                       style: FilledButton.styleFrom(
                         backgroundColor: colorScheme.primary,
@@ -441,16 +500,237 @@ class _VideoIdeasFormView extends StatelessWidget {
     );
   }
 
+  Widget _buildPromptInput(ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Décris ton produit, ton audience et le message de la vidéo',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _promptController,
+          maxLines: 5,
+          decoration: InputDecoration(
+            hintText:
+                'Ex: Je veux 5 idées de vidéos TikTok pour une crème visage bio pour femmes 25-35 ans, ton authentique et éducatif.',
+            hintStyle: TextStyle(
+              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+              fontSize: 13,
+            ),
+            filled: true,
+            fillColor: colorScheme.surfaceContainerHighest,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: colorScheme.outlineVariant.withOpacity(0.5),
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.all(16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRefineButton(ColorScheme colorScheme) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: OutlinedButton(
+        onPressed: _isRefiningPrompt ? null : _onRefinePromptPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colorScheme.primary,
+          side: BorderSide(color: colorScheme.primary),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: _isRefiningPrompt
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                ),
+              )
+            : Text(
+                'Raffiner le prompt',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildRefinedPromptPreview(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withOpacity(0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Prompt raffiné',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _refinedPrompt ?? '',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: colorScheme.onSurface,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onRefinePromptPressed() async {
+    final raw = _promptController.text.trim();
+    if (raw.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text('Veuillez saisir un prompt à raffiner')),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isRefiningPrompt = true;
+    });
+
+    try {
+      final result = await SloganService.refinePrompt(prompt: raw);
+      if (!mounted) return;
+      setState(() {
+        _refinedPrompt = result;
+        _promptController.text = result;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text(e.toString())),
+            ],
+          ),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isRefiningPrompt = false;
+      });
+    }
+  }
+
+  void _handleGenerateFromPrompt(BuildContext context, VideoIdeaFormViewModel viewModel) {
+    final prompt = (_refinedPrompt ?? _promptController.text).trim();
+
+    if (prompt.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text('Veuillez saisir ou raffiner un prompt avant de générer')),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    final truncatedName = prompt.length > 60 ? prompt.substring(0, 60) : prompt;
+    viewModel.updateProductName(truncatedName);
+
+    if (viewModel.useCases.trim().isEmpty) {
+      viewModel.updateUseCases(prompt);
+    }
+    if (viewModel.painPoint.trim().isEmpty) {
+      viewModel.updatePainPoint(prompt);
+    }
+
+    _handleGenerate(context, viewModel);
+  }
+
   Widget _buildHeader(BuildContext context, ColorScheme colorScheme, String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
-      child: Text(
-        title,
-        style: GoogleFonts.syne(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: colorScheme.onSurface,
-        ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => context.pop(),
+            icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
+            style: IconButton.styleFrom(
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              side: BorderSide(color: colorScheme.outlineVariant),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              title,
+              style: GoogleFonts.syne(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

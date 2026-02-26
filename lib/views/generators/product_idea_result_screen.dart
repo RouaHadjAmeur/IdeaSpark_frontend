@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
+import 'package:ideaspark/view_models/product_idea_view_model.dart';
 
 class ProductIdeaResultScreen extends StatelessWidget {
   const ProductIdeaResultScreen({super.key});
@@ -8,6 +11,67 @@ class ProductIdeaResultScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final viewModel = context.watch<ProductIdeaViewModel>();
+
+    if (viewModel.isLoading) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: CircularProgressIndicator(
+              color: colorScheme.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (viewModel.idea == null) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    size: 48,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Aucune idée produit générée.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.syne(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Retourne au formulaire et décris un problème à résoudre.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Retour'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final idea = viewModel.idea!;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -17,6 +81,15 @@ class ProductIdeaResultScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: Icon(Icons.arrow_back_rounded, color: colorScheme.onSurface),
+                    style: IconButton.styleFrom(
+                      backgroundColor: colorScheme.surfaceContainerHighest,
+                      side: BorderSide(color: colorScheme.outlineVariant),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Idée Produit',
@@ -48,7 +121,7 @@ class ProductIdeaResultScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     Center(
                       child: Text(
-                        'FocusFlow - App Anti-Procrastination',
+                        idea.produit.nomDuProduit,
                         textAlign: TextAlign.center,
                         style: GoogleFonts.syne(fontSize: 22, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
                       ),
@@ -59,7 +132,7 @@ class ProductIdeaResultScreen extends StatelessWidget {
                     _Label(colorScheme: colorScheme, text: '📝 Description'),
                     const SizedBox(height: 8),
                     Text(
-                      'Application mobile combinant Pomodoro intelligent, blocage de distractions, et gamification. L\'IA analyse les patterns de productivité et adapte les sessions. Intégration avec calendriers et outils (Notion, Todoist).',
+                      idea.produit.solution,
                       style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant, height: 1.6),
                     ),
                     const SizedBox(height: 16),
@@ -68,65 +141,21 @@ class ProductIdeaResultScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: colorScheme.error.withValues(alpha: 0.1),
+                        color: colorScheme.error.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
                         border: Border(left: BorderSide(color: colorScheme.error, width: 3)),
                       ),
                       child: Text(
-                        'Les professionnels et étudiants perdent 2-4h par jour en distractions. Les apps existantes sont soit trop rigides soit inefficaces.',
+                        idea.produit.probleme,
                         style: TextStyle(fontSize: 14, color: colorScheme.onSurface, height: 1.6),
                       ),
                     ),
                     const SizedBox(height: 16),
                     _Label(colorScheme: colorScheme, text: '⚙️ Caractéristiques principales'),
                     const SizedBox(height: 8),
-                    _FeatureRow(colorScheme: colorScheme, icon: '✨', text: 'IA qui ajuste durée des sessions selon énergie'),
-                    _FeatureRow(colorScheme: colorScheme, icon: '🔒', text: 'Blocage contextuel apps (réseaux en pause uniquement)'),
-                    _FeatureRow(colorScheme: colorScheme, icon: '🏆', text: 'Système de points et défis hebdomadaires'),
-                    _FeatureRow(colorScheme: colorScheme, icon: '📊', text: 'Analytics: temps focus, distractions évitées'),
-                    _FeatureRow(colorScheme: colorScheme, icon: '🔗', text: 'Intégrations calendrier Google, Notion, Slack'),
-                    const SizedBox(height: 16),
-                    _Label(colorScheme: colorScheme, text: '💵 Prix suggéré'),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Freemium', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)), Text('0€', style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface))]),
-                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Premium (mensuel)', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)), Text('7.99€', style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.primary))]),
-                          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Premium (annuel)', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)), Text('59.99€', style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.primary))]),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _Label(colorScheme: colorScheme, text: '📈 Potentiel de marché'),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(value: 0.85, minHeight: 6, backgroundColor: colorScheme.surfaceContainerHighest, valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text('8.5/10', style: GoogleFonts.syne(fontSize: 24, fontWeight: FontWeight.w700, color: colorScheme.primary)),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Marché productivité: \$50B+, apps focus: croissance 40%/an', style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant)),
-                    const SizedBox(height: 16),
-                    _Label(colorScheme: colorScheme, text: '🔍 Analyse concurrents'),
-                    const SizedBox(height: 8),
-                    _CompetitorCard(colorScheme: colorScheme, name: 'Forest', detail: '4.5M users', desc: 'Gamification forte mais manque IA et intégrations pro'),
-                    _CompetitorCard(colorScheme: colorScheme, name: 'Freedom', detail: '2M users', desc: 'Blocage puissant mais UX complexe'),
-                    _CompetitorCard(colorScheme: colorScheme, name: 'Focusmate', detail: '500K users', desc: 'Co-working virtuel excellent mais manque features techniques'),
+                    _FeatureRow(colorScheme: colorScheme, icon: '👥', text: 'Cible: ${idea.produit.cible}'),
+                    _FeatureRow(colorScheme: colorScheme, icon: '💶', text: 'Modèle économique: ${idea.produit.modeleEconomique}'),
+                    _FeatureRow(colorScheme: colorScheme, icon: '🧪', text: 'MVP: ${idea.produit.mvp}'),
                     const SizedBox(height: 20),
                     Row(
                       children: [
@@ -178,47 +207,11 @@ class _FeatureRow extends StatelessWidget {
           Container(
             width: 28,
             height: 28,
-            decoration: BoxDecoration(color: colorScheme.primary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+            decoration: BoxDecoration(color: colorScheme.primary.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
             child: Center(child: Text(icon, style: const TextStyle(fontSize: 14))),
           ),
           const SizedBox(width: 10),
           Expanded(child: Text(text, style: TextStyle(fontSize: 14, color: colorScheme.onSurface, height: 1.5))),
-        ],
-      ),
-    );
-  }
-}
-
-class _CompetitorCard extends StatelessWidget {
-  final ColorScheme colorScheme;
-  final String name;
-  final String detail;
-  final String desc;
-
-  const _CompetitorCard({required this.colorScheme, required this.name, required this.detail, required this.desc});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(name, style: GoogleFonts.syne(fontSize: 14, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-              Text(detail, style: TextStyle(fontSize: 12, color: context.accentColor)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(desc, style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant)),
         ],
       ),
     );

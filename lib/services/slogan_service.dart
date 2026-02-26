@@ -8,6 +8,33 @@ import '../models/slogan_model.dart';
 class SloganService {
   SloganService._();
 
+  static Future<String> refinePrompt({
+    required String prompt,
+  }) async {
+    final url = Uri.parse(ApiConfig.refinePromptUrl);
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'prompt': prompt,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      final result = data['result'];
+      if (result is String && result.isNotEmpty) {
+        return result;
+      }
+      throw Exception('Réponse invalide du prompt refiner');
+    } else {
+      throw Exception('Échec du raffinement: ${response.statusCode} - ${response.body}');
+    }
+  }
+
   static Future<List<SloganModel>> generateSlogans({
     required String brandName,
     required String sector,
@@ -70,7 +97,7 @@ class SloganService {
         // Fournir un message d'erreur plus explicite quand le backend relaie
         // une erreur de la Google Generative Language API indiquant qu'un
         // modèle n'est pas trouvé / supporté pour la méthode generateContent.
-        final body = response.body ?? '';
+        final body = response.body;
         try {
           // Chercher un nom de modèle dans le message retourné (ex: models/gemini-1.5-flash)
           final match = RegExp(r"models/([\w-]+)").firstMatch(body);
@@ -174,36 +201,17 @@ class SloganService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final List<dynamic> slogansJson = data['slogans'] ?? [];
-        print('✅ ${slogansJson.length} slogans reçus du backend');
         return slogansJson.map((json) => SloganModel.fromJson(json)).toList();
       } else {
-        print('❌ Erreur HTTP: ${response.statusCode}');
-        final body = response.body ?? '';
-        
-        // Gérer les erreurs de modèle IA
-        try {
-          final match = RegExp(r"models/([\w-]+)").firstMatch(body);
-          if (match != null && body.contains('not found')) {
-            print('⚠️ Modèle IA non supporté. Utilisation des données mock.');
-            return MockSloganData.generateMockSlogans();
-          }
-        } catch (_) {}
-
+        final body = response.body;
         throw Exception('Failed to generate slogans: ${response.statusCode} - $body');
       }
     } catch (e) {
-      print('⚠️ Erreur lors de la génération des slogans: $e');
+      print('⚠️ Erreur lors de la génération des slogans (copywriting): $e');
       final msg = e.toString();
-      
-      // Fallback vers mock data pour les erreurs réseau
-      if (msg.contains('Failed to fetch') || 
-          msg.contains('SocketException') || 
-          msg.contains('Connection refused') || 
-          msg.contains('XMLHttpRequest')) {
-        print('ℹ️ Backend unreachable — returning mock slogans');
+      if (msg.contains('Failed to fetch') || msg.contains('SocketException') || msg.contains('Connection refused') || msg.contains('XMLHttpRequest')) {
         return MockSloganData.generateMockSlogans();
       }
-
       rethrow;
     }
   }

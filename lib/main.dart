@@ -13,6 +13,7 @@ import 'view_models/video_idea_generator_view_model.dart';
 import 'view_models/slogan_view_model.dart';
 import 'view_models/brand_view_model.dart';
 import 'view_models/plan_view_model.dart';
+import 'view_models/product_idea_view_model.dart';
 
 
 Future<void> main() async {
@@ -46,6 +47,7 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
         ChangeNotifierProvider(create: (_) => SloganViewModel()),
         ChangeNotifierProvider(create: (_) => BrandViewModel()),
         ChangeNotifierProvider(create: (_) => PlanViewModel()),
+        ChangeNotifierProvider(create: (_) => ProductIdeaViewModel()),
         Provider(create: (_) => VideoIdeaGeneratorService()),
         ChangeNotifierProxyProvider<VideoIdeaGeneratorService, VideoIdeaGeneratorViewModel>(
           create: (context) => VideoIdeaGeneratorViewModel(

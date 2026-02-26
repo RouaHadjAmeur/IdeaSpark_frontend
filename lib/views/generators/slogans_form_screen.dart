@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
 import 'package:ideaspark/view_models/slogan_view_model.dart';
+import 'package:ideaspark/services/slogan_service.dart';
 
 class SlogansFormScreen extends StatefulWidget {
   const SlogansFormScreen({super.key});
@@ -33,6 +34,11 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProvid
   String _angle = 'Action';
   String _pilier = 'Qualité';
   String _niveauLangue = 'Courant';
+
+  bool _usePromptRefiner = false;
+  final _promptController = TextEditingController();
+  bool _isRefiningPrompt = false;
+  String? _refinedPrompt;
   
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -74,6 +80,7 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProvid
     _resultatController.dispose();
     _faiblesseController.dispose();
     _traitController.dispose();
+    _promptController.dispose();
     super.dispose();
   }
 
@@ -168,122 +175,146 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProvid
         child: SlideTransition(
           position: _slideAnimation,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(colorScheme),
-                const SizedBox(height: 32),
-                
-                // Section 1: Identité et Personnalité
-                _buildSectionHeader('Identité et Personnalité', colorScheme),
-                const SizedBox(height: 16),
-                _buildInput(
-                  'Objectif de communication',
-                  _objectifController,
-                  'Ex: Positionner la marque comme innovante',
-                  Icons.flag_rounded,
-                  colorScheme,
-                ),
-                _buildInput(
-                  'Adjectif de personnalité',
-                  _adjectifController,
-                  'Ex: Audacieux, moderne, authentique',
-                  Icons.psychology_rounded,
-                  colorScheme,
-                ),
-                _buildInput(
-                  'Promesse principale *',
-                  _promesseController,
-                  'Ex: Simplifier votre quotidien',
-                  Icons.star_rounded,
-                  colorScheme,
-                  required: true,
-                ),
-                
                 const SizedBox(height: 24),
-                
-                // Section 2: Expérience et Valeur Utilisateur
-                _buildSectionHeader('Expérience et Valeur Utilisateur', colorScheme),
-                const SizedBox(height: 16),
-                _buildInput(
-                  'Usage quotidien',
-                  _usageController,
-                  'Ex: Gérer son budget en 5 minutes par jour',
-                  Icons.schedule_rounded,
-                  colorScheme,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Mode Prompt Refiner',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Switch(
+                      value: _usePromptRefiner,
+                      onChanged: (value) {
+                        setState(() {
+                          _usePromptRefiner = value;
+                        });
+                      },
+                    ),
+                  ],
                 ),
-                _buildInput(
-                  'Obstacle majeur résolu *',
-                  _obstacleController,
-                  'Ex: La difficulté à suivre ses dépenses',
-                  Icons.warning_rounded,
-                  colorScheme,
-                  required: true,
-                ),
-                _buildInput(
-                  'Résultat concret immédiat',
-                  _resultatController,
-                  'Ex: Économiser 200€ par mois',
-                  Icons.check_circle_rounded,
-                  colorScheme,
-                ),
-                
                 const SizedBox(height: 24),
-                
-                // Section 3: Positionnement Marché
-                _buildSectionHeader('Positionnement Marché', colorScheme),
-                const SizedBox(height: 16),
-                _buildChipGroup(
-                  'Niveau de gamme',
-                  _niveauxGamme,
-                  _niveauGamme,
-                  (value) => setState(() => _niveauGamme = value),
-                  colorScheme,
-                ),
-                _buildInput(
-                  'Faiblesse concurrente corrigée',
-                  _faiblesseController,
-                  'Ex: Interface complexe des concurrents',
-                  Icons.shield_rounded,
-                  colorScheme,
-                ),
-                _buildInput(
-                  'Trait de caractère distinctif',
-                  _traitController,
-                  'Ex: Approche ludique et engageante',
-                  Icons.auto_awesome_rounded,
-                  colorScheme,
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Section 4: Directives Rédactionnelles
-                _buildSectionHeader('Directives Rédactionnelles', colorScheme),
-                const SizedBox(height: 16),
-                _buildChipGroup(
-                  'Angle',
-                  _angles,
-                  _angle,
-                  (value) => setState(() => _angle = value),
-                  colorScheme,
-                ),
-                _buildChipGroup(
-                  'Pilier de communication',
-                  _piliers,
-                  _pilier,
-                  (value) => setState(() => _pilier = value),
-                  colorScheme,
-                ),
-                _buildChipGroup(
-                  'Niveau de langue',
-                  _niveauxLangue,
-                  _niveauLangue,
-                  (value) => setState(() => _niveauLangue = value),
-                  colorScheme,
-                ),
-                
-                const SizedBox(height: 32),
+                if (!_usePromptRefiner) ...[
+                  _buildSectionHeader('Identité et Personnalité', colorScheme),
+                  const SizedBox(height: 16),
+                  _buildInput(
+                    'Objectif de communication',
+                    _objectifController,
+                    'Ex: Positionner la marque comme innovante',
+                    Icons.flag_rounded,
+                    colorScheme,
+                  ),
+                  _buildInput(
+                    'Adjectif de personnalité',
+                    _adjectifController,
+                    'Ex: Audacieux, moderne, authentique',
+                    Icons.psychology_rounded,
+                    colorScheme,
+                  ),
+                  _buildInput(
+                    'Promesse principale *',
+                    _promesseController,
+                    'Ex: Simplifier votre quotidien',
+                    Icons.star_rounded,
+                    colorScheme,
+                    required: true,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Expérience et Valeur Utilisateur', colorScheme),
+                  const SizedBox(height: 16),
+                  _buildInput(
+                    'Usage quotidien',
+                    _usageController,
+                    'Ex: Gérer son budget en 5 minutes par jour',
+                    Icons.schedule_rounded,
+                    colorScheme,
+                  ),
+                  _buildInput(
+                    'Obstacle majeur résolu *',
+                    _obstacleController,
+                    'Ex: La difficulté à suivre ses dépenses',
+                    Icons.warning_rounded,
+                    colorScheme,
+                    required: true,
+                  ),
+                  _buildInput(
+                    'Résultat concret immédiat',
+                    _resultatController,
+                    'Ex: Économiser 200€ par mois',
+                    Icons.check_circle_rounded,
+                    colorScheme,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Positionnement Marché', colorScheme),
+                  const SizedBox(height: 16),
+                  _buildChipGroup(
+                    'Niveau de gamme',
+                    _niveauxGamme,
+                    _niveauGamme,
+                    (value) => setState(() => _niveauGamme = value),
+                    colorScheme,
+                  ),
+                  _buildInput(
+                    'Faiblesse concurrente corrigée',
+                    _faiblesseController,
+                    'Ex: Interface complexe des concurrents',
+                    Icons.shield_rounded,
+                    colorScheme,
+                  ),
+                  _buildInput(
+                    'Trait de caractère distinctif',
+                    _traitController,
+                    'Ex: Approche ludique et engageante',
+                    Icons.auto_awesome_rounded,
+                    colorScheme,
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSectionHeader('Directives Rédactionnelles', colorScheme),
+                  const SizedBox(height: 16),
+                  _buildChipGroup(
+                    'Angle',
+                    _angles,
+                    _angle,
+                    (value) => setState(() => _angle = value),
+                    colorScheme,
+                  ),
+                  _buildChipGroup(
+                    'Pilier de communication',
+                    _piliers,
+                    _pilier,
+                    (value) => setState(() => _pilier = value),
+                    colorScheme,
+                  ),
+                  _buildChipGroup(
+                    'Niveau de langue',
+                    _niveauxLangue,
+                    _niveauLangue,
+                    (value) => setState(() => _niveauLangue = value),
+                    colorScheme,
+                  ),
+                  const SizedBox(height: 32),
+                ] else ...[
+                  _buildSectionHeader('Prompt libre', colorScheme),
+                  const SizedBox(height: 16),
+                  _buildPromptInput(colorScheme),
+                  const SizedBox(height: 16),
+                  _buildRefineButton(colorScheme),
+                  if (_refinedPrompt != null && _refinedPrompt!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _buildRefinedPromptPreview(colorScheme),
+                    const SizedBox(height: 24),
+                  ] else
+                    const SizedBox(height: 32),
+                ],
                 _buildGenerateButton(sloganVm, colorScheme),
               ],
             ),
@@ -478,7 +509,15 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProvid
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: sloganVm.isLoading ? null : _generateSlogans,
+        onPressed: sloganVm.isLoading
+            ? null
+            : () {
+                if (_usePromptRefiner) {
+                  _generateSlogansFromPrompt();
+                } else {
+                  _generateSlogans();
+                }
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor: colorScheme.primary,
           foregroundColor: Colors.white,
@@ -546,5 +585,250 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProvid
               ),
       ),
     );
+  }
+
+  Widget _buildPromptInput(ColorScheme colorScheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Décris ton besoin, ton audience et le ton souhaité',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _promptController,
+          maxLines: 5,
+          decoration: InputDecoration(
+            hintText: 'Ex: Je veux des slogans pour une application de productivité destinée aux freelances, ton motivant et professionnel.',
+            hintStyle: TextStyle(
+              color: colorScheme.onSurfaceVariant.withOpacity(0.6),
+              fontSize: 13,
+            ),
+            filled: true,
+            fillColor: colorScheme.surfaceContainerHighest,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: colorScheme.outlineVariant.withOpacity(0.5),
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            contentPadding: const EdgeInsets.all(16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRefineButton(ColorScheme colorScheme) {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: OutlinedButton(
+        onPressed: _isRefiningPrompt ? null : _onRefinePromptPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colorScheme.primary,
+          side: BorderSide(color: colorScheme.primary),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: _isRefiningPrompt
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                ),
+              )
+            : Text(
+                'Raffiner le prompt',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildRefinedPromptPreview(ColorScheme colorScheme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withOpacity(0.6),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Prompt raffiné',
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _refinedPrompt ?? '',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: colorScheme.onSurface,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onRefinePromptPressed() async {
+    final raw = _promptController.text.trim();
+    if (raw.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text('Veuillez saisir un prompt à raffiner')),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isRefiningPrompt = true;
+    });
+
+    try {
+      final result = await SloganService.refinePrompt(prompt: raw);
+      if (!mounted) return;
+      setState(() {
+        _refinedPrompt = result;
+        _promptController.text = result;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text(e.toString())),
+            ],
+          ),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isRefiningPrompt = false;
+      });
+    }
+  }
+
+  void _generateSlogansFromPrompt() async {
+    final sloganVm = context.read<SloganViewModel>();
+    final prompt = (_refinedPrompt ?? _promptController.text).trim();
+
+    if (prompt.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(child: Text('Veuillez saisir ou raffiner un prompt avant de générer')),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+      return;
+    }
+
+    await sloganVm.generateSlogansFromCopywritingForm(
+      objectifCommunication: prompt,
+      adjectifPersonnalite: '',
+      promessePrincipale: prompt,
+      usageQuotidien: '',
+      obstacleResolu: '',
+      resultatConcret: '',
+      niveauGamme: _niveauGamme,
+      faiblesseCorrigee: '',
+      traitDistinctif: '',
+      angle: _angle,
+      pilierCommunication: _pilier,
+      niveauLangue: _niveauLangue,
+    );
+
+    if (sloganVm.error != null) {
+      if (!mounted) return;
+      if (sloganVm.error!.contains('Authentification requise')) {
+        final authVm = context.read<AuthViewModel>();
+        final isLoggedIn = authVm.isLoggedIn;
+        if (!isLoggedIn) {
+          if (mounted) {
+            context.go('/login');
+            return;
+          }
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                SizedBox(width: 12),
+                Expanded(child: Text(sloganVm.error!)),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+      return;
+    }
+
+    if (mounted && sloganVm.slogans.isNotEmpty) {
+      context.push('/slogans-results');
+    }
   }
 }
