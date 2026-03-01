@@ -8,11 +8,15 @@ class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // Pour Android Emulator, on utilise 10.0.2.2 au lieu de localhost
-    defaultValue: 'http://localhost:3000',
+    defaultValue: 'http://10.0.2.2:3000',
   );
 
   static String get authBase => '$baseUrl/auth';
   static String get usersBase => '$baseUrl/users';
+  static String get trendsBase => '$baseUrl/trends';
+  static String getTrendsUrl({String? geo}) =>
+      geo != null ? '$trendsBase?geo=$geo' : trendsBase;
+
 
   // Video Generator Endpoints
   static String get videoGeneratorBase => '$baseUrl/video-generator';
