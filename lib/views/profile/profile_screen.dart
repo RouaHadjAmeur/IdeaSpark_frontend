@@ -7,6 +7,7 @@ import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/profile_view_model.dart';
 import 'package:ideaspark/view_models/theme_view_model.dart';
 import 'package:ideaspark/view_models/locale_view_model.dart';
+import 'package:ideaspark/view_models/settings_view_model.dart';
 import 'package:ideaspark/models/persona_model.dart';
 
 void _showDeleteAccountFlow(BuildContext context, ProfileViewModel vm) {
@@ -455,6 +456,28 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       onTap: () => _showLanguageSheet(context, colorScheme),
+                    ),
+                    Consumer<SettingsViewModel>(
+                      builder: (context, settingsVm, _) => _SettingRow(
+                        label: context.tr('voice_input'),
+                        colorScheme: colorScheme,
+                        trailing: Switch(
+                          value: settingsVm.voiceInputEnabled,
+                          onChanged: settingsVm.setVoiceInputEnabled,
+                          activeTrackColor: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    Consumer<SettingsViewModel>(
+                      builder: (context, settingsVm, _) => _SettingRow(
+                        label: 'Voice Mode',
+                        colorScheme: colorScheme,
+                        trailing: Switch(
+                          value: settingsVm.voiceModeEnabled,
+                          onChanged: settingsVm.setVoiceModeEnabled,
+                          activeTrackColor: colorScheme.primary,
+                        ),
+                      ),
                     ),
                   ],
                 ),

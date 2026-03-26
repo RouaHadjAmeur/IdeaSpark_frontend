@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/app_theme.dart';
-import 'core/app_router.dart';
+import 'core/navigation_service.dart';
 import 'view_models/auth_view_model.dart';
 import 'view_models/home_view_model.dart';
 import 'view_models/theme_view_model.dart';
 import 'view_models/locale_view_model.dart';
+import 'view_models/settings_view_model.dart';
 import 'services/video_generator_service.dart';
 import 'view_models/video_idea_generator_view_model.dart';
 import 'view_models/slogan_view_model.dart';
 import 'view_models/brand_view_model.dart';
 import 'view_models/plan_view_model.dart';
 import 'view_models/product_idea_view_model.dart';
+import 'voice/global_voice_controller.dart';
+import 'ui/widgets/global_voice_overlay.dart';
 
 
 Future<void> main() async {
@@ -34,8 +36,6 @@ class IdeaSparkApp extends StatefulWidget {
 }
 
 class _IdeaSparkAppState extends State<IdeaSparkApp> {
-  late final GoRouter _router = createAppRouter();
-
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -44,6 +44,7 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
         ChangeNotifierProvider(create: (_) => LocaleViewModel()),
         ChangeNotifierProvider(create: (_) => AuthViewModel()),
         ChangeNotifierProvider(create: (_) => HomeViewModel()),
+        ChangeNotifierProvider(create: (_) => SettingsViewModel()),
         ChangeNotifierProvider(create: (_) => SloganViewModel()),
         ChangeNotifierProvider(create: (_) => BrandViewModel()),
         ChangeNotifierProvider(create: (_) => PlanViewModel()),
@@ -55,6 +56,7 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
           ),
           update: (context, service, previous) => previous ?? VideoIdeaGeneratorViewModel(service: service),
         ),
+        ChangeNotifierProvider(create: (_) => GlobalVoiceController()),
       ],
       child: Consumer2<ThemeViewModel, LocaleViewModel>(
         builder: (context, themeVm, localeVm, _) {
@@ -65,14 +67,19 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
             darkTheme: AppTheme.darkTheme,
             themeMode: themeVm.themeMode,
             locale: localeVm.flutterLocale,
-            routerConfig: _router,
+            routerConfig: appRouter,
             builder: (context, child) {
               // Key forces the whole route subtree to rebuild when locale changes (dynamic language switch).
               return KeyedSubtree(
                 key: ValueKey(localeVm.locale),
                 child: DefaultTextStyle.merge(
                   style: const TextStyle(decoration: TextDecoration.none),
-                  child: child ?? const SizedBox.shrink(),
+                  child: Stack(
+                    children: [
+                      if (child != null) child,
+                      const GlobalVoiceOverlay(),
+                    ],
+                  ),
                 ),
               );
             },

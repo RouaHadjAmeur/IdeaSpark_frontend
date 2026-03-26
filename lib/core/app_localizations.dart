@@ -507,6 +507,14 @@ class AppLocalizations {
 
     // Brand suggestions
     'brand_suggestions_all_added': 'Toutes les suggestions déjà ajoutées !',
+
+    // Speech-to-Text
+    'voice_input': 'Entrée vocale (STT)',
+    'voice_input_subtitle': 'Dicter du texte via le micro',
+    'stt_not_available': 'Reconnaissance vocale indisponible sur cet appareil',
+    'stt_permission_denied': 'Activez le micro dans les Réglages système',
+    'stt_listening': 'Écoute en cours…',
+    'stt_error': 'Erreur de reconnaissance vocale',
   };
 
   static const Map<String, String> _en = {
@@ -994,6 +1002,14 @@ class AppLocalizations {
 
     // Brand suggestions
     'brand_suggestions_all_added': 'All suggestions already added!',
+
+    // Speech-to-Text
+    'voice_input': 'Voice input (STT)',
+    'voice_input_subtitle': 'Dictate text via microphone',
+    'stt_not_available': 'Speech recognition not available on this device',
+    'stt_permission_denied': 'Enable microphone in system Settings',
+    'stt_listening': 'Listening…',
+    'stt_error': 'Speech recognition error',
   };
 
   /// Option values displayed in criteria/filters (value from VM -> translated).

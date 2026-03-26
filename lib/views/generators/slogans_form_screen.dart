@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:ideaspark/core/app_localizations.dart';
+import 'package:ideaspark/widgets/voice_mic_button.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
 import 'package:ideaspark/view_models/slogan_view_model.dart';
 import 'package:ideaspark/services/slogan_service.dart';
@@ -431,6 +431,14 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProvid
               ),
               filled: true,
               fillColor: colorScheme.surfaceContainerHighest,
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: VoiceMicButton(controller: controller),
+              ),
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: 36,
+                minHeight: 36,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,

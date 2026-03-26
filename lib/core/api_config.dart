@@ -87,18 +87,25 @@ class ApiConfig {
   static String get aiVideoIdeasBase    => '$baseUrl/ai/video-ideas';
   static String get generateAiVideoIdeaUrl => '$aiVideoIdeasBase/generate';
 
-  // AI Slogan Campaign
-  static String get generateCampaignSloganUrl => '$sloganGeneratorBase/campaign';
+  // Voice Command Endpoints
+  static String get voiceBase => '$baseUrl/api/voice';
+  static String get voiceParseUrl => '$voiceBase/parse';
+  static String get voiceConfirmUrl => '$voiceBase/confirm';
 
-  // Feature Flags for Video Generator
-  static const bool useRemoteGenerationByDefault = true; // Enable OpenAI backend
-  static const bool fallbackToLocalOnError = true; // Fallback to local if remote fails
-
-  /// OAuth 2.0 Web application client ID (same value your backend uses to verify the id_token).
-  /// Set via --dart-define=GOOGLE_WEB_CLIENT_ID=xxx or in code. Get it from Google Cloud Console →
-  /// APIs & Services → Credentials → "Web application" client, or from your backend .env (e.g. GOOGLE_CLIENT_ID).
+  // Google Sign-In Web Client ID (set via --dart-define=GOOGLE_WEB_CLIENT_ID=...)
   static const String googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
-    defaultValue: '791353475220-dsu9gbd30rn14b0dmt6943j2kpaugct5.apps.googleusercontent.com',
+    defaultValue: '',
+  );
+
+  // Video Generation Mode
+  static const bool useRemoteGenerationByDefault = bool.fromEnvironment(
+    'USE_REMOTE_GENERATION',
+    defaultValue: true,
+  );
+
+  static const bool fallbackToLocalOnError = bool.fromEnvironment(
+    'FALLBACK_TO_LOCAL',
+    defaultValue: true,
   );
 }
