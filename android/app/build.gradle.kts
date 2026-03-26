@@ -10,7 +10,7 @@ android {
     namespace = "com.example.ideaspark"
     compileSdk = flutter.compileSdkVersion
     // Pin to a stable NDK to avoid corrupted 28.2 downloads; use 26.x which installs reliably
-    ndkVersion = "26.1.10909125"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

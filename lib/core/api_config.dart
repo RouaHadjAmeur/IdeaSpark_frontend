@@ -14,6 +14,10 @@ class ApiConfig {
 
   static String get authBase => '$baseUrl/auth';
   static String get usersBase => '$baseUrl/users';
+  static String get trendsBase => '$baseUrl/trends';
+  static String getTrendsUrl({String? geo}) =>
+      geo != null ? '$trendsBase?geo=$geo' : trendsBase;
+
 
   // Video Generator Endpoints
   static String get videoGeneratorBase => '$baseUrl/video-generator';
