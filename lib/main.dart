@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'core/app_theme.dart';
 import 'core/app_router.dart';
 import 'view_models/auth_view_model.dart';
@@ -14,14 +16,25 @@ import 'view_models/slogan_view_model.dart';
 import 'view_models/brand_view_model.dart';
 import 'view_models/plan_view_model.dart';
 import 'view_models/product_idea_view_model.dart';
+import 'services/deep_link_service.dart';
+import 'services/notification_service.dart';
 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase only on mobile (not web)
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+    await NotificationService.initialize();
+  }
+  
   await Supabase.initialize(
     url: 'https://ddqinbuujcpfgkoezrzg.supabase.co',
     anonKey: 'sb_publishable_Cz8zt7Bt75h6vG3_9NylEQ_81xW5gZ2',
   );
+  // Initialize deep link service for OAuth callbacks
+  await DeepLinkService().init();
   runApp(const IdeaSparkApp());
 }
 
