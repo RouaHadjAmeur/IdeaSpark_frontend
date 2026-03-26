@@ -7,8 +7,9 @@ class ApiConfig {
 
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    // Pour Android Emulator, on utilise 10.0.2.2 au lieu de localhost
-    defaultValue: 'http://10.0.2.2:3000',
+    // Pour Web/iOS Simulator, on utilise localhost
+    // Pour Android Emulator, utiliser: flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
+    defaultValue: 'http://localhost:3000',
   );
 
   static String get authBase => '$baseUrl/auth';

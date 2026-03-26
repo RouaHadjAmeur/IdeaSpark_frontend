@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/app_localizations.dart';
 import '../../models/plan.dart';
 import '../../models/brand.dart';
@@ -304,12 +305,12 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             onPressed: vm.isSaving ? null : () => _activatePlan(vm),
           ),
 
-        // Add to Calendar (active)
+        // Open Google Calendar directly (active)
         if (isActive)
           _actionButton(
-            label: context.tr('detail_add_cal_btn'),
-            color: cs.primary,
-            onPressed: vm.isSaving ? null : () => _addToCalendar(vm),
+            label: '📅 Ouvrir Google Calendar',
+            color: const Color(0xFF1A73E8),
+            onPressed: _openGoogleCalendar,
           ),
 
         // Regenerate (has id + any status)
@@ -665,6 +666,20 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
 
   // ─── Action handlers ──────────────────────────────────────────────────────
 
+  Future<void> _openGoogleCalendar() async {
+    final uri = Uri.parse('https://calendar.google.com');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d\'ouvrir Google Calendar'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<void> _activatePlan(PlanViewModel vm) async {
     final activated = await vm.activatePlan(_plan.id!);
     if (activated != null && mounted) {
@@ -672,17 +687,6 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(context.tr('detail_plan_activated')),
-            behavior: SnackBarBehavior.floating),
-      );
-    }
-  }
-
-  Future<void> _addToCalendar(PlanViewModel vm) async {
-    await vm.addToCalendar(_plan.id!);
-    if (mounted && vm.error == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(context.tr('plans_added_cal')),
             behavior: SnackBarBehavior.floating),
       );
     }

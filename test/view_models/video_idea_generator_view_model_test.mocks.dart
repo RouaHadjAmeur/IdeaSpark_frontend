@@ -100,4 +100,43 @@ class MockVideoIdeaGeneratorService extends _i1.Mock
             ),
           )
           as _i4.Future<_i2.VideoIdea>);
+
+  @override
+  _i4.Future<List<_i2.VideoIdea>> getHistory() =>
+      (super.noSuchMethod(
+            Invocation.method(#getHistory, []),
+            returnValue: _i4.Future<List<_i2.VideoIdea>>.value(
+              <_i2.VideoIdea>[],
+            ),
+          )
+          as _i4.Future<List<_i2.VideoIdea>>);
+
+  @override
+  _i4.Future<List<_i2.VideoIdea>> getFavorites() =>
+      (super.noSuchMethod(
+            Invocation.method(#getFavorites, []),
+            returnValue: _i4.Future<List<_i2.VideoIdea>>.value(
+              <_i2.VideoIdea>[],
+            ),
+          )
+          as _i4.Future<List<_i2.VideoIdea>>);
+
+  @override
+  _i4.Future<_i2.VideoIdea> toggleFavorite(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#toggleFavorite, [id]),
+            returnValue: _i4.Future<_i2.VideoIdea>.value(
+              _FakeVideoIdea_0(this, Invocation.method(#toggleFavorite, [id])),
+            ),
+          )
+          as _i4.Future<_i2.VideoIdea>);
+
+  @override
+  _i4.Future<void> deleteIdea(String? id) =>
+      (super.noSuchMethod(
+            Invocation.method(#deleteIdea, [id]),
+            returnValue: _i4.Future<void>.value(),
+            returnValueForMissingStub: _i4.Future<void>.value(),
+          )
+          as _i4.Future<void>);
 }
