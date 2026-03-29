@@ -72,7 +72,7 @@ class AppLocalizations {
     'nav_profile': 'Profil',
 
     // Home generators (titles)
-    'gen_business': 'Business Ideas',
+    'gen_camera-coach': 'Camera Coach',
     'gen_video': 'Video Ideas',
     'gen_product': 'Product Ideas',
     'gen_slogans': 'Slogans & Names',
@@ -152,6 +152,10 @@ class AppLocalizations {
     'approve_error': 'Échec de l\'approbation.',
     'refine_limit_error': 'Nombre maximum de raffinements atteint (3)',
     'idea_not_found': 'Idée non trouvée',
+
+    // Camera Coach form
+    'new_camera_coach': 'Nouveau Camera Coach',
+    'generate_camera_coach': '📸 Ouvrir Camera Coach',
 
     // Business form
     'new_business_idea': 'Nouvelle Idée Business',
@@ -295,7 +299,7 @@ class AppLocalizations {
     'done_count': 'Terminées',
     'created_on': 'Créée le',
     'type_video': '🎬 Vidéos',
-    'type_business': '💼 Business',
+    'type_camera-coach': '📸 Camera Coach',
     'type_product': '🎁 Produits',
     'type_slogans': '✨ Slogans',
     'ideas_saved_count': '47 idées sauvegardées',
@@ -578,7 +582,7 @@ class AppLocalizations {
     'nav_history': 'History',
     'nav_profile': 'Profile',
 
-    'gen_business': 'Business Ideas',
+    'gen_camera-coach': 'Camera Coach',
     'gen_video': 'Video Ideas',
     'gen_product': 'Product Ideas',
     'gen_slogans': 'Slogans & Names',
@@ -658,17 +662,22 @@ class AppLocalizations {
     'refine_limit_error': 'Maximum refinements reached (3)',
     'idea_not_found': 'Idea not found',
 
+    // Camera Coach form
+    'new_camera_coach': 'New Camera Coach',
+    'generate_camera_coach': '📸 Open Camera Coach',
+
+    // Business form
     'new_business_idea': 'New Business Idea',
-    'sector': 'Business sector *',
+    'sector': 'Industry *',
     'sector_hint': 'E.g. E-commerce, Services, SaaS...',
     'startup_budget': 'Startup budget',
     'skills': 'Available skills',
     'skills_hint': 'E.g. Marketing, Development, Design...',
-    'time_available': 'Time available',
+    'time_available': 'Available time',
     'location': 'Location',
     'extra_prefs': 'Additional preferences',
     'recurring_model': 'Recurring model (subscriptions)',
-    'scalable': 'Quickly scalable',
+    'scalable': 'Scalable quickly',
     'low_competition': 'Low competition',
     'generate_business': '💼 Generate Business Ideas',
     'budget_small': 'Small (<5K€)',
@@ -791,7 +800,7 @@ class AppLocalizations {
     'done_count': 'Done',
     'created_on': 'Created on',
     'type_video': '🎬 Videos',
-    'type_business': '💼 Business',
+    'type_camera-coach': '📸 Camera Coach',
     'type_product': '🎁 Products',
     'type_slogans': '✨ Slogans',
     'ideas_saved_count': '47 saved ideas',

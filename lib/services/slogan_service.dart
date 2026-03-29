@@ -4,32 +4,39 @@ import '../core/api_config.dart';
 import 'auth_service.dart';
 import '../core/mock_slogan_data.dart';
 import '../models/slogan_model.dart';
+import '../models/prompt_refiner_model.dart';
 
 class SloganService {
   SloganService._();
 
-  static Future<String> refinePrompt({
+  static Future<PromptRefinerResult> refinePrompt({
     required String prompt,
   }) async {
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final authToken = authService.accessToken;
+
     final url = Uri.parse(ApiConfig.refinePromptUrl);
+    print('🚀 refinePrompt URL: $url');
+    print('🔑 Token: ${authToken != null ? "Présent" : "Absent"}');
 
     final response = await http.post(
       url,
       headers: {
         'Content-Type': 'application/json',
+        if (authToken != null) 'Authorization': 'Bearer $authToken',
       },
       body: jsonEncode({
         'prompt': prompt,
       }),
     );
 
+    print('📡 Réponse refinePrompt: ${response.statusCode}');
+    print('📄 Body: ${response.body}');
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
-      final result = data['result'];
-      if (result is String && result.isNotEmpty) {
-        return result;
-      }
-      throw Exception('Réponse invalide du prompt refiner');
+      return PromptRefinerResult.fromJson(data);
     } else {
       throw Exception('Échec du raffinement: ${response.statusCode} - ${response.body}');
     }

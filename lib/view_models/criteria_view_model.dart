@@ -68,7 +68,7 @@ class CriteriaViewModel extends ChangeNotifier {
   void setTypeFromId(String? typeId) {
     if (typeId == null) return;
     final type = switch (typeId) {
-      'business' => 'Business Ideas',
+      'camera-coach' => 'Camera Coach',
       'video' => 'Video Ideas',
       'product' => 'Product Ideas',
       'slogans' => 'Slogans & Names',

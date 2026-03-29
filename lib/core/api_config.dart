@@ -8,7 +8,7 @@ class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // Pour Android Emulator, on utilise 10.0.2.2 au lieu de localhost
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'http://192.168.1.11:3000',
   );
 
   static String get authBase => '$baseUrl/auth';
@@ -38,12 +38,12 @@ class ApiConfig {
   static String get toggleSloganFavoriteUrl => '$sloganGeneratorBase/slogans/toggle-favorite'; // Needs /id
   static String get deleteSloganUrl => '$sloganGeneratorBase/slogans'; // Needs /id
 
-  // Product Generator (IA Scratch) Endpoints
-  static String get iaScratchBase => '$baseUrl/ia-scratch';
-  static String get generateProductIdeaUrl => '$iaScratchBase/generate';
+  // Product Generator (IA Finetuning) Endpoints
+  static String get iaFinetuningBase => '$baseUrl/ia-finetuning';
+  static String get generateProductIdeaUrl => '$iaFinetuningBase/generate';
 
-  // Prompt Refiner Endpoints
-  static String get promptRefinerBase => '$baseUrl/prompt-refiner';
+  // Prompt Refiner (IA Finetuning) Endpoints
+  static String get promptRefinerBase => '$baseUrl/ia-finetuning';
   static String get refinePromptUrl => '$promptRefinerBase/refine';
 
   // Brands Endpoints
