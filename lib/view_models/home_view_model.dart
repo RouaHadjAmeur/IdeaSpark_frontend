@@ -15,11 +15,10 @@ class GeneratorItem {
 /// ViewModel for Home screen.
 class HomeViewModel extends ChangeNotifier {
   static final List<GeneratorItem> generators = const [
-    GeneratorItem(icon: '💼', title: 'Business Ideas', typeId: 'business'),
+    GeneratorItem(icon: '📸', title: 'Camera Coach', typeId: 'camera-coach'),
     GeneratorItem(icon: '🎥', title: 'Video Ideas', typeId: 'video'),
     GeneratorItem(icon: '🛍️', title: 'Product Ideas', typeId: 'product'),
     GeneratorItem(icon: '✨', title: 'Slogans & Names', typeId: 'slogans'),
-
   ];
 
   static final List<String> trending = const [

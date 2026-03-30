@@ -32,6 +32,7 @@ import 'package:ideaspark/views/library/saved_ideas_library_screen.dart';
 import 'package:ideaspark/views/trends/trends_analysis_screen.dart';
 import 'package:ideaspark/views/profile/edit_profile_screen.dart';
 import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
+import 'package:ideaspark/modules/camera_coach/camera_coach_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/dashboard_v2_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brands_list_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brand_workspace_screen.dart';
@@ -337,6 +338,11 @@ GoRouter createAppRouter() {
             ),
           ),
         ),
+      ),
+      GoRoute(
+        path: '/camera-coach',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CameraCoachScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

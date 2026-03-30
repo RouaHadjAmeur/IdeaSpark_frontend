@@ -76,9 +76,9 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to select a profile picture.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>We need access to your camera to take a profile picture.</string>
+	<string>IdeaSpark needs access to your camera for the Camera Coach feature.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>IdeaSpark needs microphone access for voice input.</string>
+	<string>IdeaSpark needs access to your microphone for the Camera Coach feature and voice commands.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>IdeaSpark uses speech recognition to convert your voice to text.</string>
 </dict>

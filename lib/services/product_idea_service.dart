@@ -29,6 +29,10 @@ class ProductIdeaService {
       body['max_tokens'] = maxTokens;
     }
 
+    print('🚀 generateProductIdea URL: $url');
+    print('🔑 Token: ${authToken != null ? "Présent" : "Absent"}');
+    print('📝 Body: ${jsonEncode(body)}');
+
     final response = await http.post(
       url,
       headers: {
@@ -37,6 +41,9 @@ class ProductIdeaService {
       },
       body: jsonEncode(body),
     );
+
+    print('📡 Réponse generateProductIdea: ${response.statusCode}');
+    print('📄 Body: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final Map<String, dynamic> data =

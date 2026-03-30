@@ -346,10 +346,10 @@ class _DashboardContentState extends State<DashboardContent> {
 
   String _formRouteForType(String typeId) {
     switch (typeId) {
+      case 'camera-coach':
+        return '/camera-coach';
       case 'video':
         return '/video-ideas-form';
-      case 'business':
-        return '/business-ideas-form';
       case 'product':
         return '/product-ideas-form';
       case 'slogans':

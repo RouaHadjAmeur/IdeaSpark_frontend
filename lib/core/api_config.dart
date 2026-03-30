@@ -97,6 +97,35 @@ class ApiConfig {
   static String get voiceParseUrl => '$voiceBase/parse';
   static String get voiceConfirmUrl => '$voiceBase/confirm';
 
+  // Collaboration Endpoints
+  static String get collaborationBase => '$baseUrl/collaboration';
+  static String get inviteUrl => '$collaborationBase/invite';
+  static String acceptInviteUrl(String id) => '$collaborationBase/invitations/$id/accept';
+  static String declineInviteUrl(String id) => '$collaborationBase/invitations/$id/decline';
+  static String listCollaboratorsUrl(String planId) => '$collaborationBase/plans/$planId/collaborators';
+  static String removeCollaboratorUrl(String planId, String userId) => '$collaborationBase/plans/$planId/collaborators/$userId';
+  static String getActivityLogUrl(String planId) => '$collaborationBase/plans/$planId/activity';
+  static String get notificationsUrl => '$collaborationBase/notifications';
+  static String markNotificationReadUrl(String id) => '$collaborationBase/notifications/$id/read';
+  static String sharedPlansUrl(String targetId) => '$collaborationBase/shared/$targetId';
+
+  // Social & Community
+  static String get socialBase => '$baseUrl/social';
+  static const String socialFeed = '$baseUrl/social/feed';
+  static const String socialSuggestions = '$baseUrl/social/suggestions';
+  static const String socialAccept = '$baseUrl/social/accept'; // /id at end
+  static const String socialPendingRequests = '$baseUrl/social/pending-requests';
+  static const String publicProfile = '$baseUrl/users/public-profile'; // /id at end
+  static String get socialFollowingUrl => '$socialBase/following';
+  static String get socialFollowersUrl => '$socialBase/followers';
+  static String followUrl(String id) => '$socialBase/follow/$id';
+  static String unfollowUrl(String id) => '$socialBase/unfollow/$id';
+  static String get socialFriendsUrl => '$socialBase/friends';
+  static String socialFriendsByIdUrl(String id) => '$socialBase/friends/$id';
+
+  // User Search
+  static String searchUsersUrl(String query) => '$usersBase/search?q=$query';
+
   // Google Sign-In Web Client ID (set via --dart-define=GOOGLE_WEB_CLIENT_ID=...)
   static const String googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',

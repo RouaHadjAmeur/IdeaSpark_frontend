@@ -737,11 +737,11 @@ class _SlogansFormScreenState extends State<SlogansFormScreen> with TickerProvid
     });
 
     try {
-      final result = await SloganService.refinePrompt(prompt: raw);
+      final promptRefinerResult = await SloganService.refinePrompt(prompt: raw);
       if (!mounted) return;
       setState(() {
-        _refinedPrompt = result;
-        _promptController.text = result;
+        _refinedPrompt = promptRefinerResult.result;
+        _promptController.text = promptRefinerResult.result;
       });
     } catch (e) {
       if (!mounted) return;
