@@ -184,6 +184,7 @@ class Plan {
   final List<String> productIds;
   final Map<String, dynamic> contentMixPreference;
   final PlanStatus status;
+  final String userId;
   final List<Phase> phases;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -207,6 +208,7 @@ class Plan {
       'authority': 25,
     },
     this.status = PlanStatus.draft,
+    required this.userId,
     this.phases = const [],
     this.createdAt,
     this.updatedAt,
@@ -236,6 +238,7 @@ class Plan {
       productIds: List<String>.from(json['productIds'] ?? []),
       contentMixPreference: Map<String, dynamic>.from(json['contentMixPreference'] ?? {}),
       status: enumOrNull(PlanStatus.values, json['status']) ?? PlanStatus.draft,
+      userId: json['userId'] as String? ?? '',
       phases: (json['phases'] as List<dynamic>?)
               ?.map((p) => Phase.fromJson(p as Map<String, dynamic>))
               .toList() ??

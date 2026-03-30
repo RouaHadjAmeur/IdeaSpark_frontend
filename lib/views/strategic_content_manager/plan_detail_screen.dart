@@ -7,6 +7,10 @@ import '../../models/brand.dart';
 import '../../services/plan_service.dart';
 import '../../view_models/plan_view_model.dart';
 import '../../view_models/brand_view_model.dart';
+import '../../services/auth_service.dart';
+import '../../view_models/collaboration_view_model.dart';
+import '../collaboration/collaborators_modal.dart';
+import '../collaboration/project_activity_board.dart';
 
 class PlanDetailScreen extends StatefulWidget {
   final Plan plan;
@@ -170,6 +174,39 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
                     size: 17, color: cs.onSurfaceVariant),
               ),
             ),
+            const SizedBox(width: 8),
+            // Activity Log Button
+            GestureDetector(
+              onTap: () => _showActivityLog(),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  border: Border.all(color: cs.outlineVariant),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.history_rounded,
+                    size: 18, color: cs.onSurfaceVariant),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Manage Collaborators (if owner)
+            if (_plan.userId == AuthService().currentUser?.id)
+              GestureDetector(
+                onTap: () => _showCollaboratorsModal(),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: cs.primary.withOpacity(0.1),
+                    border: Border.all(color: cs.primary.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.people_outline_rounded,
+                      size: 18, color: cs.primary),
+                ),
+              ),
           ],
         ),
       );
@@ -867,5 +904,39 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
+  }
+
+  void _showCollaboratorsModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, controller) => CollaboratorsModal(planId: _plan.id!),
+      ),
+    );
+  }
+
+  void _showActivityLog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, controller) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: ProjectActivityBoard(planId: _plan.id!),
+        ),
+      ),
+    );
   }
 }

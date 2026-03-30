@@ -26,42 +26,51 @@ class BottomNavV2 extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _NavItem(
-                icon: Icons.home_rounded,
-                label: context.tr('nav_dashboard'),
-                isSelected: currentIndex == 0,
-                onTap: () => onTap(0),
-                colorScheme: colorScheme,
+              Expanded(
+                child: _NavItem(
+                  icon: Icons.home_rounded,
+                  label: context.tr('nav_dashboard'),
+                  isSelected: currentIndex == 0,
+                  onTap: () => onTap(0),
+                  colorScheme: colorScheme,
+                ),
               ),
-              _NavItem(
-                icon: Icons.label_important_outline_rounded,
-                label: context.tr('nav_brands'),
-                isSelected: currentIndex == 1,
-                onTap: () => onTap(1),
-                colorScheme: colorScheme,
+              Expanded(
+                child: _NavItem(
+                  icon: Icons.label_important_outline_rounded,
+                  label: context.tr('nav_brands'),
+                  isSelected: currentIndex == 1,
+                  onTap: () => onTap(1),
+                  colorScheme: colorScheme,
+                ),
               ),
-              _NavItem(
-                icon: Icons.calendar_month_rounded,
-                label: context.tr('nav_calendar'),
-                isSelected: currentIndex == 2,
-                onTap: () => onTap(2),
-                colorScheme: colorScheme,
+              Expanded(
+                child: _NavItem(
+                  icon: Icons.calendar_month_rounded,
+                  label: context.tr('nav_calendar'),
+                  isSelected: currentIndex == 2,
+                  onTap: () => onTap(2),
+                  colorScheme: colorScheme,
+                ),
               ),
-              _NavItem(
-                icon: Icons.rocket_launch_rounded,
-                label: context.tr('nav_projects'),
-                isSelected: currentIndex == 3,
-                onTap: () => onTap(3),
-                colorScheme: colorScheme,
+              Expanded(
+                child: _NavItem(
+                  icon: Icons.rocket_launch_rounded,
+                  label: context.tr('nav_projects'),
+                  isSelected: currentIndex == 3,
+                  onTap: () => onTap(3),
+                  colorScheme: colorScheme,
+                ),
               ),
-              _NavItem(
-                icon: Icons.insights_rounded,
-                label: context.tr('nav_insights'),
-                isSelected: currentIndex == 4,
-                onTap: () => onTap(4),
-                colorScheme: colorScheme,
+              Expanded(
+                child: _NavItem(
+                  icon: Icons.insights_rounded,
+                  label: context.tr('nav_insights'),
+                  isSelected: currentIndex == 4,
+                  onTap: () => onTap(4),
+                  colorScheme: colorScheme,
+                ),
               ),
             ],
           ),

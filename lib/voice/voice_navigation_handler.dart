@@ -18,21 +18,52 @@ class VoiceNavigationHandler {
   /// Maps backend canonical destination names → GoRouter paths.
   /// Kept as a plain const map so it is easy to audit and extend.
   static const Map<String, _NavTarget> _routeMap = {
+    // ── Auth & Onboarding ───────────────────────────────────────────────────
+    'SPLASH': _NavTarget('/splash', replace: true),
+    'ONBOARDING': _NavTarget('/onboarding', replace: true),
+    'PERSONA': _NavTarget('/persona-onboarding', replace: false),
+    'LOGIN': _NavTarget('/login', replace: true),
+    'SIGNUP': _NavTarget('/signup', replace: true),
+    'FORGOT_PASSWORD': _NavTarget('/forgot-password', replace: false),
+    'VERIFY_EMAIL': _NavTarget('/verify-email', replace: false),
+
     // ── Main shell branches (bottom-nav / sidebar) ──────────────────────────
     'HOME': _NavTarget('/home', replace: true),
     'BRANDS': _NavTarget('/brands-list', replace: true),
-    'PLANS': _NavTarget('/projects-flow', replace: false),
+    'CALENDAR': _NavTarget('/calendar', replace: true),
+    'PROJECTS': _NavTarget('/projects', replace: true),
+    'INSIGHTS': _NavTarget('/insights', replace: true),
     'FAVORITES': _NavTarget('/favorites', replace: true),
+    'HISTORY': _NavTarget('/history', replace: true),
     'PROFILE': _NavTarget('/profile', replace: true),
 
     // ── Generator screens ────────────────────────────────────────────────────
     'GENERATOR': _NavTarget('/criteria', replace: false),
+    'RESULTS': _NavTarget('/results', replace: false),
+    'IDEA_DETAIL': _NavTarget('/idea/new', replace: false), // Fallback, normally needs :id argument
     'VIDEO_GENERATOR': _NavTarget('/video-ideas-form', replace: false),
+    'VIDEO_IDEAS_RESULTS': _NavTarget('/video-ideas-results', replace: false),
+    'BUSINESS_IDEAS_FORM': _NavTarget('/business-ideas-form', replace: false),
+    'BUSINESS_IDEA_DETAIL': _NavTarget('/business-idea-detail', replace: false),
+    'PRODUCT_IDEAS_FORM': _NavTarget('/product-ideas-form', replace: false),
+    'PRODUCT_IDEA_RESULT': _NavTarget('/product-idea-result', replace: false),
     'SLOGAN_GENERATOR': _NavTarget('/slogans-form', replace: false),
+    'SLOGANS_RESULTS': _NavTarget('/slogans-results', replace: false),
+
+    // ── Strategic Content / Brands ──────────────────────────────────────────
+    'BRAND_WORKSPACE': _NavTarget('/brand-workspace', replace: false),
+    'BRAND_FORM': _NavTarget('/brand-form', replace: false),
+    'PROJECT_BOARD': _NavTarget('/project-board', replace: false),
+    'PLANS': _NavTarget('/projects-flow', replace: false),
+    'AI_CAMPAIGN_ROADMAP': _NavTarget('/ai-campaign-roadmap', replace: false),
+    'PLAN_DETAIL': _NavTarget('/plan-detail', replace: false),
 
     // ── Feature screens ──────────────────────────────────────────────────────
     'CONTENT_BLOCKS': _NavTarget('/saved-ideas', replace: false),
-    'PERSONA': _NavTarget('/persona-onboarding', replace: false),
+    'TRENDS': _NavTarget('/trends', replace: false),
+    'CREDITS_SHOP': _NavTarget('/credits-shop', replace: false),
+    'PAYMENT': _NavTarget('/payment', replace: false),
+    'EDIT_PROFILE': _NavTarget('/edit-profile', replace: false),
     'SETTINGS': _NavTarget('/profile', replace: true), // settings live inside profile for now
   };
 
@@ -57,6 +88,10 @@ class VoiceNavigationHandler {
 
   /// Returns true when [destination] is a known, navigable route.
   static bool isKnown(String destination) => _routeMap.containsKey(destination);
+
+  /// Exposes the global router so [CommandExecutor.noContext] can call pop()
+  /// without a [BuildContext].
+  static dynamic get routerForBack => appRouter;
 }
 
 /// Internal config for a single navigation target.

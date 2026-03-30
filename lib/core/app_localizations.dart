@@ -70,6 +70,7 @@ class AppLocalizations {
     'nav_favorites': 'Favoris',
     'nav_history': 'Historique',
     'nav_profile': 'Profil',
+    'nav_community': 'Communauté',
 
     // Home generators (titles)
     'gen_camera-coach': 'Camera Coach',
@@ -519,6 +520,12 @@ class AppLocalizations {
     'stt_permission_denied': 'Activez le micro dans les Réglages système',
     'stt_listening': 'Écoute en cours…',
     'stt_error': 'Erreur de reconnaissance vocale',
+
+    // Profile Incomplete
+    'profile_incomplete_title': 'Complétez votre profil !',
+    'profile_incomplete_msg': 'Remplissez votre nom d\'utilisateur, rôle et compétences pour permettre aux autres de vous trouver et collaborer sur des projets.',
+    'later': 'Plus tard',
+    'complete_now': 'Compléter maintenant',
   };
 
   static const Map<String, String> _en = {
@@ -581,6 +588,7 @@ class AppLocalizations {
     'nav_favorites': 'Favorites',
     'nav_history': 'History',
     'nav_profile': 'Profile',
+    'nav_community': 'Community',
 
     'gen_camera-coach': 'Camera Coach',
     'gen_video': 'Video Ideas',
@@ -1019,6 +1027,12 @@ class AppLocalizations {
     'stt_permission_denied': 'Enable microphone in system Settings',
     'stt_listening': 'Listening…',
     'stt_error': 'Speech recognition error',
+
+    // Profile Incomplete
+    'profile_incomplete_title': 'Complete your profile!',
+    'profile_incomplete_msg': 'Fill in your username, role, and skills to let others find you and collaborate on projects.',
+    'later': 'Later',
+    'complete_now': 'Complete now',
   };
 
   /// Option values displayed in criteria/filters (value from VM -> translated).

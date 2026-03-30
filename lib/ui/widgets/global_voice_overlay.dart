@@ -2,15 +2,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../voice/global_voice_controller.dart';
+import '../../voice/hands_free_mode_controller.dart';
 import '../../view_models/settings_view_model.dart';
 
-/// Step 7: Refined GlobalVoiceOverlay for IdeaSpark.
+/// Floating voice overlay shown on every screen.
 ///
-/// Features:
-/// - Floating mic overlay on all screens.
-/// - Pulse/Glow animation while listening.
-/// - Integrated Loading indicator during processing.
-/// - Response bubble with 3-second auto-hide.
+/// When hands-free mode is enabled:
+///   - A compact status badge above the mic button shows the current state.
+///   - The user does NOT need to tap the button; the badge is informational only.
+///
+/// When hands-free mode is disabled:
+///   - The badge is hidden.
+///   - The mic button works as normal (tap-to-listen).
 class GlobalVoiceOverlay extends StatefulWidget {
   const GlobalVoiceOverlay({super.key});
 
@@ -36,10 +39,8 @@ class _GlobalVoiceOverlayState extends State<GlobalVoiceOverlay> {
         _lastDisplayedResponse = response;
       });
       _bubbleTimer?.cancel();
-      _bubbleTimer = Timer(const Duration(seconds: 3), () {
-        if (mounted) {
-          setState(() => _showBubble = false);
-        }
+      _bubbleTimer = Timer(const Duration(seconds: 4), () {
+        if (mounted) setState(() => _showBubble = false);
       });
     }
   }
@@ -47,12 +48,21 @@ class _GlobalVoiceOverlayState extends State<GlobalVoiceOverlay> {
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsViewModel>();
-    if (!settings.voiceModeEnabled) return const SizedBox.shrink();
-
     final controller = context.watch<GlobalVoiceController>();
-    
-    // Trigger bubble logic if response text changes
+    final hfController = context.watch<HandsFreeModeController>();
+
+    // The overlay should be visible if either the manual mic mode is enabled, 
+    // OR the hands-free mode is active, OR we are in the middle of onboarding.
+    if (!settings.voiceModeEnabled && !hfController.isHandsFreeEnabled && !hfController.isOnboarding) {
+      return const SizedBox.shrink();
+    }
+
+    // Show mic-button bubble from the regular voice controller
     _handleResponseChange(controller.lastResponseText);
+    // Also show confirmations spoken by hands-free controller
+    if (hfController.lastActionText != null) {
+      _handleResponseChange(hfController.lastActionText);
+    }
 
     return Positioned(
       bottom: 24,
@@ -63,17 +73,41 @@ class _GlobalVoiceOverlayState extends State<GlobalVoiceOverlay> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // ── Response Bubble ──
+            // ── Response bubble ──
             AnimatedOpacity(
               opacity: _showBubble ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
-              child: _ResponseBubble(text: controller.lastResponseText),
+              child: _ResponseBubble(text: _lastDisplayedResponse),
             ),
-            
-            const SizedBox(height: 8),
+            // ── User speech preview bubble ──
+            if ((controller.isListening && controller.lastHeardText != null && controller.lastHeardText!.isNotEmpty) ||
+                (hfController.isOnboarding && hfController.lastHeardText != null && hfController.lastHeardText!.isNotEmpty) ||
+                (hfController.isCommandListening && hfController.lastHeardText != null && hfController.lastHeardText!.isNotEmpty))
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                constraints: const BoxConstraints(maxWidth: 200),
+                child: Text(
+                  (hfController.isOnboarding || hfController.isCommandListening) ? hfController.lastHeardText! : controller.lastHeardText!,
+                  style: const TextStyle(color: Colors.white, fontSize: 13),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
 
-            // ── Listening Indicator ──
-            if (controller.isListening)
+            // ── Hands-free status badge ──
+            if (hfController.isHandsFreeEnabled || hfController.isOnboarding)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: _HandsFreeBadge(controller: hfController),
+              ),
+
+            // ── Listening label (normal mode) ──
+            if (controller.isListening && !hfController.isHandsFreeEnabled)
               const Padding(
                 padding: EdgeInsets.only(bottom: 8, right: 8),
                 child: Text(
@@ -86,14 +120,19 @@ class _GlobalVoiceOverlayState extends State<GlobalVoiceOverlay> {
                 ),
               ),
 
-            // ── Mic Button ──
+            // ── Mic button ──
             GestureDetector(
-              onTap: controller.isProcessing 
-                  ? null 
+              onTap: (controller.isProcessing || hfController.isHandsFreeEnabled || hfController.isOnboarding)
+                  ? null // Hands-free mode: button inactive
                   : () => controller.toggleListening(context),
               child: _PulseMicButton(
-                isListening: controller.isListening,
+                isListening: controller.isListening ||
+                    hfController.isWakeListening ||
+                    hfController.isCommandListening ||
+                    hfController.isOnboarding,
                 isProcessing: controller.isProcessing,
+                isHandsFreeMode: hfController.isHandsFreeEnabled || hfController.isOnboarding,
+                isOnboarding: hfController.isOnboarding,
               ),
             ),
           ],
@@ -102,6 +141,66 @@ class _GlobalVoiceOverlayState extends State<GlobalVoiceOverlay> {
     );
   }
 }
+
+// ── Hands-free status badge ────────────────────────────────────────────────
+
+class _HandsFreeBadge extends StatelessWidget {
+  final HandsFreeModeController controller;
+  const _HandsFreeBadge({required this.controller});
+
+  String get _label {
+    if (controller.isOnboarding) return '👋 Setup Hands-Free?';
+    if (controller.isSpeaking) return '🔊 Speaking';
+    if (controller.isCommandListening) return '🎙 Listening…';
+    if (controller.isWakeListening) return '👂 Waiting for "listen"';
+    if (controller.isHandsFreeEnabled) return '✅ Hands-free on';
+    return '';
+  }
+
+  Color _color(BuildContext context) {
+    if (controller.isOnboarding) return Colors.purple.shade700;
+    if (controller.isCommandListening) return Colors.red.shade600;
+    if (controller.isWakeListening) return Colors.orange.shade700;
+    if (controller.isSpeaking) return Colors.blue.shade700;
+    return Colors.green.shade700;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _label;
+    if (label.isEmpty) return const SizedBox.shrink();
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 250),
+      child: Container(
+        key: ValueKey(label),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: _color(context).withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Response bubble ────────────────────────────────────────────────────────
 
 class _ResponseBubble extends StatelessWidget {
   final String? text;
@@ -136,13 +235,19 @@ class _ResponseBubble extends StatelessWidget {
   }
 }
 
+// ── Pulsing mic button ─────────────────────────────────────────────────────
+
 class _PulseMicButton extends StatefulWidget {
   final bool isListening;
   final bool isProcessing;
+  final bool isHandsFreeMode;
+  final bool isOnboarding;
 
   const _PulseMicButton({
     required this.isListening,
     required this.isProcessing,
+    required this.isHandsFreeMode,
+    this.isOnboarding = false,
   });
 
   @override
@@ -164,7 +269,6 @@ class _PulseMicButtonState extends State<_PulseMicButton>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
-
     if (widget.isListening) _pulseController.repeat(reverse: true);
   }
 
@@ -187,10 +291,14 @@ class _PulseMicButtonState extends State<_PulseMicButton>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    // Spec colors: Blue for Idle, Red for Listening
-    final Color baseColor = widget.isListening ? Colors.red : Colors.blue;
+    // Hands-free active → purple; listening → red; idle → blue
+    final Color baseColor = widget.isOnboarding
+        ? Colors.purple
+        : widget.isHandsFreeMode
+            ? Colors.deepPurple
+            : widget.isListening
+                ? Colors.red
+                : Colors.blue;
 
     return AnimatedBuilder(
       animation: _pulseAnimation,
@@ -198,7 +306,6 @@ class _PulseMicButtonState extends State<_PulseMicButton>
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Pulse Ring
             if (widget.isListening)
               Container(
                 width: 56 * _pulseAnimation.value,
@@ -208,8 +315,6 @@ class _PulseMicButtonState extends State<_PulseMicButton>
                   color: baseColor.withValues(alpha: 0.2),
                 ),
               ),
-            
-            // Main Button
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 56,
@@ -235,8 +340,12 @@ class _PulseMicButtonState extends State<_PulseMicButton>
                           strokeWidth: 2,
                         ),
                       )
-                    : const Icon(
-                        Icons.mic,
+                    : Icon(
+                        widget.isOnboarding
+                            ? Icons.help_outline
+                            : widget.isHandsFreeMode
+                                ? Icons.hearing
+                                : Icons.mic,
                         color: Colors.white,
                         size: 28,
                       ),

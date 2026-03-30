@@ -9,6 +9,7 @@ import 'package:ideaspark/view_models/theme_view_model.dart';
 import 'package:ideaspark/view_models/locale_view_model.dart';
 import 'package:ideaspark/view_models/settings_view_model.dart';
 import 'package:ideaspark/models/persona_model.dart';
+import 'package:ideaspark/core/utils/image_helper.dart';
 
 void _showDeleteAccountFlow(BuildContext context, ProfileViewModel vm) {
   final colorScheme = Theme.of(context).colorScheme;
@@ -390,9 +391,7 @@ class ProfileScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     image: vm.profilePicture != null
                         ? DecorationImage(
-                            image: vm.profilePicture!.startsWith('data:')
-                                ? MemoryImage(base64Decode(vm.profilePicture!.split(',').last))
-                                : NetworkImage(vm.profilePicture!),
+                            image: ImageHelper.getImageProvider(vm.profilePicture),
                             fit: BoxFit.cover,
                           )
                         : null,
@@ -419,6 +418,15 @@ class ProfileScreen extends StatelessWidget {
                     fontSize: 14,
                     color: colorScheme.onSurfaceVariant,
                   ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildStatColumn('Following', vm.followingCount, colorScheme),
+                    const SizedBox(width: 32),
+                    _buildStatColumn('Followers', vm.followersCount, colorScheme),
+                  ],
                 ),
                 const SizedBox(height: 32),
                 _SettingsGroup(
@@ -616,6 +624,29 @@ class ProfileScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildStatColumn(String label, int count, ColorScheme colorScheme) {
+    return Column(
+      children: [
+        Text(
+          count.toString(),
+          style: GoogleFonts.syne(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: colorScheme.primary,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

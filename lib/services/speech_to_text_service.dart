@@ -77,10 +77,53 @@ class SpeechToTextService {
       },
       localeId: localeId,
       listenFor: const Duration(seconds: 30),
-      pauseFor: const Duration(seconds: 30),
+      pauseFor: const Duration(seconds: 3),
       listenOptions: stt.SpeechListenOptions(
         listenMode: stt.ListenMode.dictation,
         cancelOnError: true,
+        partialResults: true,
+      ),
+    );
+  }
+
+  /// Short-window listen for the hands-free wake-word loop.
+  ///
+  /// Each window is **4 seconds** maximum. This prevents holding the mic
+  /// open indefinitely between wake phrases. The wake-word controller calls
+  /// this in a repeated loop.
+  ///
+  /// [onPartial] — intermediate words as they arrive.
+  /// [onFinal]   — the finalised transcript (may be empty string).
+  Future<void> startShortListening({
+    String? localeId,
+    required void Function(String partialText) onPartial,
+    required void Function(String finalText) onFinal,
+  }) async {
+    _lastError = null;
+
+    if (!_isAvailable) {
+      final ok = await init();
+      if (!ok) {
+        _lastError = 'speech_not_available';
+        onFinal('');
+        return;
+      }
+    }
+
+    await _speech.listen(
+      onResult: (SpeechRecognitionResult result) {
+        if (result.finalResult) {
+          onFinal(result.recognizedWords);
+        } else {
+          onPartial(result.recognizedWords);
+        }
+      },
+      localeId: localeId,
+      listenFor: const Duration(seconds: 4),
+      pauseFor: const Duration(seconds: 4),
+      listenOptions: stt.SpeechListenOptions(
+        listenMode: stt.ListenMode.confirmation,
+        cancelOnError: false,
         partialResults: true,
       ),
     );

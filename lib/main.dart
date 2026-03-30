@@ -14,7 +14,11 @@ import 'view_models/slogan_view_model.dart';
 import 'view_models/brand_view_model.dart';
 import 'view_models/plan_view_model.dart';
 import 'view_models/product_idea_view_model.dart';
+import 'view_models/collaboration_view_model.dart';
+import 'view_models/profile_view_model.dart';
+import 'view_models/social_view_model.dart'; // Added for social features
 import 'voice/global_voice_controller.dart';
+import 'voice/hands_free_mode_controller.dart';
 import 'ui/widgets/global_voice_overlay.dart';
 
 
@@ -49,6 +53,9 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
         ChangeNotifierProvider(create: (_) => BrandViewModel()),
         ChangeNotifierProvider(create: (_) => PlanViewModel()),
         ChangeNotifierProvider(create: (_) => ProductIdeaViewModel()),
+        ChangeNotifierProvider(create: (_) => CollaborationViewModel()),
+        ChangeNotifierProvider(create: (_) => ProfileViewModel()),
+        ChangeNotifierProvider(create: (_) => SocialViewModel()), // Added
         Provider(create: (_) => VideoIdeaGeneratorService()),
         ChangeNotifierProxyProvider<VideoIdeaGeneratorService, VideoIdeaGeneratorViewModel>(
           create: (context) => VideoIdeaGeneratorViewModel(
@@ -57,6 +64,14 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
           update: (context, service, previous) => previous ?? VideoIdeaGeneratorViewModel(service: service),
         ),
         ChangeNotifierProvider(create: (_) => GlobalVoiceController()),
+        // HandsFreeModeController depends on SettingsViewModel to persist preferences.
+        ChangeNotifierProxyProvider<SettingsViewModel, HandsFreeModeController>(
+          create: (ctx) => HandsFreeModeController(
+            Provider.of<SettingsViewModel>(ctx, listen: false),
+          ),
+          update: (ctx, settings, previous) =>
+              previous ?? HandsFreeModeController(settings),
+        ),
       ],
       child: Consumer2<ThemeViewModel, LocaleViewModel>(
         builder: (context, themeVm, localeVm, _) {
@@ -69,7 +84,7 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
             locale: localeVm.flutterLocale,
             routerConfig: appRouter,
             builder: (context, child) {
-              // Key forces the whole route subtree to rebuild when locale changes (dynamic language switch).
+              // Key forces the whole route subtree to rebuild when locale changes.
               return KeyedSubtree(
                 key: ValueKey(localeVm.locale),
                 child: DefaultTextStyle.merge(

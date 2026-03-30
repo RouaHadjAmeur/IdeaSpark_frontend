@@ -10,27 +10,41 @@ import '../core/api_config.dart';
 
 /// User model matching backend User entity (id, email, name, profilePicture).
 class AppUser {
+  final String id;
+  final String email;
+  final String displayName;
+  final String? phone;
+  final String? profilePicture;
+  final String? username;
+  final List<String>? skills;
+  final String? role;
+  final List<String>? interests;
+
+  String get name => displayName;
+
   AppUser({
     required this.id,
     required this.email,
     required this.displayName,
     this.phone,
     this.profilePicture,
+    this.username,
+    this.skills,
+    this.role,
+    this.interests,
   });
-
-  final String id;
-  final String email;
-  final String displayName;
-  final String? phone;
-  final String? profilePicture;
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
-      id: json['id'] as String? ?? '',
+      id: (json['id'] as String?) ?? (json['_id'] as String?) ?? '',
       email: json['email'] as String? ?? '',
       displayName: (json['name'] as String?) ?? (json['email'] as String?).toString().split('@').first,
       phone: json['phone'] as String?,
       profilePicture: (json['profile_img'] as String?) ?? (json['profilePicture'] as String?),
+      username: json['username'] as String?,
+      skills: (json['skills'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      role: json['role'] as String?,
+      interests: (json['interests'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
     );
   }
 }
@@ -102,7 +116,11 @@ class AuthService {
       'email': user.email,
       'name': user.displayName,
       'phone': user.phone,
-      'profilePicture': user.profilePicture,
+      'profile_img': user.profilePicture,
+      'username': user.username,
+      'skills': user.skills,
+      'role': user.role,
+      'interests': user.interests,
     }));
   }
 
@@ -423,7 +441,15 @@ class AuthService {
     return res.body.isNotEmpty ? res.body : 'Request failed';
   }
 
-  Future<void> updateProfile({String? name, String? phone, String? profilePicture}) async {
+  Future<void> updateProfile({
+    String? name,
+    String? phone,
+    String? profilePicture,
+    String? username,
+    List<String>? skills,
+    String? role,
+    List<String>? interests,
+  }) async {
     await _loadStored();
     final token = _accessToken;
     if (token == null || token.isEmpty) {
@@ -434,6 +460,10 @@ class AuthService {
     if (name != null) body['name'] = name;
     if (phone != null) body['phone'] = phone;
     if (profilePicture != null) body['profile_img'] = profilePicture;
+    if (username != null) body['username'] = username;
+    if (skills != null) body['skills'] = skills;
+    if (role != null) body['role'] = role;
+    if (interests != null) body['interests'] = interests;
 
     final res = await http.patch(
       uri,

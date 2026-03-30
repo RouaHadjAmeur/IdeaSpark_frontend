@@ -253,6 +253,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
+  AppUser? get currentUser => _authService.currentUser;
   String? get displayName => _authService.currentUser?.displayName;
   String? get email => _authService.currentUser?.email;
   String? get userId => _authService.currentUser?.id;

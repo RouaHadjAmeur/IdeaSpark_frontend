@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/view_models/profile_view_model.dart';
+import 'package:ideaspark/core/utils/image_helper.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -19,6 +20,10 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
+  late TextEditingController _usernameController;
+  late TextEditingController _roleController;
+  late TextEditingController _skillsController;
+  late TextEditingController _interestsController;
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -27,12 +32,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final vm = context.read<ProfileViewModel>();
     _nameController = TextEditingController(text: vm.displayName);
     _phoneController = TextEditingController(text: vm.phone);
+    _usernameController = TextEditingController(text: vm.username ?? '');
+    _roleController = TextEditingController(text: vm.role ?? '');
+    _skillsController = TextEditingController(text: vm.skills.join(', '));
+    _interestsController = TextEditingController(text: vm.interests.join(', '));
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _usernameController.dispose();
+    _roleController.dispose();
+    _skillsController.dispose();
+    _interestsController.dispose();
     super.dispose();
   }
 
@@ -61,6 +74,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final success = await vm.updateProfile(
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
+      username: _usernameController.text.trim().isEmpty ? null : _usernameController.text.trim(),
+      role: _roleController.text.trim().isEmpty ? null : _roleController.text.trim(),
+      skills: _skillsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(),
+      interests: _interestsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList(),
     );
     
     if (!mounted) return;
@@ -118,9 +135,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           )
                         : vm.profilePicture != null
                             ? DecorationImage(
-                                image: vm.profilePicture!.startsWith('data:')
-                                    ? MemoryImage(base64Decode(vm.profilePicture!.split(',').last))
-                                    : NetworkImage(vm.profilePicture!),
+                                image: ImageHelper.getImageProvider(vm.profilePicture),
                                 fit: BoxFit.cover,
                               )
                             : null,
@@ -195,6 +210,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   icon: Icons.phone_outlined,
                   colorScheme: colorScheme,
                   keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  controller: _usernameController,
+                  label: 'Nom d\'utilisateur',
+                  hint: 'Ex: @jean_doe',
+                  icon: Icons.alternate_email_rounded,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  controller: _roleController,
+                  label: 'Rôle professionnel',
+                  hint: 'Ex: Créateur de contenu, Marketer',
+                  icon: Icons.work_outline_rounded,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  controller: _skillsController,
+                  label: 'Compétences (séparées par des virgules)',
+                  hint: 'Ex: Vidéo, Design, Stratégie',
+                  icon: Icons.star_outline_rounded,
+                  colorScheme: colorScheme,
+                ),
+                const SizedBox(height: 16),
+
+                _buildTextField(
+                  controller: _interestsController,
+                  label: 'Intérêts (séparées par des virgules)',
+                  hint: 'Ex: IA, Entrepreneuriat, Tech',
+                  icon: Icons.interests_outlined,
+                  colorScheme: colorScheme,
                 ),
                 
                 const SizedBox(height: 40),
