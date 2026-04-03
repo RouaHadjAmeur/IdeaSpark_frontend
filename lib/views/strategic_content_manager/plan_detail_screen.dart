@@ -15,7 +15,11 @@ import '../../services/notification_service.dart';
 import '../../services/in_app_notification_service.dart';
 import '../notifications/notifications_screen.dart';
 import '../content/post_preview_screen.dart';
+import '../content/caption_generator_screen.dart';
 import '../templates/plan_templates_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import '../analytics/plan_stats_screen.dart';
+import '../../services/pdf_export_service.dart';
 
 class PlanDetailScreen extends StatefulWidget {
   final Plan plan;
@@ -32,6 +36,7 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
   bool _isGoogleCalendarConnected = false;
   GoogleCalendarTokens? _googleTokens;
   bool _isSyncingToGoogle = false;
+  bool _remindersActive = false;
 
   static const _palette = [
     Color(0xFFFF6B6B),
@@ -402,10 +407,14 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
           ),
           const SizedBox(height: 8),
           _actionButton(
-            label: '🔔 Activer les rappels de publications',
-            color: const Color(0xFFFF6B35),
+            label: _remindersActive
+                ? '🔕 Désactiver les rappels'
+                : '🔔 Activer les rappels de publications',
+            color: _remindersActive
+                ? Colors.grey
+                : const Color(0xFFFF6B35),
             outlined: true,
-            onPressed: _schedulePostReminders,
+            onPressed: _toggleReminders,
           ),
         ],
 
@@ -424,6 +433,30 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             color: const Color(0xFF9C27B0),
             outlined: true,
             onPressed: _saveAsTemplate,
+          ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '📤 Partager ce plan',
+            color: const Color(0xFF00BCD4),
+            outlined: true,
+            onPressed: _sharePlan,
+          ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '📊 Voir les statistiques',
+            color: const Color(0xFF4285F4),
+            outlined: true,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PlanStatsScreen(plan: _plan)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '📄 Exporter en PDF',
+            color: const Color(0xFFE53935),
+            outlined: true,
+            onPressed: () => PdfExportService.exportPlan(_plan),
           ),
         ],
 
@@ -740,6 +773,28 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
                   size: 16, color: cs.primary),
             ),
           ),
+          const SizedBox(width: 6),
+          // Caption generator button
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CaptionGeneratorScreen(
+                  block: block,
+                  brandName: _plan.name,
+                ),
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.purple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.auto_awesome,
+                  size: 16, color: Colors.purple),
+            ),
+          ),
         ],
       ),
     );
@@ -779,6 +834,28 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
       );
 
   // ─── Action handlers ──────────────────────────────────────────────────────
+
+  Future<void> _toggleReminders() async {
+    if (_remindersActive) {
+      // Désactiver
+      await NotificationService.cancelAll();
+      InAppNotificationService().clear();
+      setState(() => _remindersActive = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🔕 Rappels désactivés'),
+            backgroundColor: Colors.grey,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } else {
+      // Activer
+      await _schedulePostReminders();
+      setState(() => _remindersActive = true);
+    }
+  }
 
   Future<void> _schedulePostReminders() async {
     final phases = _plan.phases;
@@ -847,6 +924,26 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
         ),
       );
     }
+  }
+
+  Future<void> _sharePlan() async {
+    final totalPosts = _plan.phases.fold<int>(0, (s, p) => s + p.contentBlocks.length);
+    final phases = _plan.phases.map((p) =>
+        '📌 ${p.name} (${p.contentBlocks.length} posts)').join('\n');
+
+    final text = '''
+🚀 Plan Marketing : ${_plan.name}
+${_plan.objective.emoji} ${_plan.objective.label}
+
+📅 ${_formatDate(_plan.startDate)} → ${_formatDate(_plan.endDate)}
+📊 ${_plan.phases.length} phases • $totalPosts publications • ${_plan.durationWeeks} semaines
+
+$phases
+
+Créé avec IdeaSpark ✨
+''';
+
+    await Share.share(text, subject: 'Plan Marketing - ${_plan.name}');
   }
 
   Future<void> _saveAsTemplate() async {
