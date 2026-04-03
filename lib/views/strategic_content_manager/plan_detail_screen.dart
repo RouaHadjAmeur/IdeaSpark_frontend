@@ -20,6 +20,8 @@ import '../templates/plan_templates_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import '../analytics/plan_stats_screen.dart';
 import '../../services/pdf_export_service.dart';
+import '../collaboration/collaboration_screen.dart';
+import '../collaboration/post_comments_screen.dart';
 
 class PlanDetailScreen extends StatefulWidget {
   final Plan plan;
@@ -458,6 +460,21 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             outlined: true,
             onPressed: () => PdfExportService.exportPlan(_plan),
           ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '👥 Collaboration',
+            color: const Color(0xFF9C27B0),
+            outlined: true,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CollaborationScreen(
+                  planId: _plan.id ?? '',
+                  planName: _plan.name,
+                ),
+              ),
+            ),
+          ),
         ],
 
         const SizedBox(height: 8),
@@ -793,6 +810,30 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
               ),
               child: const Icon(Icons.auto_awesome,
                   size: 16, color: Colors.purple),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Comments button
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PostCommentsScreen(
+                  postId: block.id ?? block.title,
+                  postTitle: block.title,
+                  planId: _plan.id ?? '',
+                  currentUserName: 'Vous',
+                ),
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.chat_bubble_outline,
+                  size: 16, color: Colors.orange),
             ),
           ),
         ],
