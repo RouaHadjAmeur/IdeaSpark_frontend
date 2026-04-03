@@ -20,8 +20,8 @@ import '../templates/plan_templates_screen.dart';
 import 'package:share_plus/share_plus.dart';
 import '../analytics/plan_stats_screen.dart';
 import '../../services/pdf_export_service.dart';
-import '../collaboration/collaboration_screen.dart';
-import '../collaboration/post_comments_screen.dart';
+import '../plan-collaboration/collaboration_screen.dart';
+import '../plan-collaboration/post_comments_screen.dart';
 
 class PlanDetailScreen extends StatefulWidget {
   final Plan plan;
