@@ -52,6 +52,14 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
+				<string>ideaspark</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
 				<string>com.googleusercontent.apps.791353475220-cuoqu6b4f8ace9jm5q0ekbvvpqsks2m6</string>
 			</array>
 		</dict>

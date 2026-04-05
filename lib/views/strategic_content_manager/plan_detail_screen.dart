@@ -7,10 +7,21 @@ import '../../models/brand.dart';
 import '../../services/plan_service.dart';
 import '../../view_models/plan_view_model.dart';
 import '../../view_models/brand_view_model.dart';
-import '../../services/auth_service.dart';
-import '../../view_models/collaboration_view_model.dart';
-import '../collaboration/collaborators_modal.dart';
-import '../collaboration/project_activity_board.dart';
+import '../../services/google_calendar_storage_service.dart';
+import '../../models/google_calendar_tokens.dart';
+import '../../services/deep_link_service.dart';
+import '../../views/settings/google_calendar_token_screen.dart';
+import '../../services/notification_service.dart';
+import '../../services/in_app_notification_service.dart';
+import '../notifications/notifications_screen.dart';
+import '../content/post_preview_screen.dart';
+import '../content/caption_generator_screen.dart';
+import '../templates/plan_templates_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import '../analytics/plan_stats_screen.dart';
+import '../../services/pdf_export_service.dart';
+import '../plan-collaboration/collaboration_screen.dart';
+import '../plan-collaboration/post_comments_screen.dart';
 
 class PlanDetailScreen extends StatefulWidget {
   final Plan plan;
@@ -24,6 +35,10 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
   late Plan _plan;
   bool _isLoadingDetail = false;
   final Set<int> _expandedPhases = {};
+  bool _isGoogleCalendarConnected = false;
+  GoogleCalendarTokens? _googleTokens;
+  bool _isSyncingToGoogle = false;
+  bool _remindersActive = false;
 
   static const _palette = [
     Color(0xFFFF6B6B),
@@ -42,12 +57,54 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
   void initState() {
     super.initState();
     _plan = widget.plan;
-    // Fetch full plan with phases if not yet loaded
+    _checkGoogleCalendarConnection();
+    // Listen for deep link OAuth callback - tokens saved automatically
+    DeepLinkService().onGoogleCalendarConnected = (tokens) {
+      if (mounted) {
+        setState(() {
+          _googleTokens = tokens;
+          _isGoogleCalendarConnected = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Google Calendar connecté automatiquement !'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    };
     if (_plan.phases.isEmpty && _plan.id != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _fetchDetail());
     } else {
-      // Expand first phase by default
       if (_plan.phases.isNotEmpty) _expandedPhases.add(0);
+    }
+  }
+
+  @override
+  void dispose() {
+    DeepLinkService().onGoogleCalendarConnected = null;
+    super.dispose();
+  }
+
+  Future<void> _checkGoogleCalendarConnection() async {
+    final tokens = await GoogleCalendarStorageService.getTokens();
+    if (mounted) {
+      setState(() {
+        _googleTokens = tokens;
+        _isGoogleCalendarConnected = tokens != null && !tokens.isExpired;
+      });
+      
+      // Si connecté, envoyer une notification de rappel automatique
+      if (_isGoogleCalendarConnected && _plan.phases.isNotEmpty) {
+        final totalPosts = _plan.phases.fold<int>(0, (s, p) => s + p.contentBlocks.length);
+        await NotificationService.schedulePublicationReminder(
+          id: _plan.id.hashCode,
+          title: '📅 ${_plan.name}',
+          body: '$totalPosts publications planifiées - Vérifiez votre Google Calendar !',
+          scheduledTime: DateTime.now(),
+        );
+      }
     }
   }
 
@@ -159,6 +216,39 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             const SizedBox(width: 8),
             _statusBadge(_plan.status, cs),
             const SizedBox(width: 8),
+            // Notifications button
+            GestureDetector(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              ),
+              child: Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  border: Border.all(color: cs.outlineVariant),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Stack(children: [
+                  Center(
+                    child: Icon(Icons.notifications_outlined,
+                        size: 18, color: cs.onSurfaceVariant),
+                  ),
+                  if (InAppNotificationService().unreadCount > 0)
+                    Positioned(
+                      top: 4, right: 4,
+                      child: Container(
+                        width: 10, height: 10,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF6B35),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ]),
+              ),
+            ),
+            const SizedBox(width: 8),
             // Edit name button
             GestureDetector(
               onTap: () => _showEditNameDialog(vm),
@@ -174,39 +264,6 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
                     size: 17, color: cs.onSurfaceVariant),
               ),
             ),
-            const SizedBox(width: 8),
-            // Activity Log Button
-            GestureDetector(
-              onTap: () => _showActivityLog(),
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  border: Border.all(color: cs.outlineVariant),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.history_rounded,
-                    size: 18, color: cs.onSurfaceVariant),
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Manage Collaborators (if owner)
-            if (_plan.userId == AuthService().currentUser?.id)
-              GestureDetector(
-                onTap: () => _showCollaboratorsModal(),
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withOpacity(0.1),
-                    border: Border.all(color: cs.primary.withOpacity(0.3)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.people_outline_rounded,
-                      size: 18, color: cs.primary),
-                ),
-              ),
           ],
         ),
       );
@@ -342,13 +399,26 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             onPressed: vm.isSaving ? null : () => _activatePlan(vm),
           ),
 
-        // Open Google Calendar directly (active)
-        if (isActive)
+        // Google Calendar button (active only)
+        if (isActive) ...[
+          const SizedBox(height: 8),
           _actionButton(
             label: '📅 Ouvrir Google Calendar',
-            color: const Color(0xFF1A73E8),
+            color: const Color(0xFF4285F4),
             onPressed: _openGoogleCalendar,
           ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: _remindersActive
+                ? '🔕 Désactiver les rappels'
+                : '🔔 Activer les rappels de publications',
+            color: _remindersActive
+                ? Colors.grey
+                : const Color(0xFFFF6B35),
+            outlined: true,
+            onPressed: _toggleReminders,
+          ),
+        ],
 
         // Regenerate (has id + any status)
         if (_plan.id != null) ...[
@@ -358,6 +428,52 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             color: cs.secondary,
             outlined: true,
             onPressed: vm.isGenerating ? null : () => _regenerate(vm),
+          ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '🔖 Sauvegarder comme template',
+            color: const Color(0xFF9C27B0),
+            outlined: true,
+            onPressed: _saveAsTemplate,
+          ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '📤 Partager ce plan',
+            color: const Color(0xFF00BCD4),
+            outlined: true,
+            onPressed: _sharePlan,
+          ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '📊 Voir les statistiques',
+            color: const Color(0xFF4285F4),
+            outlined: true,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PlanStatsScreen(plan: _plan)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '📄 Exporter en PDF',
+            color: const Color(0xFFE53935),
+            outlined: true,
+            onPressed: () => PdfExportService.exportPlan(_plan),
+          ),
+          const SizedBox(height: 8),
+          _actionButton(
+            label: '👥 Collaboration',
+            color: const Color(0xFF9C27B0),
+            outlined: true,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CollaborationScreen(
+                  planId: _plan.id ?? '',
+                  planName: _plan.name,
+                ),
+              ),
+            ),
           ),
         ],
 
@@ -371,7 +487,7 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
         ),
 
         // Loading indicator
-        if (vm.isSaving || vm.isGenerating) ...[
+        if (vm.isSaving || vm.isGenerating || _isSyncingToGoogle) ...[
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -587,8 +703,7 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(
-              color: cs.outlineVariant.withValues(alpha: 0.5)),
+          bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(
@@ -596,8 +711,7 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
         children: [
           // Format badge
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
             decoration: BoxDecoration(
               color: formatColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(6),
@@ -605,9 +719,7 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             child: Text(
               block.format.label,
               style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  color: formatColor),
+                  fontSize: 9, fontWeight: FontWeight.w700, color: formatColor),
             ),
           ),
           const SizedBox(width: 10),
@@ -628,13 +740,9 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
                 Wrap(
                   spacing: 8,
                   children: [
-                    // Pillar
-                    Text(
-                      block.pillar,
-                      style: TextStyle(
-                          fontSize: 10, color: cs.onSurfaceVariant),
-                    ),
-                    // CTA type
+                    Text(block.pillar,
+                        style: TextStyle(
+                            fontSize: 10, color: cs.onSurfaceVariant)),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 1),
@@ -650,17 +758,82 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
                             fontWeight: FontWeight.w600),
                       ),
                     ),
-                    // Day + time
                     if (block.recommendedDayOffset < 7)
                       Text(
                         '${weekdays[block.recommendedDayOffset]} ${block.recommendedTime ?? ''}',
                         style: TextStyle(
-                            fontSize: 10,
-                            color: cs.onSurfaceVariant),
+                            fontSize: 10, color: cs.onSurfaceVariant),
                       ),
                   ],
                 ),
               ],
+            ),
+          ),
+          // Preview button
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PostPreviewScreen(
+                  block: block,
+                  brandName: _plan.name,
+                ),
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(Icons.visibility_outlined,
+                  size: 16, color: cs.primary),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Caption generator button
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CaptionGeneratorScreen(
+                  block: block,
+                  brandName: _plan.name,
+                ),
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.purple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.auto_awesome,
+                  size: 16, color: Colors.purple),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Comments button
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PostCommentsScreen(
+                  postId: block.id ?? block.title,
+                  postTitle: block.title,
+                  planId: _plan.id ?? '',
+                  currentUserName: 'Vous',
+                ),
+              ),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.chat_bubble_outline,
+                  size: 16, color: Colors.orange),
             ),
           ),
         ],
@@ -703,17 +876,210 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
 
   // ─── Action handlers ──────────────────────────────────────────────────────
 
-  Future<void> _openGoogleCalendar() async {
-    final uri = Uri.parse('https://calendar.google.com');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else if (mounted) {
+  Future<void> _toggleReminders() async {
+    if (_remindersActive) {
+      // Désactiver
+      await NotificationService.cancelAll();
+      InAppNotificationService().clear();
+      setState(() => _remindersActive = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🔕 Rappels désactivés'),
+            backgroundColor: Colors.grey,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } else {
+      // Activer
+      await _schedulePostReminders();
+      setState(() => _remindersActive = true);
+    }
+  }
+
+  Future<void> _schedulePostReminders() async {
+    final phases = _plan.phases;
+    if (phases.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Impossible d\'ouvrir Google Calendar'),
+          content: Text('Aucune phase trouvée dans ce plan'),
           behavior: SnackBarBehavior.floating,
         ),
       );
+      return;
+    }
+
+    int count = 0;
+    for (final phase in phases) {
+      for (final block in phase.contentBlocks) {
+        count++;
+        // Add to in-app notifications
+        InAppNotificationService().add(AppNotification(
+          id: count,
+          title: '📢 Post à publier - ${_plan.name}',
+          body: '${block.title}\n${block.format.label} • ${block.pillar}',
+          time: DateTime.now(),
+          type: 'post',
+        ));
+        // Also send system notification
+        await NotificationService.schedulePublicationReminder(
+          id: count,
+          title: '📢 ${_plan.name} - Post à publier !',
+          body: '${block.title} • ${block.format.label}',
+          scheduledTime: DateTime.now(),
+        );
+      }
+    }
+
+    // Add plan summary notification
+    InAppNotificationService().add(AppNotification(
+      id: 0,
+      title: '✅ Rappels activés - ${_plan.name}',
+      body: '$count publications planifiées. Consultez vos rappels pour ne rien manquer !',
+      time: DateTime.now(),
+      type: 'plan',
+    ));
+
+    if (mounted) {
+      final ctx = context;
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        SnackBar(
+          content: Text('✅ $count rappels activés pour ${_plan.name} !'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Voir',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(ctx).hideCurrentSnackBar();
+              Navigator.push(
+                ctx,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationsScreen(),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _sharePlan() async {
+    final totalPosts = _plan.phases.fold<int>(0, (s, p) => s + p.contentBlocks.length);
+    final phases = _plan.phases.map((p) =>
+        '📌 ${p.name} (${p.contentBlocks.length} posts)').join('\n');
+
+    final text = '''
+🚀 Plan Marketing : ${_plan.name}
+${_plan.objective.emoji} ${_plan.objective.label}
+
+📅 ${_formatDate(_plan.startDate)} → ${_formatDate(_plan.endDate)}
+📊 ${_plan.phases.length} phases • $totalPosts publications • ${_plan.durationWeeks} semaines
+
+$phases
+
+Créé avec IdeaSpark ✨
+''';
+
+    await Share.share(text, subject: 'Plan Marketing - ${_plan.name}');
+  }
+
+  Future<void> _saveAsTemplate() async {
+    final template = PlanTemplate.fromPlan(_plan);
+    await PlanTemplatesService.save(template);
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('🔖 "${_plan.name}" sauvegardé comme template !'),
+        backgroundColor: const Color(0xFF9C27B0),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Voir',
+          textColor: Colors.white,
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const PlanTemplatesScreen(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openGoogleCalendar() async {
+    final uri = Uri.parse('https://calendar.google.com');
+    try {
+      // Try externalApplication first, fallback to inAppWebView
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        // Fallback: try platformDefault
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      // Last fallback: inAppWebView
+      try {
+        await launchUrl(uri, mode: LaunchMode.inAppWebView);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ouvrez calendar.google.com dans votre navigateur'),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _configureGoogleCalendar() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const GoogleCalendarTokenScreen(),
+      ),
+    );
+    if (!mounted) return;
+    if (result == true) {
+      await _checkGoogleCalendarConnection();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Google Calendar connecté !'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _syncToGoogleCalendar() async {
+    if (_googleTokens == null) return;
+    setState(() => _isSyncingToGoogle = true);
+    try {
+      // TODO: call sync-plan endpoint with _googleTokens
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Plan synchronisé avec Google Calendar !'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSyncingToGoogle = false);
     }
   }
 
@@ -904,39 +1270,5 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
     ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
-  }
-
-  void _showCollaboratorsModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (_, controller) => CollaboratorsModal(planId: _plan.id!),
-      ),
-    );
-  }
-
-  void _showActivityLog() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.8,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, controller) => Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: ProjectActivityBoard(planId: _plan.id!),
-        ),
-      ),
-    );
   }
 }

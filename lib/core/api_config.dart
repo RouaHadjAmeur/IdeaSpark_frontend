@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// Backend API base URL. Change for production or use env.
 /// For iOS Simulator use http://localhost:3000
 /// For Android Emulator use http://10.0.2.2:3000
@@ -5,12 +7,15 @@
 class ApiConfig {
   ApiConfig._();
 
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    // Pour Web/iOS Simulator, on utilise localhost
-    // Pour Android Emulator, utiliser: flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
-    defaultValue: 'http://localhost:3000',
-  );
+  static String get baseUrl {
+    const envUrl = String.fromEnvironment('API_BASE_URL');
+    if (envUrl.isNotEmpty) return envUrl;
+    // Android emulator uses 10.0.2.2 to reach host localhost
+    if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
+      return 'http://10.0.2.2:3000';
+    }
+    return 'http://localhost:3000';
+  }
 
   static String get authBase => '$baseUrl/auth';
   static String get usersBase => '$baseUrl/users';
