@@ -7,6 +7,7 @@ import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
 import 'package:ideaspark/services/persona_completion_service.dart';
+import 'package:ideaspark/voice/hands_free_mode_controller.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -80,6 +81,9 @@ class _SplashScreenState extends State<SplashScreen>
         if (!mounted) return;
         if (personaCompleted) {
           context.go('/home');
+          // Fire-and-forget: ask about hands-free (or restore silent mode).
+          // This runs AFTER navigation so there is no splash delay.
+          context.read<HandsFreeModeController>().runInitialVoiceOnboardingIfNeeded();
         } else {
           // Redirect to persona onboarding if not completed
           final userId = authVm.userId ?? '';

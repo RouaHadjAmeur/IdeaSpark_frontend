@@ -1,7 +1,57 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
+import 'package:ideaspark/core/api_config.dart';
 import 'package:ideaspark/core/app_theme.dart';
-import 'package:ideaspark/core/app_localizations.dart';
+
+// ─── Model ───────────────────────────────────────────────────────────────────
+
+class TrendModel {
+  final String topic;
+  final String summary;
+  final String volume;
+  final String geo;
+  final String niche;
+
+  TrendModel({
+    required this.topic,
+    required this.summary,
+    required this.volume,
+    required this.geo,
+    required this.niche,
+  });
+
+  factory TrendModel.fromJson(Map<String, dynamic> j) => TrendModel(
+        topic: j['topic'] ?? '',
+        summary: j['summary'] ?? '',
+        volume: j['volume'] ?? 'N/A',
+        geo: j['geo'] ?? 'GLOBAL',
+        niche: j['niche'] ?? 'general',
+      );
+}
+
+// ─── Niche chip config ────────────────────────────────────────────────────────
+
+class _Niche {
+  final String label;
+  final String value; // null value = "All"
+  final String emoji;
+  const _Niche(this.label, this.value, this.emoji);
+}
+
+const _niches = [
+  _Niche('All', '', '✨'),
+  _Niche('Tech', 'tech', '💻'),
+  _Niche('Business', 'business', '💼'),
+  _Niche('Politics', 'politics', '🏛️'),
+  _Niche('Sports', 'sports', '⚽'),
+  _Niche('Health', 'health', '❤️'),
+  _Niche('Entertainment', 'entertainment', '🎬'),
+  _Niche('Science', 'science', '🔬'),
+];
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
 
 class TrendsAnalysisScreen extends StatefulWidget {
   const TrendsAnalysisScreen({super.key});
@@ -10,82 +60,168 @@ class TrendsAnalysisScreen extends StatefulWidget {
   State<TrendsAnalysisScreen> createState() => _TrendsAnalysisScreenState();
 }
 
-class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
-  int _tabIndex = 0;
-  static const _tabKeys = ['for_you', 'video_tab', 'business_tab', 'products_tab'];
+class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen>
+    with SingleTickerProviderStateMixin {
+  // Region tabs
+  static const _regions = [
+    ('Tunisia 🇹🇳', 'TN'),
+    ('Global 🌍', 'GLOBAL'),
+  ];
+  int _regionIndex = 0;
+
+  // Niche filter
+  int _nicheIndex = 0; // 0 = All
+
+  List<TrendModel> _trends = [];
+  bool _loading = true;
+  String? _error;
+
+  late final AnimationController _fadeCtrl;
+  late final Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 350));
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeIn);
+    _loadTrends();
+  }
+
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadTrends() async {
+    setState(() { _loading = true; _error = null; });
+    _fadeCtrl.reset();
+    try {
+      final geo = _regions[_regionIndex].$2;
+      final niche = _niches[_nicheIndex].value;
+      var url = '${ApiConfig.trendsBase}?geo=$geo';
+      if (niche.isNotEmpty) url += '&niche=$niche';
+      final res = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 15));
+      if (res.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(res.body);
+        setState(() {
+          _trends = data.map((e) => TrendModel.fromJson(e)).toList();
+          _loading = false;
+        });
+        _fadeCtrl.forward();
+      } else {
+        setState(() { _error = 'Server error ${res.statusCode}'; _loading = false; });
+      }
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  // ── Sections: first 4 = Rising, next 4 = Popular, rest = Evergreen
+  List<TrendModel> get _rising => _trends.take(4).toList();
+  List<TrendModel> get _popular => _trends.skip(4).take(4).toList();
+  List<TrendModel> get _evergreen => _trends.skip(8).toList();
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Column(
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 16, 0),
+              child: Row(
                 children: [
                   Expanded(
                     child: Text(
-                      context.tr('current_trends'),
-                      style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
+                      'Current Trends',
+                      style: GoogleFonts.syne(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                      ),
                     ),
                   ),
                   IconButton(
-                    onPressed: () {},
-                    icon: Icon(Icons.notifications_outlined, color: colorScheme.onSurface),
+                    onPressed: _loadTrends,
+                    icon: const Icon(Icons.refresh_rounded),
+                    color: cs.onSurface,
                     style: IconButton.styleFrom(
-                      backgroundColor: colorScheme.surfaceContainerHighest,
-                      side: BorderSide(color: colorScheme.outlineVariant),
+                      backgroundColor: cs.surfaceContainerHighest,
+                      side: BorderSide(color: cs.outlineVariant),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: context.successColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: context.successColor.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  children: [
-                    const Text('🔥', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        context.tr('trends_match_profile'),
-                        style: TextStyle(fontSize: 13, color: context.successColor, fontWeight: FontWeight.w500),
+            ),
+
+            // ── Match Banner ─────────────────────────────────────────────────
+            if (!_loading && _trends.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: context.successColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: context.successColor.withValues(alpha: 0.25)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Text('🔥', style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${_trends.length} trends match your profile!',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: context.successColor,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: List.generate(_tabKeys.length, (i) {
-                  final active = _tabIndex == i;
+
+            const SizedBox(height: 14),
+
+            // ── Region Tabs ──────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: List.generate(_regions.length, (i) {
+                  final active = _regionIndex == i;
                   return Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(right: i < _tabKeys.length - 1 ? 8 : 0),
-                      child: Material(
-                        color: active ? colorScheme.primary.withValues(alpha: 0.2) : colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(10),
-                        child: InkWell(
-                          onTap: () => setState(() => _tabIndex = i),
-                          borderRadius: BorderRadius.circular(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: active ? colorScheme.primary : colorScheme.outlineVariant),
+                      padding: EdgeInsets.only(right: i == 0 ? 8 : 0),
+                      child: GestureDetector(
+                        onTap: () {
+                          if (_regionIndex == i) return;
+                          setState(() => _regionIndex = i);
+                          _loadTrends();
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
+                          decoration: BoxDecoration(
+                            color: active
+                                ? cs.primary.withValues(alpha: 0.15)
+                                : cs.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: active ? cs.primary : cs.outlineVariant,
                             ),
-                            child: Center(
-                              child: Text(
-                                context.tr(_tabKeys[i]),
-                                style: TextStyle(fontSize: 13, color: active ? colorScheme.primary : colorScheme.onSurface),
+                          ),
+                          child: Center(
+                            child: Text(
+                              _regions[i].$1,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                                color: active ? cs.primary : cs.onSurface,
                               ),
                             ),
                           ),
@@ -95,118 +231,328 @@ class _TrendsAnalysisScreenState extends State<TrendsAnalysisScreen> {
                   );
                 }),
               ),
-              const SizedBox(height: 24),
-              Text(
-                context.tr('rising_trends'),
-                style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
+            ),
+
+            const SizedBox(height: 12),
+
+            // ── Niche Filter Chips ────────────────────────────────────────────
+            SizedBox(
+              height: 36,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: _niches.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, i) {
+                  final active = _nicheIndex == i;
+                  return GestureDetector(
+                    onTap: () {
+                      if (_nicheIndex == i) return;
+                      setState(() => _nicheIndex = i);
+                      _loadTrends();
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: active ? cs.primary : cs.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: active ? cs.primary : cs.outlineVariant,
+                        ),
+                      ),
+                      child: Text(
+                        '${_niches[i].emoji} ${_niches[i].label}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                          color: active ? cs.onPrimary : cs.onSurface,
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-              const SizedBox(height: 12),
-              _TrendItem(colorScheme: colorScheme, icon: '💪', title: 'Fitness femmes 25-35', subtitle: '↗️ ${context.tr("growth")} +127% (7 jours)', growth: '+127%', isRising: true),
-              _TrendItem(colorScheme: colorScheme, icon: '🛍️', title: 'E-commerce Tunisie', subtitle: '↗️ ${context.tr("growth")} +89% (7 jours)', growth: '+89%', isRising: true),
-              _TrendItem(colorScheme: colorScheme, icon: '🧠', title: 'Productivité IA', subtitle: '↗️ ${context.tr("growth")} +156% (7 jours)', growth: '+156%', isRising: true),
-              const SizedBox(height: 24),
-              Text(
-                context.tr('popular_now'),
-                style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
-              ),
-              const SizedBox(height: 12),
-              _TrendItem(colorScheme: colorScheme, icon: '🎥', title: 'Side Hustle 2026', subtitle: context.tr('peak_interest'), growth: 'Top 5', isRising: false, accent: true),
-              _TrendItem(colorScheme: colorScheme, icon: '📱', title: 'Apps No-Code', subtitle: context.tr('peak_interest'), growth: 'Top 3', isRising: false, accent: true),
-              const SizedBox(height: 24),
-              Text(
-                context.tr('evergreen_potential'),
-                style: GoogleFonts.syne(fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
-              ),
-              const SizedBox(height: 12),
-              _TrendItem(colorScheme: colorScheme, icon: '💰', title: 'Investissement passif', subtitle: '📊 ${context.tr("stable_interest")}', growth: 'Stable', isRising: false, evergreen: true),
-              const SizedBox(height: 24),
-              Center(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.onSurface,
-                    side: BorderSide(color: colorScheme.outlineVariant),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  ),
-                  child: Text(context.tr('see_all_trends')),
-                ),
-              ),
-              const SizedBox(height: 40),
-            ],
-          ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // ── Content ───────────────────────────────────────────────────────
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? _ErrorView(message: _error!, onRetry: _loadTrends, cs: cs)
+                      : _trends.isEmpty
+                          ? _EmptyView(cs: cs)
+                          : FadeTransition(
+                              opacity: _fadeAnim,
+                              child: _TrendsList(
+                                rising: _rising,
+                                popular: _popular,
+                                evergreen: _evergreen,
+                                cs: cs,
+                              ),
+                            ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _TrendItem extends StatelessWidget {
-  final ColorScheme colorScheme;
-  final String icon;
-  final String title;
-  final String subtitle;
-  final String growth;
-  final bool isRising;
-  final bool accent;
-  final bool evergreen;
+// ─── Trends List ─────────────────────────────────────────────────────────────
 
-  const _TrendItem({
-    required this.colorScheme,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.growth,
-    required this.isRising,
-    this.accent = false,
-    this.evergreen = false,
+class _TrendsList extends StatelessWidget {
+  final List<TrendModel> rising;
+  final List<TrendModel> popular;
+  final List<TrendModel> evergreen;
+  final ColorScheme cs;
+
+  const _TrendsList({
+    required this.rising,
+    required this.popular,
+    required this.evergreen,
+    required this.cs,
   });
 
   @override
   Widget build(BuildContext context) {
-    final success = context.successColor;
-    final accentColor = context.accentColor;
-    Color boxColor = colorScheme.primary.withValues(alpha: 0.2);
-    Color subtitleColor = success;
-    if (accent) {
-      boxColor = accentColor.withValues(alpha: 0.2);
-      subtitleColor = accentColor;
-    } else if (evergreen) {
-      boxColor = success.withValues(alpha: 0.2);
-      subtitleColor = success;
-    }
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      children: [
+        if (rising.isNotEmpty) ...[
+          _header('🔥 Rising Trends', cs),
+          const SizedBox(height: 10),
+          ...rising.asMap().entries.map((e) => _TrendCard(
+                trend: e.value,
+                rank: e.key + 1,
+                accent: const Color(0xFF00C896),
+                badge: '↗ Rising',
+                cs: cs,
+              )),
+          const SizedBox(height: 20),
+        ],
+        if (popular.isNotEmpty) ...[
+          _header('⭐ Popular Now', cs),
+          const SizedBox(height: 10),
+          ...popular.asMap().entries.map((e) => _TrendCard(
+                trend: e.value,
+                rank: e.key + 1,
+                accent: const Color(0xFF6C63FF),
+                badge: 'Top ${e.key + 1}',
+                cs: cs,
+              )),
+          const SizedBox(height: 20),
+        ],
+        if (evergreen.isNotEmpty) ...[
+          _header('🌿 Evergreen', cs),
+          const SizedBox(height: 10),
+          ...evergreen.map((t) => _TrendCard(
+                trend: t,
+                rank: 0,
+                accent: const Color(0xFF0EA5E9),
+                badge: 'Stable',
+                cs: cs,
+              )),
+          const SizedBox(height: 40),
+        ],
+      ],
+    );
+  }
+
+  Widget _header(String text, ColorScheme cs) => Text(
+        text,
+        style: GoogleFonts.syne(
+          fontSize: 17,
+          fontWeight: FontWeight.w700,
+          color: cs.onSurface,
+        ),
+      );
+}
+
+// ─── Trend Card ──────────────────────────────────────────────────────────────
+
+const _nicheEmoji = {
+  'tech': '💻',
+  'business': '💼',
+  'politics': '🏛️',
+  'sports': '⚽',
+  'health': '❤️',
+  'entertainment': '🎬',
+  'science': '🔬',
+  'mena': '🌍',
+  'general': '📰',
+};
+
+class _TrendCard extends StatelessWidget {
+  final TrendModel trend;
+  final int rank;
+  final Color accent;
+  final String badge;
+  final ColorScheme cs;
+
+  const _TrendCard({
+    required this.trend,
+    required this.rank,
+    required this.accent,
+    required this.badge,
+    required this.cs,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final emoji = _nicheEmoji[trend.niche] ?? '📰';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colorScheme.outlineVariant),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Icon
           Container(
-            width: 50,
-            height: 50,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              color: boxColor,
+              color: accent.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(child: Text(icon, style: const TextStyle(fontSize: 24))),
+            child: Center(child: Text(emoji, style: const TextStyle(fontSize: 22))),
           ),
-          const SizedBox(width: 15),
+          const SizedBox(width: 12),
+          // Text
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.syne(fontSize: 16, fontWeight: FontWeight.w600, color: colorScheme.onSurface)),
-                const SizedBox(height: 4),
-                Text(subtitle, style: TextStyle(fontSize: 12, color: subtitleColor)),
+                Text(
+                  trend.topic,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.syne(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                    height: 1.3,
+                  ),
+                ),
+                if (trend.summary.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    trend.summary,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: accent,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                // Niche chip
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    trend.niche,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: accent,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          Text(growth, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isRising ? context.successColor : colorScheme.onSurfaceVariant)),
+          const SizedBox(width: 8),
+          // Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              badge,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: accent,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+}
+
+// ─── States ───────────────────────────────────────────────────────────────────
+
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  final ColorScheme cs;
+  const _ErrorView({required this.message, required this.onRetry, required this.cs});
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.wifi_off_rounded, size: 48, color: cs.error),
+              const SizedBox(height: 12),
+              Text('Could not load trends',
+                  style: GoogleFonts.syne(
+                      fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
+              const SizedBox(height: 4),
+              Text(message,
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+class _EmptyView extends StatelessWidget {
+  final ColorScheme cs;
+  const _EmptyView({required this.cs});
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('📭', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 12),
+            Text('No trends yet',
+                style: GoogleFonts.syne(
+                    fontSize: 16, fontWeight: FontWeight.w600, color: cs.onSurface)),
+            const SizedBox(height: 4),
+            Text('Run the n8n workflow to fetch trends',
+                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+          ],
+        ),
+      );
 }

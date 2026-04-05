@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/locale_view_model.dart';
 import 'package:ideaspark/widgets/locale_rebuilder.dart';
 import 'package:ideaspark/views/splash/splash_screen.dart';
@@ -32,7 +31,8 @@ import 'package:ideaspark/views/library/saved_ideas_library_screen.dart';
 import 'package:ideaspark/views/trends/trends_analysis_screen.dart';
 import 'package:ideaspark/views/profile/edit_profile_screen.dart';
 import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
-import 'package:ideaspark/views/strategic_content_manager/dashboard_v2_screen.dart';
+import 'package:ideaspark/modules/camera_coach/camera_coach_screen.dart';
+
 import 'package:ideaspark/views/strategic_content_manager/brands_list_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brand_workspace_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/calendar_screen.dart';
@@ -46,11 +46,14 @@ import 'package:ideaspark/views/strategic_content_manager/plan_detail_screen.dar
 import 'package:ideaspark/widgets/bottom_nav_v2.dart';
 import 'package:ideaspark/widgets/sidebar_navigation.dart';
 import 'package:ideaspark/widgets/page_shell.dart';
+import 'package:ideaspark/views/collaboration/notifications_screen.dart';
+import 'package:ideaspark/views/social/community_feed_screen.dart';
+
+import 'package:ideaspark/views/social/user_profile_screen.dart';
 
 import '../models/video_generator_models.dart';
 import '../models/brand.dart';
 import '../models/plan.dart';
-import '../view_models/profile_view_model.dart';
 import '../services/auth_service.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -319,6 +322,13 @@ GoRouter createAppRouter() {
         },
       ),
       GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => NotificationsScreen()),
+        ),
+      ),
+      GoRoute(
         path: '/plan-detail',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
@@ -331,12 +341,14 @@ GoRouter createAppRouter() {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(
-            builder: (_) => ChangeNotifierProvider(
-              create: (_) => ProfileViewModel(),
-              child: const EditProfileScreen(),
-            ),
+            builder: (_) => EditProfileScreen(),
           ),
         ),
+      ),
+      GoRoute(
+        path: '/camera-coach',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CameraCoachScreen(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -432,6 +444,17 @@ GoRouter createAppRouter() {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/community',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const CommunityFeedScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/profile',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
@@ -441,6 +464,14 @@ GoRouter createAppRouter() {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/user/:userId',
+        name: 'user-profile',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return UserProfileScreen(userId: userId);
+        },
       ),
     ],
   );

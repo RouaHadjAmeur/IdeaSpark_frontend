@@ -11,6 +11,7 @@ import '../../models/brand.dart';
 import '../../core/app_localizations.dart';
 import '../../widgets/day_detail_sheet.dart';
 import '../../services/dashboard_alert_service.dart';
+import '../../view_models/collaboration_view_model.dart';
 
 class DashboardV2Screen extends StatelessWidget {
   const DashboardV2Screen({super.key});
@@ -34,6 +35,7 @@ class DashboardContent extends StatefulWidget {
 
 class _DashboardContentState extends State<DashboardContent> {
   String? _selectedBrandId; // null = All Brands
+  bool _profileChecked = false;
 
   static const _brandColors = [
     Color(0xFFFF6B6B),
@@ -56,12 +58,67 @@ class _DashboardContentState extends State<DashboardContent> {
     if (!mounted) return;
     final brandVm = context.read<BrandViewModel>();
     final planVm  = context.read<PlanViewModel>();
-    await Future.wait([brandVm.loadBrands(), planVm.loadPlans()]);
+    final collabVm = context.read<CollaborationViewModel>();
+    await Future.wait([
+      brandVm.loadBrands(),
+      planVm.loadPlans(),
+      collabVm.loadNotifications(),
+    ]);
     if (!mounted) return;
     await planVm.loadAllCalendar();
     if (!mounted) return;
     // Load AI alerts after calendar is ready (uses cached result if < 24 h old)
     await planVm.loadAiAlerts(brands: brandVm.brands);
+    
+    if (mounted) _checkProfileCompletion();
+  }
+
+  void _checkProfileCompletion() {
+    if (_profileChecked) return;
+    _profileChecked = true;
+
+    final authVm = context.read<AuthViewModel>();
+    final user = authVm.currentUser;
+    if (user == null) return;
+
+    final isIncomplete = (user.username?.isEmpty ?? true) ||
+        (user.role?.isEmpty ?? true) ||
+        (user.skills?.isEmpty ?? true) ||
+        (user.interests?.isEmpty ?? true);
+
+    if (isIncomplete) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Text('👋 ', style: TextStyle(fontSize: 24)),
+              Expanded(
+                child: Text(
+                  ctx.tr('profile_incomplete_title'),
+                  style: const TextStyle(fontFamily: 'Syne', fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Text(ctx.tr('profile_incomplete_msg')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(ctx.tr('later')),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                context.push('/edit-profile');
+              },
+              child: Text(ctx.tr('complete_now')),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -237,6 +294,32 @@ class _DashboardContentState extends State<DashboardContent> {
                 size: 20, color: colorScheme.onSurface),
           ),
         ),
+        const SizedBox(width: 12),
+        Consumer<CollaborationViewModel>(
+          builder: (context, collabVm, _) {
+            final count = collabVm.unreadNotificationsCount;
+            return GestureDetector(
+              onTap: () => context.push('/notifications'),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                ),
+                child: Center(
+                  child: Badge(
+                    label: Text('$count'),
+                    isLabelVisible: count > 0,
+                    child: Icon(Icons.notifications_none_rounded,
+                        size: 20, color: colorScheme.onSurface),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -346,10 +429,10 @@ class _DashboardContentState extends State<DashboardContent> {
 
   String _formRouteForType(String typeId) {
     switch (typeId) {
+      case 'camera-coach':
+        return '/camera-coach';
       case 'video':
         return '/video-ideas-form';
-      case 'business':
-        return '/business-ideas-form';
       case 'product':
         return '/product-ideas-form';
       case 'slogans':

@@ -19,6 +19,10 @@ class ApiConfig {
 
   static String get authBase => '$baseUrl/auth';
   static String get usersBase => '$baseUrl/users';
+  static String get trendsBase => '$baseUrl/trends';
+  static String getTrendsUrl({String? geo}) =>
+      geo != null ? '$trendsBase?geo=$geo' : trendsBase;
+
 
   // Video Generator Endpoints
   static String get videoGeneratorBase => '$baseUrl/video-generator';
@@ -93,18 +97,54 @@ class ApiConfig {
   static String get aiVideoIdeasBase    => '$baseUrl/ai/video-ideas';
   static String get generateAiVideoIdeaUrl => '$aiVideoIdeasBase/generate';
 
-  // AI Slogan Campaign
-  static String get generateCampaignSloganUrl => '$sloganGeneratorBase/campaign';
+  // Voice Command Endpoints
+  static String get voiceBase => '$baseUrl/api/voice';
+  static String get voiceParseUrl => '$voiceBase/parse';
+  static String get voiceConfirmUrl => '$voiceBase/confirm';
 
-  // Feature Flags for Video Generator
-  static const bool useRemoteGenerationByDefault = true; // Enable OpenAI backend
-  static const bool fallbackToLocalOnError = true; // Fallback to local if remote fails
+  // Collaboration Endpoints
+  static String get collaborationBase => '$baseUrl/collaboration';
+  static String get inviteUrl => '$collaborationBase/invite';
+  static String acceptInviteUrl(String id) => '$collaborationBase/invitations/$id/accept';
+  static String declineInviteUrl(String id) => '$collaborationBase/invitations/$id/decline';
+  static String listCollaboratorsUrl(String planId) => '$collaborationBase/plans/$planId/collaborators';
+  static String removeCollaboratorUrl(String planId, String userId) => '$collaborationBase/plans/$planId/collaborators/$userId';
+  static String getActivityLogUrl(String planId) => '$collaborationBase/plans/$planId/activity';
+  static String get notificationsUrl => '$collaborationBase/notifications';
+  static String markNotificationReadUrl(String id) => '$collaborationBase/notifications/$id/read';
+  static String sharedPlansUrl(String targetId) => '$collaborationBase/shared/$targetId';
 
-  /// OAuth 2.0 Web application client ID (same value your backend uses to verify the id_token).
-  /// Set via --dart-define=GOOGLE_WEB_CLIENT_ID=xxx or in code. Get it from Google Cloud Console →
-  /// APIs & Services → Credentials → "Web application" client, or from your backend .env (e.g. GOOGLE_CLIENT_ID).
+  // Social & Community
+  static String get socialBase => '$baseUrl/social';
+  static const String socialFeed = '$baseUrl/social/feed';
+  static const String socialSuggestions = '$baseUrl/social/suggestions';
+  static const String socialAccept = '$baseUrl/social/accept'; // /id at end
+  static const String socialPendingRequests = '$baseUrl/social/pending-requests';
+  static const String publicProfile = '$baseUrl/users/public-profile'; // /id at end
+  static String get socialFollowingUrl => '$socialBase/following';
+  static String get socialFollowersUrl => '$socialBase/followers';
+  static String followUrl(String id) => '$socialBase/follow/$id';
+  static String unfollowUrl(String id) => '$socialBase/unfollow/$id';
+  static String get socialFriendsUrl => '$socialBase/friends';
+  static String socialFriendsByIdUrl(String id) => '$socialBase/friends/$id';
+
+  // User Search
+  static String searchUsersUrl(String query) => '$usersBase/search?q=$query';
+
+  // Google Sign-In Web Client ID (set via --dart-define=GOOGLE_WEB_CLIENT_ID=...)
   static const String googleWebClientId = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
-    defaultValue: '791353475220-dsu9gbd30rn14b0dmt6943j2kpaugct5.apps.googleusercontent.com',
+    defaultValue: '',
+  );
+
+  // Video Generation Mode
+  static const bool useRemoteGenerationByDefault = bool.fromEnvironment(
+    'USE_REMOTE_GENERATION',
+    defaultValue: true,
+  );
+
+  static const bool fallbackToLocalOnError = bool.fromEnvironment(
+    'FALLBACK_TO_LOCAL',
+    defaultValue: true,
   );
 }

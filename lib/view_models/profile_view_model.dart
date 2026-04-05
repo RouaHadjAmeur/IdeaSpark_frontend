@@ -4,17 +4,21 @@ import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
 import '../models/persona_model.dart';
 import '../services/persona_service.dart';
+import '../services/social_service.dart';
 
 /// ViewModel for Profile / Settings screen.
 class ProfileViewModel extends ChangeNotifier {
-  ProfileViewModel({AuthService? authService, PersonaService? personaService})
+  ProfileViewModel({AuthService? authService, PersonaService? personaService, SocialService? socialService})
       : _authService = authService ?? AuthService(),
-        _personaService = personaService ?? PersonaService() {
+        _personaService = personaService ?? PersonaService(),
+        _socialService = socialService ?? SocialService() {
     _loadPersona();
+    _loadSocialStats();
   }
 
   final AuthService _authService;
   final PersonaService _personaService;
+  final SocialService _socialService;
 
   // Persona state
   PersonaModel? _persona;
@@ -22,11 +26,27 @@ class ProfileViewModel extends ChangeNotifier {
   bool _isPersonaUpdating = false;
   String? _personaUpdateError;
 
+  // Social stats
+  int _followersCount = 0;
+  int _followingCount = 0;
+
   PersonaModel? get persona => _persona;
   bool get isPersonaLoading => _isPersonaLoading;
   bool get hasPersona => _persona != null;
   bool get isPersonaUpdating => _isPersonaUpdating;
   String? get personaUpdateError => _personaUpdateError;
+  int get followersCount => _followersCount;
+  int get followingCount => _followingCount;
+
+  Future<void> _loadSocialStats() async {
+    try {
+      final following = await _socialService.getFollowing();
+      final followers = await _socialService.getFollowers();
+      _followingCount = following.length;
+      _followersCount = followers.length;
+      notifyListeners();
+    } catch (_) {}
+  }
 
   Future<void> _loadPersona() async {
     _isPersonaLoading = true;
@@ -96,6 +116,10 @@ class ProfileViewModel extends ChangeNotifier {
       _authService.currentUser?.email ?? 'email@exemple.com';
   String get phone => _authService.currentUser?.phone ?? '';
   String? get profilePicture => _authService.currentUser?.profilePicture;
+  String? get username => _authService.currentUser?.username;
+  List<String> get skills => _authService.currentUser?.skills ?? [];
+  String? get role => _authService.currentUser?.role;
+  List<String> get interests => _authService.currentUser?.interests ?? [];
 
   void refresh() {
     _selectedImage = null;
@@ -133,7 +157,14 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateProfile({String? name, String? phone}) async {
+  Future<bool> updateProfile({
+    String? name,
+    String? phone,
+    String? username,
+    List<String>? skills,
+    String? role,
+    List<String>? interests,
+  }) async {
     _isUpdateProfileLoading = true;
     _updateProfileErrorMessage = null;
     notifyListeners();
@@ -146,7 +177,15 @@ class ProfileViewModel extends ChangeNotifier {
         imageUrl = 'data:image/jpeg;base64,$base64Image';
       }
       
-      await _authService.updateProfile(name: name, phone: phone, profilePicture: imageUrl);
+      await _authService.updateProfile(
+        name: name,
+        phone: phone,
+        profilePicture: imageUrl,
+        username: username,
+        skills: skills,
+        role: role,
+        interests: interests,
+      );
       _isUpdateProfileLoading = false;
       notifyListeners();
       return true;

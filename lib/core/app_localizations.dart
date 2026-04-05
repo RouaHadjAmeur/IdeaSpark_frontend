@@ -70,9 +70,10 @@ class AppLocalizations {
     'nav_favorites': 'Favoris',
     'nav_history': 'Historique',
     'nav_profile': 'Profil',
+    'nav_community': 'Communauté',
 
     // Home generators (titles)
-    'gen_business': 'Business Ideas',
+    'gen_camera-coach': 'Camera Coach',
     'gen_video': 'Video Ideas',
     'gen_product': 'Product Ideas',
     'gen_slogans': 'Slogans & Names',
@@ -152,6 +153,10 @@ class AppLocalizations {
     'approve_error': 'Échec de l\'approbation.',
     'refine_limit_error': 'Nombre maximum de raffinements atteint (3)',
     'idea_not_found': 'Idée non trouvée',
+
+    // Camera Coach form
+    'new_camera_coach': 'Nouveau Camera Coach',
+    'generate_camera_coach': '📸 Ouvrir Camera Coach',
 
     // Business form
     'new_business_idea': 'Nouvelle Idée Business',
@@ -295,7 +300,7 @@ class AppLocalizations {
     'done_count': 'Terminées',
     'created_on': 'Créée le',
     'type_video': '🎬 Vidéos',
-    'type_business': '💼 Business',
+    'type_camera-coach': '📸 Camera Coach',
     'type_product': '🎁 Produits',
     'type_slogans': '✨ Slogans',
     'ideas_saved_count': '47 idées sauvegardées',
@@ -507,6 +512,20 @@ class AppLocalizations {
 
     // Brand suggestions
     'brand_suggestions_all_added': 'Toutes les suggestions déjà ajoutées !',
+
+    // Speech-to-Text
+    'voice_input': 'Entrée vocale (STT)',
+    'voice_input_subtitle': 'Dicter du texte via le micro',
+    'stt_not_available': 'Reconnaissance vocale indisponible sur cet appareil',
+    'stt_permission_denied': 'Activez le micro dans les Réglages système',
+    'stt_listening': 'Écoute en cours…',
+    'stt_error': 'Erreur de reconnaissance vocale',
+
+    // Profile Incomplete
+    'profile_incomplete_title': 'Complétez votre profil !',
+    'profile_incomplete_msg': 'Remplissez votre nom d\'utilisateur, rôle et compétences pour permettre aux autres de vous trouver et collaborer sur des projets.',
+    'later': 'Plus tard',
+    'complete_now': 'Compléter maintenant',
   };
 
   static const Map<String, String> _en = {
@@ -569,8 +588,9 @@ class AppLocalizations {
     'nav_favorites': 'Favorites',
     'nav_history': 'History',
     'nav_profile': 'Profile',
+    'nav_community': 'Community',
 
-    'gen_business': 'Business Ideas',
+    'gen_camera-coach': 'Camera Coach',
     'gen_video': 'Video Ideas',
     'gen_product': 'Product Ideas',
     'gen_slogans': 'Slogans & Names',
@@ -650,17 +670,22 @@ class AppLocalizations {
     'refine_limit_error': 'Maximum refinements reached (3)',
     'idea_not_found': 'Idea not found',
 
+    // Camera Coach form
+    'new_camera_coach': 'New Camera Coach',
+    'generate_camera_coach': '📸 Open Camera Coach',
+
+    // Business form
     'new_business_idea': 'New Business Idea',
-    'sector': 'Business sector *',
+    'sector': 'Industry *',
     'sector_hint': 'E.g. E-commerce, Services, SaaS...',
     'startup_budget': 'Startup budget',
     'skills': 'Available skills',
     'skills_hint': 'E.g. Marketing, Development, Design...',
-    'time_available': 'Time available',
+    'time_available': 'Available time',
     'location': 'Location',
     'extra_prefs': 'Additional preferences',
     'recurring_model': 'Recurring model (subscriptions)',
-    'scalable': 'Quickly scalable',
+    'scalable': 'Scalable quickly',
     'low_competition': 'Low competition',
     'generate_business': '💼 Generate Business Ideas',
     'budget_small': 'Small (<5K€)',
@@ -783,7 +808,7 @@ class AppLocalizations {
     'done_count': 'Done',
     'created_on': 'Created on',
     'type_video': '🎬 Videos',
-    'type_business': '💼 Business',
+    'type_camera-coach': '📸 Camera Coach',
     'type_product': '🎁 Products',
     'type_slogans': '✨ Slogans',
     'ideas_saved_count': '47 saved ideas',
@@ -994,6 +1019,20 @@ class AppLocalizations {
 
     // Brand suggestions
     'brand_suggestions_all_added': 'All suggestions already added!',
+
+    // Speech-to-Text
+    'voice_input': 'Voice input (STT)',
+    'voice_input_subtitle': 'Dictate text via microphone',
+    'stt_not_available': 'Speech recognition not available on this device',
+    'stt_permission_denied': 'Enable microphone in system Settings',
+    'stt_listening': 'Listening…',
+    'stt_error': 'Speech recognition error',
+
+    // Profile Incomplete
+    'profile_incomplete_title': 'Complete your profile!',
+    'profile_incomplete_msg': 'Fill in your username, role, and skills to let others find you and collaborate on projects.',
+    'later': 'Later',
+    'complete_now': 'Complete now',
   };
 
   /// Option values displayed in criteria/filters (value from VM -> translated).
