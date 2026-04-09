@@ -6,6 +6,7 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:gal/gal.dart';
 import 'services/camera_service.dart';
 import 'services/tts_service.dart';
+import 'services/stability_service.dart';
 import 'widgets/rule_of_thirds_overlay.dart';
 import 'widgets/luminosity_indicator.dart';
 
@@ -19,12 +20,18 @@ class CameraCoachScreen extends StatefulWidget {
 class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTickerProviderStateMixin {
   final CameraService _cameraService = CameraService();
   final TtsService _ttsService = TtsService();
+  final StabilityService _stabilityService = StabilityService();
   bool _isInitialized = false;
   double _luminosity = 0.5;
   List<Face> _faces = [];
   bool _isProcessing = false;
   DateTime _lastAnalysis = DateTime.now();
   DateTime _lastSpoken = DateTime.now();
+
+  // TIMER FEATURE
+  bool _autoTimerEnabled = false;
+  int _countdown = 0;
+  bool _isCountingDown = false;
 
   // FEATURE 1 & 2
   bool _isVideoMode = false;
@@ -44,9 +51,29 @@ class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTicker
   Future<void> _initialize() async {
     await _cameraService.initialize();
     await _ttsService.initialize();
+    _stabilityService.initialize();
     _startImageStream();
     if (mounted) {
       setState(() => _isInitialized = true);
+    }
+  }
+
+  void _startCountdown() async {
+    if (_isCountingDown) return;
+    _isCountingDown = true;
+    
+    for (int i = 3; i > 0; i--) {
+      if (!mounted || !_isCountingDown || !_autoTimerEnabled) break;
+      setState(() => _countdown = i);
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    
+    if (mounted && _isCountingDown && _autoTimerEnabled && _countdown == 1) {
+      setState(() {
+        _countdown = 0;
+        _isCountingDown = false;
+      });
+      _takePhoto();
     }
   }
 
@@ -63,33 +90,78 @@ class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTicker
       _lastAnalysis = now;
 
       try {
+        final isFrontCamera = _cameraService.cameraDescription?.lensDirection == CameraLensDirection.front;
         final double lum = _cameraService.analyzeLuminosity(image);
         
         // FEATURE 3: Détection visage uniquement en mode selfie
         List<Face> detectedFaces = [];
-        final isFrontCamera = _cameraService.cameraDescription?.lensDirection == CameraLensDirection.front;
         
         if (isFrontCamera) {
           detectedFaces = await _cameraService.detectFaces(image);
         }
 
         if (mounted) {
-          setState(() {
-            _luminosity = lum;
-            _faces = detectedFaces;
-          });
+             setState(() {
+               _luminosity = lum;
+               _faces = detectedFaces;
+             });
 
-          // Logic for TTS feedback every 3 seconds
+             // Logic for Auto Timer
+             bool isFaceCentered = true;
+             if (isFrontCamera) {
+               if (detectedFaces.isEmpty) {
+                 isFaceCentered = false;
+               } else {
+                 final face = detectedFaces.first;
+                 final rect = face.boundingBox;
+                 final sensorOrientation = _cameraService.controller?.description.sensorOrientation ?? 0;
+                 final isPortrait = sensorOrientation == 90 || sensorOrientation == 270;
+                 final previewSize = _cameraService.controller!.value.previewSize!;
+                 final imageWidth = isPortrait ? previewSize.height : previewSize.width;
+                 final imageHeight = isPortrait ? previewSize.width : previewSize.height;
+
+                 double centerX = (rect.left + rect.width / 2) / imageWidth;
+                 final double centerY = (rect.top + rect.height / 2) / imageHeight;
+                 centerX = 1.0 - centerX; // Selfie mode
+
+                 final isCenteredX = centerX > 1 / 3 && centerX < 2 / 3;
+                 final isCenteredY = centerY > 1 / 3 && centerY < 2 / 3;
+                 isFaceCentered = isCenteredX && isCenteredY;
+               }
+             }
+
+             final bool everythingIsPerfect = _stabilityService.isStable &&
+                 (_luminosity >= 0.3 && _luminosity <= 0.7) &&
+                 (!isFrontCamera || isFaceCentered);
+
+             if (_autoTimerEnabled && everythingIsPerfect) {
+               if (!_isCountingDown && _countdown == 0) {
+                 _startCountdown();
+               }
+             } else {
+               if (_isCountingDown || _countdown != 0) {
+                 setState(() {
+                   _isCountingDown = false;
+                   _countdown = 0;
+                 });
+               }
+             }
+
+             // Logic for TTS feedback every 3 seconds
           if (now.difference(_lastSpoken).inSeconds >= 3) {
             String message = "";
 
-            // 1. Priorité à la Luminosité (Fonctionne pour les deux caméras)
-            if (_luminosity < 0.3) {
+            // 1. Priorité à la Stabilité
+            if (!_stabilityService.isStable) {
+              message = "Stabilise ton téléphone";
+            }
+            // 2. Priorité à la Luminosité (Fonctionne pour les deux caméras)
+            else if (_luminosity < 0.3) {
               message = "Trop sombre, trouve une meilleure lumière";
             } else if (_luminosity > 0.7) {
               message = "Trop de lumière, change d'angle";
             }
-            // 2. Visage en second (Seulement si luminosité OK ET en mode selfie)
+            // 3. Visage en dernier (Seulement si stabilité & luminosité OK ET en mode selfie)
             else if (isFrontCamera) {
               if (detectedFaces.isEmpty) {
                 message = "Aucun visage détecté";
@@ -200,6 +272,7 @@ class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTicker
   void dispose() {
     _cameraService.dispose();
     _ttsService.dispose();
+    _stabilityService.dispose();
     _pulseController.dispose();
     super.dispose();
   }
@@ -282,7 +355,29 @@ class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTicker
         children: [
           CameraPreview(_cameraService.controller!),
           const RuleOfThirdsOverlay(),
+          // Face Feedback Overlay
           _buildFaceFeedback(),
+
+          // Countdown Overlay
+          if (_countdown > 0)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  color: Colors.black45,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$_countdown',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 120,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
           LuminosityIndicator(luminosity: _luminosity),
           
           // Back Button
@@ -304,6 +399,35 @@ class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTicker
               child: IconButton(
                 icon: const Icon(Icons.cameraswitch, color: Colors.white, size: 28),
                 onPressed: _toggleCamera,
+              ),
+            ),
+          ),
+
+          // FEATURE: Stability Indicator
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            right: 70,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.camera,
+                    color: _stabilityService.isStable ? Colors.green : Colors.red,
+                    size: 20,
+                  ),
+                  if (!_stabilityService.isStable) ...[
+                    const SizedBox(width: 5),
+                    const Text(
+                      "Stabilise ton téléphone",
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
@@ -355,8 +479,26 @@ class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTicker
                   ),
                 ),
 
-                // Placeholder for symmetry
-                const SizedBox(width: 40),
+                // Auto Timer Toggle
+                CircleAvatar(
+                  backgroundColor: Colors.black54,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.timer,
+                      color: _autoTimerEnabled ? Colors.green : Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _autoTimerEnabled = !_autoTimerEnabled;
+                        if (!_autoTimerEnabled) {
+                          _countdown = 0;
+                          _isCountingDown = false;
+                        }
+                        _ttsService.speak(_autoTimerEnabled ? "Timer automatique activé" : "Timer automatique désactivé");
+                      });
+                    },
+                  ),
+                ),
               ],
             ),
           ),

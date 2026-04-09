@@ -16,6 +16,9 @@ import 'view_models/plan_view_model.dart';
 import 'view_models/product_idea_view_model.dart';
 import 'voice/global_voice_controller.dart';
 import 'ui/widgets/global_voice_overlay.dart';
+import 'services/call_service.dart';
+import 'modules/chat/call_screen.dart';
+import 'core/app_router.dart';
 
 
 Future<void> main() async {
@@ -36,6 +39,34 @@ class IdeaSparkApp extends StatefulWidget {
 }
 
 class _IdeaSparkAppState extends State<IdeaSparkApp> {
+  @override
+  void initState() {
+    super.initState();
+    _initCallListener();
+  }
+
+  void _initCallListener() {
+    final callService = CallService();
+    // Start listening globally for incoming calls
+    callService.onIncomingCall.listen((data) {
+      print('📱 Global Call Listener: Received call request for ${data['callerName']}');
+      final context = rootNavigatorKey.currentContext;
+      if (context != null) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => CallScreen(
+              remoteUserId: data['callerId']!,
+              remoteUserName: data['callerName']!,
+              isIncoming: true,
+            ),
+          ),
+        );
+      } else {
+        print('❌ Global Call Listener: Navigator context is null, cannot show call screen');
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

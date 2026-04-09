@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../services/call_service.dart';
+import '../../modules/chat/call_screen.dart';
 import '../../view_models/auth_view_model.dart';
 import '../../view_models/home_view_model.dart';
 import '../../view_models/brand_view_model.dart';
@@ -49,7 +51,28 @@ class _DashboardContentState extends State<DashboardContent> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+      _initCallService();
+    });
+  }
+
+  void _initCallService() {
+    final callService = CallService();
+    callService.connect();
+    callService.onIncomingCall.listen((data) {
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => CallScreen(
+              remoteUserId: data['callerId']!,
+              remoteUserName: data['callerName']!,
+              isIncoming: true,
+            ),
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _loadData() async {

@@ -7,6 +7,7 @@ import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
 import 'package:ideaspark/services/persona_completion_service.dart';
+import 'package:ideaspark/services/call_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -72,6 +73,9 @@ class _SplashScreenState extends State<SplashScreen>
     final loggedIn = await authVm.restoreSession();
     if (!mounted) return;
     if (loggedIn) {
+      // Initialize call service as soon as we are logged in
+      CallService().connect();
+      
       final onboardingDone = await authVm.isOnboardingDone();
       if (!mounted) return;
       if (onboardingDone) {

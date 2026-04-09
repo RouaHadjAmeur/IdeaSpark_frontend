@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:camera/camera.dart';
@@ -17,7 +18,8 @@ class CameraService {
     if (cameras.isEmpty) return;
 
     _cameraDescription = cameras.firstWhere(
-          (camera) => camera.lensDirection == (lensDirection ?? CameraLensDirection.back),
+          (camera) =>
+      camera.lensDirection == (lensDirection ?? CameraLensDirection.back),
       orElse: () => cameras.first,
     );
 
@@ -28,7 +30,7 @@ class CameraService {
 
     _controller = CameraController(
       _cameraDescription!,
-      ResolutionPreset.high, // ⬅️ medium au lieu de high → ML Kit plus fiable
+      ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.nv21,
     );
@@ -38,7 +40,7 @@ class CameraService {
         enableContours: false,
         enableClassification: false,
         minFaceSize: 0.1,
-        performanceMode: FaceDetectorMode.fast, // ⬅️ plus rapide
+        performanceMode: FaceDetectorMode.fast,
       ),
     );
 
@@ -47,9 +49,9 @@ class CameraService {
 
   Future<void> toggleCamera() async {
     final lensDirection =
-        _cameraDescription?.lensDirection == CameraLensDirection.back
-            ? CameraLensDirection.front
-            : CameraLensDirection.back;
+    _cameraDescription?.lensDirection == CameraLensDirection.back
+        ? CameraLensDirection.front
+        : CameraLensDirection.back;
     await initialize(lensDirection: lensDirection);
   }
 
@@ -76,9 +78,6 @@ class CameraService {
     if (_faceDetector == null || _cameraDescription == null) return [];
 
     final sensorOrientation = _cameraDescription!.sensorOrientation;
-    
-    // On utilise UNIQUEMENT le plan Y (Luminance) car c'est suffisant pour ML Kit
-    // et beaucoup plus robuste sur Android que de concaténer les 3 plans manuellement.
     final bytes = image.planes[0].bytes;
 
     InputImageRotation imageRotation;
@@ -99,7 +98,7 @@ class CameraService {
     final inputImageData = InputImageMetadata(
       size: Size(image.width.toDouble(), image.height.toDouble()),
       rotation: imageRotation,
-      format: InputImageFormat.nv21, // NV21 est le format standard pour le plan Y
+      format: InputImageFormat.nv21,
       bytesPerRow: image.planes[0].bytesPerRow,
     );
 
@@ -110,14 +109,14 @@ class CameraService {
 
     try {
       final faces = await _faceDetector!.processImage(inputImage);
-      print('📸 [CameraService] Detection success: ${faces.length} faces found');
-      if (faces.isNotEmpty) {
-        final f = faces.first;
-        print('   - Face bounding box: ${f.boundingBox}');
+      if (kDebugMode) {
+        print('📸 [CameraService] Detection: ${faces.length} faces found');
       }
       return faces;
     } catch (e) {
-      print('❌ [CameraService] ML Kit Error: $e');
+      if (kDebugMode) {
+        print('❌ [CameraService] ML Kit Error: $e');
+      }
       return [];
     }
   }
