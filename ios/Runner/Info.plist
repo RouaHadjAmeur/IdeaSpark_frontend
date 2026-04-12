@@ -83,6 +83,8 @@
 	<string>REPLACE_WITH_YOUR_FACEBOOK_CLIENT_TOKEN</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>We need access to your photo library to select a profile picture.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>IdeaSpark needs permission to save generated images to your photo library.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>IdeaSpark needs access to your camera for the Camera Coach feature.</string>
 	<key>NSMicrophoneUsageDescription</key>

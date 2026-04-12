@@ -10,11 +10,11 @@ class ApiConfig {
   static String get baseUrl {
     const envUrl = String.fromEnvironment('API_BASE_URL');
     if (envUrl.isNotEmpty) return envUrl;
-    // Android emulator uses 10.0.2.2 to reach host localhost
-    if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
-      return 'http://10.0.2.2:3000';
-    }
-    return 'http://localhost:3000';
+    // TEMPORARY: Using ngrok for testing
+    // return 'https://YOUR_NGROK_URL.ngrok.io'; // ← Décommentez et mettez votre URL ngrok
+    // Use your PC's local IP for physical device testing
+    // Change this IP if your PC's IP changes
+    return 'http://192.168.1.24:3000';
   }
 
   static String get authBase => '$baseUrl/auth';
@@ -116,11 +116,13 @@ class ApiConfig {
 
   // Social & Community
   static String get socialBase => '$baseUrl/social';
-  static const String socialFeed = '$baseUrl/social/feed';
-  static const String socialSuggestions = '$baseUrl/social/suggestions';
-  static const String socialAccept = '$baseUrl/social/accept'; // /id at end
-  static const String socialPendingRequests = '$baseUrl/social/pending-requests';
-  static const String publicProfile = '$baseUrl/users/public-profile'; // /id at end
+  // These depend on runtime `baseUrl` (which itself depends on platform), so expose
+  // them as getters rather than compile-time constants.
+  static String get socialFeed => '$baseUrl/social/feed';
+  static String get socialSuggestions => '$baseUrl/social/suggestions';
+  static String get socialAccept => '$baseUrl/social/accept'; // /id at end
+  static String get socialPendingRequests => '$baseUrl/social/pending-requests';
+  static String get publicProfile => '$baseUrl/users/public-profile'; // /id at end
   static String get socialFollowingUrl => '$socialBase/following';
   static String get socialFollowersUrl => '$socialBase/followers';
   static String followUrl(String id) => '$socialBase/follow/$id';

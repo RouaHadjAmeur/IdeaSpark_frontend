@@ -67,33 +67,50 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateNext() async {
-    await Future.delayed(const Duration(seconds: 3));
+    // Délai réduit de 800ms à 400ms
+    await Future.delayed(const Duration(milliseconds: 400));
     if (!mounted) return;
-    final authVm = context.read<AuthViewModel>();
-    final loggedIn = await authVm.restoreSession();
-    if (!mounted) return;
-    if (loggedIn) {
-      final onboardingDone = await authVm.isOnboardingDone();
+
+    try {
+      final authVm = context.read<AuthViewModel>();
+
+      // Timeout réduit de 3s à 1.5s pour la session
+      final loggedIn = await authVm.restoreSession()
+          .timeout(const Duration(milliseconds: 1500), onTimeout: () => false);
       if (!mounted) return;
-      if (onboardingDone) {
-        // Check if persona onboarding is completed
-        final personaCompleted = await PersonaCompletionService.isPersonaCompleted();
+
+      if (loggedIn) {
+        // Timeout réduit de 2s à 1s pour l'onboarding
+        final onboardingDone = await authVm.isOnboardingDone()
+            .timeout(const Duration(seconds: 1), onTimeout: () => true);
         if (!mounted) return;
-        if (personaCompleted) {
-          context.go('/home');
-          // Fire-and-forget: ask about hands-free (or restore silent mode).
-          // This runs AFTER navigation so there is no splash delay.
-          context.read<HandsFreeModeController>().runInitialVoiceOnboardingIfNeeded();
+
+        if (onboardingDone) {
+          // Timeout réduit de 2s à 1s pour le persona
+          final personaCompleted = await PersonaCompletionService.isPersonaCompleted()
+              .timeout(const Duration(seconds: 1), onTimeout: () => true);
+          if (!mounted) return;
+
+          if (personaCompleted) {
+            context.go('/home');
+            // Lancer l'onboarding vocal en arrière-plan (non bloquant)
+            Future.microtask(() {
+              if (mounted) {
+                context.read<HandsFreeModeController>().runInitialVoiceOnboardingIfNeeded();
+              }
+            });
+          } else {
+            final userId = authVm.userId ?? '';
+            context.go('/persona-onboarding', extra: userId);
+          }
         } else {
-          // Redirect to persona onboarding if not completed
-          final userId = authVm.userId ?? '';
-          context.go('/persona-onboarding', extra: userId);
+          context.go('/onboarding');
         }
       } else {
-        context.go('/onboarding');
+        context.go('/login');
       }
-    } else {
-      context.go('/login');
+    } catch (_) {
+      if (mounted) context.go('/login');
     }
   }
 

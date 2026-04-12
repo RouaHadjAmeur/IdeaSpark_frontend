@@ -113,4 +113,26 @@ class CollaborationService {
     await prefs.setString('history_$planId',
         jsonEncode(history.map((h) => h.toJson()).toList()));
   }
+
+  // ── Stub methods for collaboration_view_model compatibility ──────────────
+
+  Future<List<dynamic>> searchUsers(String query) async => [];
+
+  Future<void> inviteCollaborator(String planId, String inviteeId) async {}
+
+  Future<List<dynamic>> getCollaborators(String planId) async => [];
+
+  Future<void> removeCollaborator(String planId, String userId) async {}
+
+  Future<List<dynamic>> getActivityLog(String planId) async => [];
+
+  Future<List<dynamic>> getNotifications() async => [];
+
+  Future<void> acceptInvitation(String invitationId) async {}
+
+  Future<void> declineInvitation(String invitationId) async {}
+
+  Future<void> markNotificationRead(String notificationId) async {}
+
+  Future<List<dynamic>> getSharedPlans(String targetId) async => [];
 }

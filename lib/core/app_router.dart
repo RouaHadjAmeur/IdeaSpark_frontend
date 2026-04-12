@@ -50,6 +50,8 @@ import 'package:ideaspark/views/collaboration/notifications_screen.dart';
 import 'package:ideaspark/views/social/community_feed_screen.dart';
 
 import 'package:ideaspark/views/social/user_profile_screen.dart';
+import 'package:ideaspark/views/ai/image_generator_screen.dart';
+import 'package:ideaspark/views/ai/image_history_screen.dart';
 
 import '../models/video_generator_models.dart';
 import '../models/brand.dart';
@@ -349,6 +351,20 @@ GoRouter createAppRouter() {
         path: '/camera-coach',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CameraCoachScreen(),
+      ),
+      GoRoute(
+        path: '/image-generator',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ImageGeneratorScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/image-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ImageHistoryScreen()),
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

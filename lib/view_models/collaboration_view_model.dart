@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import '../services/collaboration_service.dart';
 import '../services/auth_service.dart';
 
@@ -31,7 +32,19 @@ class CollaborationViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      _searchResults = await _service.searchUsers(query);
+      final results = await _service.searchUsers(query);
+      // Service may return List<AppUser> or List<dynamic> (JSON). Normalize to List<AppUser>.
+      _searchResults = results.map<AppUser>((e) {
+        if (e is AppUser) return e;
+        if (e is Map<String, dynamic>) return AppUser.fromJson(e);
+        // If item is JSON string, try decoding
+        try {
+          final parsed = e is String ? (jsonDecode(e) as Map<String, dynamic>) : null;
+          if (parsed != null) return AppUser.fromJson(parsed);
+        } catch (_) {}
+        // Fallback: construct a minimal AppUser from toString()
+        return AppUser(id: '', email: '', displayName: e.toString());
+      }).toList();
     } catch (e) {
       debugPrint('Search error: $e');
     } finally {

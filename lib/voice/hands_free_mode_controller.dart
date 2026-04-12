@@ -94,10 +94,6 @@ class HandsFreeModeController extends ChangeNotifier {
     await Future.delayed(const Duration(milliseconds: 500));
     if (_disposed) return;
 
-    // TODO(testing): Forcing false so you can test the onboarding again.
-    // Remove or comment out this line later if you want it to remember.
-    await _settings.setHandsFreeOnboardingCompleted(false);
-
     if (_settings.handsFreeOnboardingCompleted) {
       // Restore mode silently.
       if (_settings.handsFreeEnabled) {

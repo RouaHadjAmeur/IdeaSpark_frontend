@@ -22,6 +22,8 @@ import '../analytics/plan_stats_screen.dart';
 import '../../services/pdf_export_service.dart';
 import '../plan-collaboration/collaboration_screen.dart';
 import '../plan-collaboration/post_comments_screen.dart';
+import '../../services/image_generator_service.dart';
+import '../../services/image_download_service.dart';
 
 class PlanDetailScreen extends StatefulWidget {
   final Plan plan;
@@ -709,6 +711,30 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Image thumbnail (if exists)
+          if (block.imageUrl != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.network(
+                block.imageUrl!,
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(Icons.broken_image, size: 20, color: cs.onSurfaceVariant),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+          ],
           // Format badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -810,6 +836,25 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
               ),
               child: const Icon(Icons.auto_awesome,
                   size: 16, color: Colors.purple),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Image generator button
+          GestureDetector(
+            onTap: () => _showImageGeneratorDialog(block),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: block.imageUrl != null 
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                block.imageUrl != null ? Icons.image : Icons.image_outlined,
+                size: 16, 
+                color: block.imageUrl != null ? Colors.green : Colors.blue,
+              ),
             ),
           ),
           const SizedBox(width: 6),
@@ -1271,4 +1316,468 @@ Créé avec IdeaSpark ✨
     ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
+
+  // ─── Image Generator Dialog ──────────────────────────────────────────────
+
+  void _showImageGeneratorDialog(ContentBlock block) {
+    final cs = Theme.of(context).colorScheme;
+    
+    // Get brand info from context
+    final brandVm = context.read<BrandViewModel>();
+    final brand = brandVm.brands.cast<Brand?>().firstWhere(
+      (b) => b?.id == _plan.brandId,
+      orElse: () => null,
+    );
+    
+    // Auto-detect category from brand description
+    String? autoCategory;
+    if (brand?.description != null) {
+      final desc = brand!.description!.toLowerCase();
+      if (desc.contains('cosmetic') || desc.contains('makeup') || desc.contains('beauty') || desc.contains('skincare')) {
+        autoCategory = 'cosmetics';
+      } else if (desc.contains('sport') || desc.contains('fitness') || desc.contains('athletic')) {
+        autoCategory = 'sports';
+      } else if (desc.contains('fashion') || desc.contains('clothing') || desc.contains('apparel')) {
+        autoCategory = 'fashion';
+      } else if (desc.contains('food') || desc.contains('restaurant') || desc.contains('cuisine')) {
+        autoCategory = 'food';
+      } else if (desc.contains('tech') || desc.contains('software') || desc.contains('digital')) {
+        autoCategory = 'technology';
+      }
+    }
+    
+    final promptController = TextEditingController(
+      text: '${brand?.name ?? _plan.name} - ${block.title}',
+    );
+    final objectController = TextEditingController(); // NOUVEAU : champ objet spécifique
+    String selectedStyle = 'professional';
+    String? selectedCategory = autoCategory;
+    bool isGenerating = false;
+    String? generatedImageUrl;
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.image, color: cs.primary, size: 20),
+              const SizedBox(width: 8),
+              const Text('Générer une Image'),
+            ],
+          ),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.85,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (block.imageUrl != null) ...[
+                    Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        image: DecorationImage(
+                          image: NetworkImage(block.imageUrl!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '✅ Image déjà générée',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.green,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: cs.primaryContainer.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 14, color: cs.primary),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Image pour ${brand?.name ?? _plan.name}',
+                            style: TextStyle(fontSize: 10, color: cs.onSurface),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: cs.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: promptController,
+                    maxLines: 2,
+                    decoration: InputDecoration(
+                      hintText: 'Ex: ${brand?.name ?? "Nike"} - Chaussures...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      isDense: true,
+                    ),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  
+                  // NOUVEAU : Champ objet spécifique
+                  Text(
+                    'Objet spécifique (optionnel)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: cs.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: objectController,
+                    decoration: InputDecoration(
+                      hintText: 'Ex: rouge à lèvres, parfum, espadrille, pantalon...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      isDense: true,
+                    ),
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Catégorie ${autoCategory != null ? "(auto)" : ""}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: cs.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    value: selectedCategory,
+                    decoration: InputDecoration(
+                      hintText: 'Sélectionnez',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      filled: true,
+                      fillColor: cs.surfaceContainerHighest,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      isDense: true,
+                    ),
+                    style: const TextStyle(fontSize: 12),
+                    items: [
+                      DropdownMenuItem(value: null, child: Text('Aucune', style: TextStyle(fontSize: 12))),
+                      DropdownMenuItem(value: 'cosmetics', child: Text('💄 Cosmétiques', style: TextStyle(fontSize: 12))),
+                      DropdownMenuItem(value: 'beauty', child: Text('✨ Beauté', style: TextStyle(fontSize: 12))),
+                      DropdownMenuItem(value: 'sports', child: Text('⚽ Sports', style: TextStyle(fontSize: 12))),
+                      DropdownMenuItem(value: 'fashion', child: Text('👗 Mode', style: TextStyle(fontSize: 12))),
+                      DropdownMenuItem(value: 'food', child: Text('🍔 Food', style: TextStyle(fontSize: 12))),
+                      DropdownMenuItem(value: 'technology', child: Text('💻 Tech', style: TextStyle(fontSize: 12))),
+                      DropdownMenuItem(value: 'lifestyle', child: Text('🏠 Lifestyle', style: TextStyle(fontSize: 12))),
+                    ],
+                    onChanged: (value) {
+                      setDialogState(() => selectedCategory = value);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Style',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: cs.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      'professional',
+                      'minimal',
+                      'colorful',
+                      'dark',
+                      'nature',
+                    ].map((style) {
+                      final isSelected = selectedStyle == style;
+                      return ChoiceChip(
+                        label: Text(style, style: TextStyle(fontSize: 11)),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          setDialogState(() => selectedStyle = style);
+                        },
+                        selectedColor: cs.primary,
+                        labelStyle: TextStyle(
+                          fontSize: 11,
+                          color: isSelected ? cs.onPrimary : cs.onSurface,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      );
+                    }).toList(),
+                  ),
+                  if (isGenerating) ...[
+                    const SizedBox(height: 12),
+                    Center(
+                      child: Column(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(color: cs.primary, strokeWidth: 2.5),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Génération...',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (generatedImageUrl != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      '✅ Image générée',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        generatedImageUrl!,
+                        height: 120,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 120,
+                            color: cs.surfaceContainerHighest,
+                            child: Center(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  value: loadingProgress.expectedTotalBytes != null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.broken_image, size: 32, color: cs.onSurfaceVariant),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Erreur',
+                                  style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Bouton Partager seulement (pas de bouton Utiliser, sauvegarde automatique)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: generatedImageUrl == null ? null : () async {
+                          // Show share dialog with image and caption
+                          await ImageDownloadService.showShareDialog(
+                            context: context,
+                            imageUrl: generatedImageUrl!,
+                            caption: '${brand?.name ?? _plan.name} - ${block.title}\n\n${block.pillar}',
+                          );
+                        },
+                        icon: Icon(Icons.share, size: 14),
+                        label: Text('Partager', style: TextStyle(fontSize: 12)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: cs.primary,
+                          side: BorderSide(color: cs.primary),
+                          padding: EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red, size: 14),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              errorMessage!,
+                              style: TextStyle(fontSize: 10, color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isGenerating ? null : () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            FilledButton.icon(
+              onPressed: isGenerating
+                  ? null
+                  : () async {
+                      setDialogState(() {
+                        isGenerating = true;
+                        errorMessage = null;
+                        generatedImageUrl = null;
+                      });
+
+                      try {
+                        // Convert style string to ImageStyle enum
+                        ImageStyle style;
+                        switch (selectedStyle) {
+                          case 'minimal':
+                            style = ImageStyle.minimalist;
+                            break;
+                          case 'colorful':
+                            style = ImageStyle.colorful;
+                            break;
+                          case 'professional':
+                            style = ImageStyle.professional;
+                            break;
+                          case 'dark':
+                          case 'nature':
+                          default:
+                            style = ImageStyle.professional;
+                        }
+
+                        // Construire la description avec l'objet spécifique si fourni
+                        String finalDescription = promptController.text.trim();
+                        if (objectController.text.trim().isNotEmpty) {
+                          finalDescription = '${objectController.text.trim()} - $finalDescription';
+                        }
+
+                        final result = await ImageGeneratorService.generateImage(
+                          description: finalDescription,
+                          style: style,
+                          brandName: _plan.name,
+                          category: selectedCategory,
+                        );
+
+                        setDialogState(() {
+                          generatedImageUrl = result.url;
+                          isGenerating = false;
+                        });
+
+                        // Sauvegarder automatiquement l'image dans le post
+                        if (block.id != null) {
+                          try {
+                            await ImageGeneratorService.saveImageToPost(
+                              contentBlockId: block.id!,
+                              imageUrl: result.url,
+                            );
+                            
+                            // Reload plan from backend to get updated data
+                            await _fetchDetail();
+                            
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('✅ Image générée et sauvegardée !'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            print('❌ Erreur sauvegarde: $e');
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('✅ Image générée (sauvegarde échouée)'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            }
+                          }
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('✅ Image générée avec succès !'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        setDialogState(() {
+                          errorMessage = e.toString();
+                          isGenerating = false;
+                        });
+                      }
+                    },
+              icon: const Icon(Icons.auto_awesome, size: 16),
+              label: const Text('Générer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+

@@ -93,6 +93,18 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                   onTap: () => context.push('/home'),
                 ),
                 _SidebarItem(
+                  icon: Icons.image_outlined,
+                  label: 'IA Générateur d\'Images',
+                  isActive: GoRouterState.of(context).matchedLocation == '/image-generator',
+                  onTap: () => context.push('/image-generator'),
+                ),
+                _SidebarItem(
+                  icon: Icons.photo_library_outlined,
+                  label: 'Historique Images',
+                  isActive: GoRouterState.of(context).matchedLocation == '/image-history',
+                  onTap: () => context.push('/image-history'),
+                ),
+                _SidebarItem(
                   icon: Icons.favorite_border_rounded,
                   label: context.tr('nav_favorites'),
                   isActive: GoRouterState.of(context).matchedLocation == '/favorites',

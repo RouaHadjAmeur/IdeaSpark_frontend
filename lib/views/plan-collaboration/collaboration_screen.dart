@@ -507,34 +507,38 @@ L'équipe IdeaSpark
               ),
               const SizedBox(height: 12),
               // Role selector
-              Row(children: [
-                Text('Rôle :', style: TextStyle(fontSize: 13, color: cs.onSurface)),
-                const SizedBox(width: 12),
-                ...CollabRole.values.map((r) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => setS(() => selectedRole = r),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: selectedRole == r
-                            ? _roleColor(r)
-                            : _roleColor(r).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        r == CollabRole.admin ? 'Admin'
-                            : r == CollabRole.editor ? 'Éditeur' : 'Lecteur',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: selectedRole == r ? Colors.white : _roleColor(r),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Rôle :', style: TextStyle(fontSize: 13, color: cs.onSurface)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: CollabRole.values.map((r) => GestureDetector(
+                      onTap: () => setS(() => selectedRole = r),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: selectedRole == r
+                              ? _roleColor(r)
+                              : _roleColor(r).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          r == CollabRole.admin ? 'Admin'
+                              : r == CollabRole.editor ? 'Éditeur' : 'Lecteur',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: selectedRole == r ? Colors.white : _roleColor(r),
+                          ),
                         ),
                       ),
-                    ),
+                    )).toList(),
                   ),
-                )),
-              ]),
+                ],
+              ),
             ],
           ),
           actions: [

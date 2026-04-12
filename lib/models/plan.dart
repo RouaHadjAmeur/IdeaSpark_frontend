@@ -32,6 +32,7 @@ class ContentBlock {
   final int recommendedDayOffset;
   final String? recommendedTime;
   final ContentBlockStatus status;
+  final String? imageUrl;
 
   const ContentBlock({
     this.id,
@@ -44,6 +45,7 @@ class ContentBlock {
     this.recommendedDayOffset = 0,
     this.recommendedTime,
     this.status = ContentBlockStatus.draft,
+    this.imageUrl,
   });
 
   factory ContentBlock.fromJson(Map<String, dynamic> json) {
@@ -63,6 +65,7 @@ class ContentBlock {
       recommendedDayOffset: (json['recommendedDayOffset'] as num?)?.toInt() ?? 0,
       recommendedTime: json['recommendedTime'],
       status: enumOrNull(ContentBlockStatus.values, json['status']) ?? ContentBlockStatus.draft,
+      imageUrl: json['imageUrl'],
     );
   }
 }

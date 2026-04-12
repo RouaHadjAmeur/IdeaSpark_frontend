@@ -18,6 +18,11 @@ import 'view_models/plan_view_model.dart';
 import 'view_models/product_idea_view_model.dart';
 import 'services/deep_link_service.dart';
 import 'services/notification_service.dart';
+import 'view_models/settings_view_model.dart';
+import 'view_models/collaboration_view_model.dart';
+import 'view_models/social_view_model.dart';
+import 'view_models/profile_view_model.dart';
+import 'voice/hands_free_mode_controller.dart';
 
 
 Future<void> main() async {
@@ -61,6 +66,17 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
         ChangeNotifierProvider(create: (_) => BrandViewModel()),
         ChangeNotifierProvider(create: (_) => PlanViewModel()),
         ChangeNotifierProvider(create: (_) => ProductIdeaViewModel()),
+        ChangeNotifierProvider(create: (_) => SettingsViewModel()),
+        ChangeNotifierProvider(create: (_) => CollaborationViewModel()),
+        ChangeNotifierProvider(create: (_) => SocialViewModel()),
+        ChangeNotifierProvider(create: (_) => ProfileViewModel()),
+        ChangeNotifierProxyProvider<SettingsViewModel, HandsFreeModeController>(
+          create: (context) => HandsFreeModeController(
+            Provider.of<SettingsViewModel>(context, listen: false),
+          ),
+          update: (context, settings, previous) =>
+              previous ?? HandsFreeModeController(settings),
+        ),
         Provider(create: (_) => VideoIdeaGeneratorService()),
         ChangeNotifierProxyProvider<VideoIdeaGeneratorService, VideoIdeaGeneratorViewModel>(
           create: (context) => VideoIdeaGeneratorViewModel(
