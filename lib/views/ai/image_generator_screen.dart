@@ -90,6 +90,7 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
 
     return Scaffold(
       backgroundColor: cs.surface,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
@@ -117,7 +118,7 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Générateur de Visuels IA',
+                        Text('Générateur d\'Images',
                             style: GoogleFonts.syne(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,

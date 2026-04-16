@@ -94,9 +94,15 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                 ),
                 _SidebarItem(
                   icon: Icons.image_outlined,
-                  label: 'IA Générateur d\'Images',
+                  label: 'Générateur d\'Images',
                   isActive: GoRouterState.of(context).matchedLocation == '/image-generator',
                   onTap: () => context.push('/image-generator'),
+                ),
+                _SidebarItem(
+                  icon: Icons.auto_awesome,
+                  label: '✨ Générateur de Hooks',
+                  isActive: GoRouterState.of(context).matchedLocation == '/creative-ai-test',
+                  onTap: () => context.push('/creative-ai-test'),
                 ),
                 _SidebarItem(
                   icon: Icons.photo_library_outlined,
