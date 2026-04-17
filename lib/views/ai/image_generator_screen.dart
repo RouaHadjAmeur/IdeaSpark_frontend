@@ -90,7 +90,7 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
 
     return Scaffold(
       backgroundColor: cs.surface,
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Column(
           children: [
@@ -125,7 +125,9 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
                                 color: cs.onSurface)),
                         Text('Images gratuites via Unsplash',
                             style: TextStyle(
-                                fontSize: 11, color: cs.onSurfaceVariant)),
+                                fontSize: 11, color: cs.onSurfaceVariant),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
                       ],
                     ),
                   ),

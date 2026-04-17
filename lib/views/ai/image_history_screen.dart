@@ -116,7 +116,7 @@ class _ImageHistoryScreenState extends State<ImageHistoryScreen> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Padding(
+                  Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
                           _error!,
@@ -125,6 +125,8 @@ class _ImageHistoryScreenState extends State<ImageHistoryScreen> {
                             color: cs.onSurfaceVariant,
                           ),
                           textAlign: TextAlign.center,
+                          maxLines: 5,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -132,6 +134,12 @@ class _ImageHistoryScreenState extends State<ImageHistoryScreen> {
                         onPressed: _loadHistory,
                         icon: const Icon(Icons.refresh, size: 18),
                         label: const Text('Réessayer'),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, size: 18),
+                        label: const Text('Retour'),
                       ),
                     ],
                   ),
@@ -300,7 +308,10 @@ class _ImageHistoryScreenState extends State<ImageHistoryScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(ImageGeneratorService.getStyleIcon(image.style) as IconData?, size: 20),
+                      Text(
+                        ImageGeneratorService.getStyleIcon(image.style),
+                        style: const TextStyle(fontSize: 20),
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         ImageGeneratorService.getStyleLabel(image.style),
@@ -377,14 +388,7 @@ class _ImageHistoryScreenState extends State<ImageHistoryScreen> {
     );
 
     if (confirmed == true) {
-      // Note: We don't have image ID in the current model
-      // This would need to be added to GeneratedImage model
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('⚠️ Suppression non implémentée (ID manquant)'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      _deleteImage(image.id, index);
     }
   }
 

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import '../../models/video_generator_models.dart';
 import '../../view_models/video_idea_form_view_model.dart';
-import '../../services/video_generator_service.dart';
+import '../../services/video_idea_generator_service.dart';
 import '../../services/slogan_service.dart';
 import '../../widgets/chip_group_selector.dart';
 import 'package:image_picker/image_picker.dart';

@@ -99,6 +99,12 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                   onTap: () => context.push('/image-generator'),
                 ),
                 _SidebarItem(
+                  icon: Icons.videocam_outlined,
+                  label: 'Générateur Vidéo',
+                  isActive: GoRouterState.of(context).matchedLocation == '/video-generator',
+                  onTap: () => context.push('/video-generator'),
+                ),
+                _SidebarItem(
                   icon: Icons.auto_awesome,
                   label: '✨ Générateur de Hooks',
                   isActive: GoRouterState.of(context).matchedLocation == '/creative-ai-test',
@@ -109,6 +115,12 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                   label: 'Historique Images',
                   isActive: GoRouterState.of(context).matchedLocation == '/image-history',
                   onTap: () => context.push('/image-history'),
+                ),
+                _SidebarItem(
+                  icon: Icons.video_library_outlined,
+                  label: 'Historique Vidéos',
+                  isActive: GoRouterState.of(context).matchedLocation == '/video-history',
+                  onTap: () => context.push('/video-history'),
                 ),
                 _SidebarItem(
                   icon: Icons.favorite_border_rounded,

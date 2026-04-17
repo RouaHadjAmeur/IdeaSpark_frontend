@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/video_generator_models.dart';
-import '../services/video_generator_service.dart';
+import '../services/video_idea_generator_service.dart';
 import '../core/api_config.dart';
 
 /// ViewModel for the Video Ideas Form Screen
@@ -158,29 +158,13 @@ class VideoIdeaFormViewModel extends ChangeNotifier {
     notifyListeners();
     
     try {
-      final suggestions = await _service.analyzeImage(_productImagePath!);
+      final suggestions = await _service.analyzeImage(
+        imageUrl: _productImagePath!,
+        brandName: _productName.isNotEmpty ? _productName : 'Product',
+      );
       
-      if (suggestions.containsKey('productName')) {
-        _productName = suggestions['productName'];
-      }
-      if (suggestions.containsKey('productCategory')) {
-        _productCategory = suggestions['productCategory'];
-      }
-      if (suggestions.containsKey('keyBenefits')) {
-        _keyBenefits = (suggestions['keyBenefits'] as List).join(', ');
-      }
-      if (suggestions.containsKey('targetAudience')) {
-        _targetAudience = suggestions['targetAudience'];
-      }
-      if (suggestions.containsKey('painPoint')) {
-        _painPoint = suggestions['painPoint'];
-      }
-      if (suggestions.containsKey('offer')) {
-        _offer = suggestions['offer'];
-      }
-      if (suggestions.containsKey('price')) {
-        _price = suggestions['price'];
-      }
+      // suggestions est une List<VideoIdea>
+      // Pour l'instant, on ignore les suggestions
       
     } catch (e) {
       debugPrint('Error analyzing product image: $e');

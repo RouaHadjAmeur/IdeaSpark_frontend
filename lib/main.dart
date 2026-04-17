@@ -11,6 +11,7 @@ import 'view_models/home_view_model.dart';
 import 'view_models/theme_view_model.dart';
 import 'view_models/locale_view_model.dart';
 import 'services/video_generator_service.dart';
+import 'services/video_idea_generator_service.dart';
 import 'view_models/video_idea_generator_view_model.dart';
 import 'view_models/slogan_view_model.dart';
 import 'view_models/brand_view_model.dart';

@@ -11,12 +11,14 @@ enum ImageStyle {
 }
 
 class GeneratedImage {
+  final String id;
   final String url;
   final String prompt;
   final ImageStyle style;
   final DateTime createdAt;
 
   GeneratedImage({
+    required this.id,
     required this.url,
     required this.prompt,
     required this.style,
@@ -25,6 +27,7 @@ class GeneratedImage {
 
   factory GeneratedImage.fromJson(Map<String, dynamic> json) {
     return GeneratedImage(
+      id: json['_id'] ?? json['id'] ?? '',
       url: json['url'] as String,
       prompt: json['prompt'] as String,
       style: ImageStyle.values.firstWhere(
@@ -36,6 +39,7 @@ class GeneratedImage {
   }
 
   Map<String, dynamic> toJson() => {
+        'id': id,
         'url': url,
         'prompt': prompt,
         'style': style.name,
@@ -96,6 +100,7 @@ class ImageGeneratorService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return GeneratedImage(
+          id: data['_id'] ?? data['id'] ?? '',
           url: data['url'] as String,
           prompt: data['prompt'] as String? ?? description,
           style: style,
@@ -116,17 +121,48 @@ class ImageGeneratorService {
   static Future<List<GeneratedImage>> getHistory() async {
     final token = await _getToken();
     
+    final endpoint = '${ApiConfig.baseUrl}/ai-images/history';
+    print('🔍 [Flutter] Getting image history from: $endpoint');
+    
     final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/ai/generated-images'),
+      Uri.parse(endpoint),
       headers: _headers(token),
     );
 
+    print('✅ [Flutter] History response status: ${response.statusCode}');
+    print('📄 [Flutter] History response body: ${response.body}');
+
     if (response.statusCode == 200) {
-      final List<dynamic> list = jsonDecode(response.body);
+      final data = jsonDecode(response.body);
+      
+      print('📊 [Flutter] Parsed data type: ${data.runtimeType}');
+      print('📊 [Flutter] Parsed data: $data');
+      
+      // Gérer différents formats de réponse
+      List<dynamic> list;
+      if (data is List) {
+        // Si c'est directement un array
+        print('✅ [Flutter] Response is direct List');
+        list = data;
+      } else if (data is Map && data.containsKey('images')) {
+        // Si c'est un objet avec clé 'images'
+        print('✅ [Flutter] Response has "images" key');
+        list = data['images'] as List;
+      } else if (data is Map && data.containsKey('data')) {
+        // Si c'est un objet avec clé 'data'
+        print('✅ [Flutter] Response has "data" key');
+        list = data['data'] as List;
+      } else {
+        throw Exception('Format de réponse non reconnu: $data');
+      }
+      
+      print('📊 [Flutter] Found ${list.length} images');
       return list.map((e) => GeneratedImage.fromJson(e as Map<String, dynamic>)).toList();
     }
 
-    throw Exception('Failed to load history: ${response.statusCode}');
+    print('❌ [Flutter] History error: ${response.statusCode}');
+    print('❌ [Flutter] Response body: ${response.body}');
+    throw Exception('Failed to load history: ${response.statusCode} - ${response.body}');
   }
 
   /// Delete a generated image
@@ -134,7 +170,7 @@ class ImageGeneratorService {
     final token = await _getToken();
     
     final response = await http.delete(
-      Uri.parse('${ApiConfig.baseUrl}/ai/generated-images/$imageId'),
+      Uri.parse('${ApiConfig.baseUrl}/ai-images/$imageId'),
       headers: _headers(token),
     );
 

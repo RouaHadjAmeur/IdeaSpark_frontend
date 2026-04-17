@@ -14,7 +14,7 @@ class ApiConfig {
     // return 'https://YOUR_NGROK_URL.ngrok.io'; // ← Décommentez et mettez votre URL ngrok
     // Use your PC's local IP for physical device testing
     // Change this IP if your PC's IP changes
-    return 'http://192.168.1.24:3000';
+    return 'http://10.175.98.19:3000';
   }
 
   static String get authBase => '$baseUrl/auth';

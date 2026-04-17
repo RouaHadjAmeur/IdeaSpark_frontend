@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/video_generator_models.dart';
-import '../services/video_generator_service.dart';
+import '../services/video_idea_generator_service.dart';
 
 /// ViewModel for Video Ideas Generation and Results
 /// Manages the generation process, loading state, and error handling
