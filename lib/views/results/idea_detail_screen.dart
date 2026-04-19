@@ -176,7 +176,7 @@ class _DetailSection extends StatelessWidget {
               content!,
               style: TextStyle(fontSize: 13, color: colorScheme.onSurfaceVariant, height: 1.6, decoration: TextDecoration.none),
             ),
-          ?child,
+          if (child != null) child!,
         ],
       ),
     );

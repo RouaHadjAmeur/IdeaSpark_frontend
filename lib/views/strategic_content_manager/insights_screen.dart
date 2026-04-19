@@ -1211,7 +1211,7 @@ class _HealthScoreCard extends StatelessWidget {
               tween: Tween(begin: 0.0, end: score / 100),
               duration: const Duration(milliseconds: 900),
               curve: Curves.easeOutCubic,
-              builder: (_, value, _) => SizedBox(
+              builder: (context, value, child) => SizedBox(
                 width: 56,
                 height: 56,
                 child: Stack(
@@ -1587,7 +1587,7 @@ class _ScoreDetailSheet extends StatelessWidget {
                 tween: Tween(begin: 0.0, end: score / 100),
                 duration: const Duration(milliseconds: 1000),
                 curve: Curves.easeOutCubic,
-                builder: (_, value, _) => SizedBox(
+                builder: (context, value, child) => SizedBox(
                   width: 76,
                   height: 76,
                   child: Stack(

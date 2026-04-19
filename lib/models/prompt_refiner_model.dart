@@ -13,4 +13,11 @@ class PromptRefinerResult {
       modelLoaded: json['model_loaded'] == true,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'result': result,
+      'modelLoaded': modelLoaded,
+    };
+  }
 }

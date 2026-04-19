@@ -182,6 +182,8 @@ class _DashboardContentState extends State<DashboardContent> {
                       avgPromo: avgPromo,
                     ),
                     const SizedBox(height: 32),
+                    _buildAgentAccessSection(context),
+                    const SizedBox(height: 32),
                     _buildSectionHeader(context, 'Quick Actions'),
                     _buildGeneratorsGrid(context, vm),
                     const SizedBox(height: 24),
@@ -294,6 +296,73 @@ class _DashboardContentState extends State<DashboardContent> {
             );
           }),
         ],
+      ),
+    );
+  }
+
+  // ─── Agent Access section ──────────────────────────────────────────────────
+
+  Widget _buildAgentAccessSection(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: () => context.push('/agent-full-access'),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              colorScheme.primary,
+              colorScheme.secondary,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: colorScheme.primary.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: const Text('🤖', style: TextStyle(fontSize: 24)),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Agent Full Access',
+                    style: GoogleFonts.syne(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Orchestrez toute votre stratégie IA en un seul prompt.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
+          ],
+        ),
       ),
     );
   }

@@ -223,7 +223,7 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
 
   Widget _buildStep1(ColorScheme cs) {
     return Consumer<BrandViewModel>(
-      builder: (_, vm, _) {
+      builder: (context, vm, child) {
         if (vm.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -410,7 +410,7 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
 
   Widget _buildStep4(ColorScheme cs) {
     return Consumer<PlanViewModel>(
-      builder: (_, vm, _) {
+      builder: (context, vm, child) {
         final working = vm.isSaving || vm.isGenerating;
 
         // Error

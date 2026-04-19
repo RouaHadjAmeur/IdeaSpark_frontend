@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/product_idea_view_model.dart';
+import 'product_idea_result_screen.dart';
+import 'product_ideas_history_screen.dart';
 
 class ProductIdeasFormScreen extends StatefulWidget {
   const ProductIdeasFormScreen({super.key});
@@ -183,7 +185,18 @@ class _ProductIdeasFormScreenState extends State<ProductIdeasFormScreen> {
               style: GoogleFonts.syne(fontSize: 20, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
             ),
           ),
-          const SizedBox(width: 48),
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const ProductIdeasHistoryScreen(),
+              ),
+            ),
+            icon: Icon(Icons.history_rounded, color: colorScheme.onSurface),
+            style: IconButton.styleFrom(
+              backgroundColor: colorScheme.surfaceContainerHighest,
+              side: BorderSide(color: colorScheme.outlineVariant),
+            ),
+          ),
         ],
       ),
     );

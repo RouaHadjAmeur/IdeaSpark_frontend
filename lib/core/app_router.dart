@@ -35,7 +35,6 @@ import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
 import 'package:ideaspark/modules/camera_coach/camera_coach_screen.dart';
 import 'package:ideaspark/modules/contacts/contacts_screen.dart';
 import 'package:ideaspark/modules/chat/chat_screen.dart';
-import 'package:ideaspark/views/strategic_content_manager/dashboard_v2_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brands_list_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brand_workspace_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/calendar_screen.dart';
@@ -43,6 +42,7 @@ import 'package:ideaspark/views/strategic_content_manager/plan_project_flow.dart
 import 'package:ideaspark/views/strategic_content_manager/ai_campaign_roadmap_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/insights_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/create_edit_brand_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/agent_full_access_screen.dart';
 import 'package:ideaspark/views/execution_hub/execution_hub_screen.dart';
 import 'package:ideaspark/views/execution_hub/project_board_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/plan_detail_screen.dart';
@@ -345,6 +345,11 @@ GoRouter createAppRouter() {
         path: '/camera-coach',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CameraCoachScreen(),
+      ),
+      GoRoute(
+        path: '/agent-full-access',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AgentFullAccessScreen(),
       ),
       GoRoute(
         path: '/chat/:receiverId',

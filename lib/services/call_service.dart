@@ -8,6 +8,8 @@ import 'auth_service.dart';
 
 enum CallStatus { idle, calling, incoming, active }
 
+enum CallType { audio, video }
+
 class CallService {
   CallService._();
   static final CallService _instance = CallService._();
@@ -23,6 +25,7 @@ class CallService {
   String? _remoteUserId;
   String? _remoteUserName;
   CallStatus _status = CallStatus.idle;
+  CallType _type = CallType.audio;
   Map<String, dynamic>? _pendingOffer;
   Completer<void>? _offerCompleter;
   final List<RTCIceCandidate> _pendingIceCandidates = [];
@@ -31,13 +34,21 @@ class CallService {
   final _statusController = StreamController<CallStatus>.broadcast();
   Stream<CallStatus> get onStatusChanged => _statusController.stream;
 
-  final _incomingCallController = StreamController<Map<String, String>>.broadcast();
-  Stream<Map<String, String>> get onIncomingCall => _incomingCallController.stream;
+  final _incomingCallController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get onIncomingCall => _incomingCallController.stream;
 
-  final _remoteStreamController = StreamController<MediaStream>.broadcast();
-  Stream<MediaStream> get onRemoteStream => _remoteStreamController.stream;
+  final _remoteStreamController = StreamController<MediaStream?>.broadcast();
+  Stream<MediaStream?> get onRemoteStream => _remoteStreamController.stream;
+
+  final _localStreamController = StreamController<MediaStream?>.broadcast();
+  Stream<MediaStream?> get onLocalStream => _localStreamController.stream;
+
+  MediaStream? get localStream => _localStream;
+  MediaStream? get remoteStream => _peerConnection?.getRemoteStreams().isNotEmpty ?? false 
+      ? _peerConnection!.getRemoteStreams()[0] : null;
 
   CallStatus get status => _status;
+  CallType get type => _type;
   String? get remoteUserName => _remoteUserName;
 
   void connect() {
@@ -78,9 +89,14 @@ class CallService {
       print('📞 CallService: RECEIVED incomingCall event from server: $data');
       _remoteUserId = data['callerId'];
       _remoteUserName = data['callerName'];
+      _type = data['type'] == 'video' ? CallType.video : CallType.audio;
       _status = CallStatus.incoming;
       _statusController.add(_status);
-      _incomingCallController.add({'callerId': _remoteUserId!, 'callerName': _remoteUserName!});
+      _incomingCallController.add({
+        'callerId': _remoteUserId!, 
+        'callerName': _remoteUserName!,
+        'type': data['type'] ?? 'audio'
+      });
       
       // Initialize completer for the offer that should follow
       _offerCompleter = Completer<void>();
@@ -134,13 +150,22 @@ class CallService {
     });
   }
 
-  Future<void> initiateCall(String receiverId, String receiverName) async {
-    print('📞 CallService: initiateCall to $receiverName ($receiverId)');
+  Future<void> initiateCall(String receiverId, String receiverName, {CallType type = CallType.audio}) async {
+    print('📞 CallService: initiateCall to $receiverName ($receiverId) type: $type');
     
     try {
-      // Check permissions first
-      final status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
+      _type = type;
+      // Check permissions
+      if (_type == CallType.video) {
+        final camStatus = await Permission.camera.request();
+        if (camStatus != PermissionStatus.granted) {
+          print('❌ CallService: Camera permission denied');
+          return;
+        }
+      }
+      
+      final micStatus = await Permission.microphone.request();
+      if (micStatus != PermissionStatus.granted) {
         print('❌ CallService: Microphone permission denied');
         return;
       }
@@ -155,6 +180,7 @@ class CallService {
         'callerId': _authService.currentUser?.id,
         'callerName': _authService.currentUser?.displayName,
         'receiverId': receiverId,
+        'type': _type == CallType.video ? 'video' : 'audio',
       });
 
       // Create PeerConnection and Local Stream
@@ -178,73 +204,97 @@ class CallService {
     }
   }
 
-  Future<void> acceptCall() async {
-    print('📞 CallService: acceptCall called');
+  Future<void> acceptCall({String? remoteUserId, String? remoteUserName}) async {
+    print('📞 CallService: acceptCall() START');
+    print('📞 CallService: Current state - _remoteUserId: $_remoteUserId, status: $_status');
     _stopRingtone();
     
     try {
+      // Use provided ID if internal state is missing (fallback)
+      if (_remoteUserId == null && remoteUserId != null) {
+        print('⚠️ CallService: _remoteUserId was null, using provided fallback: $remoteUserId');
+        _remoteUserId = remoteUserId;
+        _remoteUserName = remoteUserName;
+      }
+
       if (_remoteUserId == null) {
-        print('❌ CallService: Cannot accept call, missing remoteUserId');
-        return;
+        throw Exception('Impossible d\'accepter l\'appel : remoteUserId manquant');
       }
 
       // If offer hasn't arrived yet, wait for it (max 5 seconds)
       if (_pendingOffer == null) {
-        print('⏳ CallService: Offer not yet arrived, waiting...');
+        print('⏳ CallService: Offer not yet arrived, waiting up to 5s...');
         if (_offerCompleter != null) {
           await _offerCompleter!.future.timeout(const Duration(seconds: 5));
         }
       }
 
       if (_pendingOffer == null) {
-        print('❌ CallService: Timed out waiting for offer');
-        return;
+        throw Exception('Délai d\'attente de l\'offre expiré (Signalisation trop lente)');
       }
 
       // 1. Ensure permissions
-      final status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
-        print('❌ CallService: Microphone permission denied');
-        _cleanUp();
-        return;
+      print('📞 CallService: Checking permissions for type: $_type');
+      if (_type == CallType.video) {
+        final camStatus = await Permission.camera.request();
+        if (camStatus != PermissionStatus.granted) {
+          throw Exception('Permission Caméra refusée');
+        }
       }
 
+      final micStatus = await Permission.microphone.request();
+      if (micStatus != PermissionStatus.granted) {
+        throw Exception('Permission Microphone refusée');
+      }
+
+      print('📞 CallService: Permissions OK, updating status to ACTIVE');
       _status = CallStatus.active;
       _statusController.add(_status);
 
       // 2. Create PeerConnection and Local Stream
+      print('📞 CallService: Creating PeerConnection...');
       await _createPeerConnection();
 
+      // Ensure local stream is shared with UI
+      if (_localStream != null) {
+        print('📞 CallService: Local stream available, sending to UI');
+        _localStreamController.add(_localStream!);
+      }
+
       // 3. Set Remote Description (the offer)
-      print('📞 CallService: Setting remote description with offer...');
+      print('📞 CallService: Setting remote description (OFFER)...');
       await _peerConnection!.setRemoteDescription(
         RTCSessionDescription(_pendingOffer!['sdp'], _pendingOffer!['type']),
       );
 
       // 4. Add any ICE candidates that arrived early
-      print('📞 CallService: Adding ${ _pendingIceCandidates.length} pending ICE candidates');
-      for (var candidate in _pendingIceCandidates) {
-        await _peerConnection!.addCandidate(candidate);
+      if (_pendingIceCandidates.isNotEmpty) {
+        print('📞 CallService: Adding ${ _pendingIceCandidates.length} pending ICE candidates');
+        for (var candidate in _pendingIceCandidates) {
+          await _peerConnection!.addCandidate(candidate);
+        }
+        _pendingIceCandidates.clear();
       }
-      _pendingIceCandidates.clear();
 
       // 5. Create and set Local Description (the answer)
-      print('📞 CallService: Creating WebRTC answer...');
+      print('📞 CallService: Creating WebRTC ANSWER...');
       final answer = await _peerConnection!.createAnswer();
       await _peerConnection!.setLocalDescription(answer);
 
       // 6. Send answer to the caller via signaling server
-      print('🚀 CallService: Emitting answer to $_remoteUserId');
+      print('🚀 CallService: Emitting ANSWER to server for caller: $_remoteUserId');
       _socket!.emit('answer', {
         'sdp': answer.toMap(),
         'callerId': _remoteUserId,
       });
       
       _pendingOffer = null;
+      print('✅ CallService: acceptCall() COMPLETED successfully');
     } catch (e, stack) {
-      print('❌ CallService: Error in acceptCall: $e');
+      print('❌ CallService: CRITICAL Error in acceptCall: $e');
       print(stack);
       _cleanUp();
+      rethrow;
     }
   }
 
@@ -261,6 +311,18 @@ class CallService {
       _socket!.emit('endCall', {'receiverId': _remoteUserId});
     }
     _cleanUp();
+  }
+
+  void setMute(bool mute) {
+    _localStream?.getAudioTracks().forEach((track) {
+      track.enabled = !mute;
+    });
+  }
+
+  void setCamera(bool enabled) {
+    _localStream?.getVideoTracks().forEach((track) {
+      track.enabled = enabled;
+    });
   }
 
   Future<void> _createPeerConnection() async {
@@ -290,16 +352,26 @@ class CallService {
       }
     };
 
-    print('📞 CallService: Accessing microphone...');
+    print('📞 CallService: Accessing media (Audio: true, Video: ${ _type == CallType.video})...');
     try {
-      _localStream = await navigator.mediaDevices.getUserMedia({
+      final Map<String, dynamic> mediaConstraints = {
         'audio': true,
-        'video': false,
-      });
-      print('✅ CallService: Microphone access granted');
+        'video': _type == CallType.video,
+      };
+      
+      _localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      print('✅ CallService: Media access granted. Tracks: ${ _localStream!.getTracks().length}');
+      _localStreamController.add(_localStream!);
     } catch (e) {
       print('❌ CallService: Failed to get user media: $e');
-      rethrow;
+      // If video fails, try audio only as fallback?
+      if (_type == CallType.video) {
+        print('⚠️ CallService: Trying audio-only fallback...');
+        _localStream = await navigator.mediaDevices.getUserMedia({'audio': true, 'video': false});
+        _localStreamController.add(_localStream!);
+      } else {
+        rethrow;
+      }
     }
 
     _localStream!.getTracks().forEach((track) {
@@ -338,7 +410,11 @@ class CallService {
   }
 
   void _cleanUp() {
-    _localStream?.getTracks().forEach((track) => track.stop());
+    print('🧹 CallService: Cleaning up resources...');
+    _localStream?.getTracks().forEach((track) {
+      track.stop();
+      print('🧹 CallService: Stopped track: ${track.kind}');
+    });
     _localStream?.dispose();
     _peerConnection?.close();
     _peerConnection = null;
@@ -346,9 +422,14 @@ class CallService {
     _remoteUserId = null;
     _remoteUserName = null;
     _status = CallStatus.idle;
+    _type = CallType.audio; // Reset type to default
     _statusController.add(_status);
     _pendingOffer = null;
     _offerCompleter = null;
     _pendingIceCandidates.clear();
+    
+    // Clear streams
+    _localStreamController.add(null); 
+    _remoteStreamController.add(null);
   }
 }

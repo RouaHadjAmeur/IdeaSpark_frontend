@@ -222,7 +222,7 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
                         padding:
                             const EdgeInsets.fromLTRB(16, 16, 16, 100),
                         itemCount: filtered.length,
-                        separatorBuilder: (_, _) =>
+                        separatorBuilder: (_, __) =>
                             const SizedBox(height: 12),
                         itemBuilder: (_, i) {
                           final plan = filtered[i];

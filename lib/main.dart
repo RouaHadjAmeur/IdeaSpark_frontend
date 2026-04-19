@@ -58,6 +58,7 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
               remoteUserId: data['callerId']!,
               remoteUserName: data['callerName']!,
               isIncoming: true,
+              isVideoButton: data['type'] == 'video',
             ),
           ),
         );

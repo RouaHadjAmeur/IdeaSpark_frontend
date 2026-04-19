@@ -969,7 +969,7 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
 
   Widget _buildNavBar(ColorScheme cs) {
     return Consumer<BrandViewModel>(
-      builder: (_, vm, _) => Container(
+      builder: (context, vm, child) => Container(
         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         decoration: BoxDecoration(
           color: cs.surface,
@@ -1034,7 +1034,7 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.zero,
         itemCount: ordered.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final name = ordered[index].key;
           final pillars = ordered[index].value;

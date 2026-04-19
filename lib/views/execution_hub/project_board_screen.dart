@@ -279,7 +279,7 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       itemCount: phases.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (_, i) =>
           _PhaseCard(phase: phases[i], cs: cs),
     );
@@ -314,7 +314,7 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       itemCount: scheduled.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (_, i) => _ScheduledTile(
         block: scheduled[i],
         cs: cs,

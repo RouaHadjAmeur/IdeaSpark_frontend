@@ -8,9 +8,8 @@ class ApiConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // Pour Android Emulator, on utilise 10.0.2.2 au lieu de localhost
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'http://10.0.2.2:3000'
   );
-
   static String get authBase => '$baseUrl/auth';
   static String get usersBase => '$baseUrl/users';
 
@@ -41,10 +40,20 @@ class ApiConfig {
   // Product Generator (IA Finetuning) Endpoints
   static String get iaFinetuningBase => '$baseUrl/ia-finetuning';
   static String get generateProductIdeaUrl => '$iaFinetuningBase/generate';
+  static String get saveProductIdeaUrl => '$iaFinetuningBase/product-ideas/save';
+  static String get getProductIdeasHistoryUrl => '$iaFinetuningBase/product-ideas/history';
+  static String get getProductIdeasFavoritesUrl => '$iaFinetuningBase/product-ideas/favorites';
+  static String toggleProductIdeaFavoriteUrl(String id) => '$iaFinetuningBase/product-ideas/toggle-favorite/$id';
+  static String deleteProductIdeaUrl(String id) => '$iaFinetuningBase/product-ideas/$id';
 
   // Prompt Refiner (IA Finetuning) Endpoints
   static String get promptRefinerBase => '$baseUrl/ia-finetuning';
   static String get refinePromptUrl => '$promptRefinerBase/refine';
+
+  // Traces Endpoints
+  static String get productIdeaTraceUrl => '$iaFinetuningBase/traces/product-idea';
+  static String get promptRefinerTraceUrl => '$iaFinetuningBase/traces/prompt-refiner';
+  static String get tracesStatsUrl => '$iaFinetuningBase/traces/stats';
 
   // Brands Endpoints
   static String get brandsBase => '$baseUrl/brands';

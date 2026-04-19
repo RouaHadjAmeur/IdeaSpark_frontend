@@ -870,7 +870,7 @@ class _SaveSheetState extends State<_SaveSheet> {
             const SizedBox(height: 8),
             ListenableBuilder(
               listenable: widget.cbVm,
-              builder: (_, _) => SizedBox(
+              builder: (_, __) => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _selectedBrand != null && !widget.cbVm.isLoading
@@ -1017,7 +1017,7 @@ class _AddToPlanSheetState extends State<_AddToPlanSheet> {
             const SizedBox(height: 20),
             ListenableBuilder(
               listenable: widget.cbVm,
-              builder: (_, _) => SizedBox(
+              builder: (_, __) => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _plan != null && !widget.cbVm.isLoading ? _confirm : null,
@@ -1223,7 +1223,7 @@ class _ScheduleSheetState extends State<_ScheduleSheet> {
 
           ListenableBuilder(
             listenable: widget.cbVm,
-            builder: (_, _) => SizedBox(
+            builder: (_, __) => SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: ready && !widget.cbVm.isLoading ? _confirm : null,
