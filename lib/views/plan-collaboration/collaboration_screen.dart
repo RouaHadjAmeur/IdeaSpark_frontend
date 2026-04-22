@@ -272,7 +272,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _members.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) => _buildMemberCard(_members[i], cs),
     );
   }
@@ -426,7 +426,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: allComments.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (_, i) {
             final comment = allComments[i];
             Color? actionColor;
@@ -515,7 +515,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _history.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (_, i) => _buildHistoryCard(_history[i], cs),
     );
   }
@@ -652,8 +652,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                     },
                   ),
   
-                  // Search results — Column inside SingleChildScrollView avoids
-                  // the IntrinsicWidth/ShrinkWrappingViewport conflict in AlertDialog
+                  // Search results
                   if (searchResults.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Container(
@@ -728,16 +727,16 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                   ],
   
                   const SizedBox(height: 12),
-                  // Role selector — Column to avoid Row overflow inside dialog
+                  // Role selector
                   Text('Rôle :', style: TextStyle(fontSize: 13, color: cs.onSurface)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
-                    runSpacing: 6,
+                    runSpacing: 8,
                     children: CollabRole.values.map((r) => GestureDetector(
                       onTap: () => setS(() => selectedRole = r),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: selectedRole == r
                               ? _roleColor(r)
@@ -748,7 +747,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                           r == CollabRole.admin ? 'Admin'
                               : r == CollabRole.editor ? 'Éditeur' : 'Lecteur',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: selectedRole == r ? Colors.white : _roleColor(r),
                           ),

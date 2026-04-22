@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import '../services/collaboration_service.dart';
 import '../services/social_service.dart';
 import '../services/auth_service.dart';

@@ -19,19 +19,18 @@ import 'services/deep_link_service.dart';
 
 import 'view_models/theme_view_model.dart';
 import 'view_models/locale_view_model.dart';
+
 import 'view_models/plan_view_model.dart';
 import 'view_models/brand_view_model.dart';
 import 'view_models/collaboration_view_model.dart';
 import 'view_models/slogan_view_model.dart';
 import 'view_models/product_idea_view_model.dart';
 import 'view_models/video_idea_generator_view_model.dart';
-import 'services/video_generator_service.dart';
+import 'services/video_idea_generator_service.dart';
 import 'view_models/challenge_view_model.dart';
-import 'voice/global_voice_controller.dart';
-import 'ui/widgets/global_voice_overlay.dart';
 import 'services/call_service.dart';
 import 'modules/chat/call_screen.dart';
-import 'core/app_router.dart';
+import 'services/notification_service.dart';
 
 
 Future<void> main() async {
@@ -119,6 +118,13 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
         ChangeNotifierProvider(create: (_) => CollaborationViewModel()),
         ChangeNotifierProvider(create: (_) => ProfileViewModel()),
         ChangeNotifierProvider(create: (_) => SocialViewModel()),
+        ChangeNotifierProxyProvider<SettingsViewModel, HandsFreeModeController>(
+          create: (context) => HandsFreeModeController(
+            Provider.of<SettingsViewModel>(context, listen: false),
+          ),
+          update: (context, settings, previous) =>
+              previous ?? HandsFreeModeController(settings),
+        ),
         Provider(create: (_) => VideoIdeaGeneratorService()),
         ChangeNotifierProxyProvider<VideoIdeaGeneratorService, VideoIdeaGeneratorViewModel>(
           create: (context) => VideoIdeaGeneratorViewModel(
@@ -128,13 +134,6 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
         ),
         ChangeNotifierProvider(create: (_) => GlobalVoiceController()),
         ChangeNotifierProvider(create: (_) => ChallengeViewModel()),
-        ChangeNotifierProxyProvider<SettingsViewModel, HandsFreeModeController>(
-          create: (ctx) => HandsFreeModeController(
-            Provider.of<SettingsViewModel>(ctx, listen: false),
-          ),
-          update: (ctx, settings, previous) =>
-              previous ?? HandsFreeModeController(settings),
-        ),
       ],
       child: Consumer2<ThemeViewModel, LocaleViewModel>(
         builder: (context, themeVm, localeVm, _) {

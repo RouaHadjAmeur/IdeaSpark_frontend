@@ -39,21 +39,21 @@ class ContentBlockService {
     final headers = await _authHeaders();
     final body = <String, dynamic>{
       'productName': productName,
-      'productCategory': ?productCategory,
-      'keyBenefits':     ?keyBenefits,
-      'painPoint':        ?painPoint,
-      'brandId':          ?brandId,
-      'brandTone':        ?brandTone,
-      'brandAudience':    ?brandAudience,
-      'contentPillars':   ?contentPillars,
-      'activePlanPhase':  ?activePlanPhase,
-      'currentWeek':      ?currentWeek,
-      'promoRatio':       ?promoRatio,
-      'calendarContext':  ?calendarContext,
-      if (platform        != null) 'platform':         platform.toJson(),
-      'language':         ?language,
-      'planId':            ?planId,
-      'planPhaseId':       ?planPhaseId,
+      if (productCategory != null) 'productCategory': productCategory,
+      if (keyBenefits != null) 'keyBenefits': keyBenefits,
+      if (painPoint != null) 'painPoint': painPoint,
+      if (brandId != null) 'brandId': brandId,
+      if (brandTone != null) 'brandTone': brandTone,
+      if (brandAudience != null) 'brandAudience': brandAudience,
+      if (contentPillars != null) 'contentPillars': contentPillars,
+      if (activePlanPhase != null) 'activePlanPhase': activePlanPhase,
+      if (currentWeek != null) 'currentWeek': currentWeek,
+      if (promoRatio != null) 'promoRatio': promoRatio,
+      if (calendarContext != null) 'calendarContext': calendarContext,
+      if (platform != null) 'platform': platform.toJson(),
+      if (language != null) 'language': language,
+      if (planId != null) 'planId': planId,
+      if (planPhaseId != null) 'planPhaseId': planPhaseId,
     };
 
     final response = await http.post(
@@ -186,7 +186,7 @@ class ContentBlockService {
         headers: headers,
         body: jsonEncode({
           'productionChecklist': checklist,
-          'updatedBy': ?userId,
+          if (userId != null) 'updatedBy': userId,
         }),
       );
       if (response.statusCode == 200 || response.statusCode == 204) return;
@@ -196,7 +196,7 @@ class ContentBlockService {
         headers: headers,
         body: jsonEncode({
           'productionChecklist': checklist,
-          'updatedBy': ?userId,
+          if (userId != null) 'updatedBy': userId,
         }),
       );
       if (fallback.statusCode != 200 && fallback.statusCode != 204) {
@@ -241,8 +241,8 @@ class ContentBlockService {
       headers: headers,
       body: jsonEncode({
         'planId': planId,
-        'planPhaseId': ?planPhaseId,
-        'phaseLabel':  ?phaseLabel,
+        if (planPhaseId != null) 'planPhaseId': planPhaseId,
+        if (phaseLabel != null) 'phaseLabel': phaseLabel,
       }),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {

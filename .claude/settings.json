@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(open -a Simulator)",
+      "Bash(flutter doctor *)"
+    ],
+    "additionalDirectories": [
+      "/Users/mac/Library/Developer/Xcode/DerivedData"
+    ]
+  }
+}

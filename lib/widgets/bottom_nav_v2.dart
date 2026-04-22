@@ -54,6 +54,7 @@ class BottomNavV2 extends StatelessWidget {
                   isSelected: currentIndex == 0,
                   onTap: () => onTap(0),
                   colorScheme: colorScheme,
+                  activeColor: activeColor,
                 ),
                 _NavItem(
                   icon: Icons.label_important_outline_rounded,
@@ -61,6 +62,7 @@ class BottomNavV2 extends StatelessWidget {
                   isSelected: currentIndex == 1,
                   onTap: () => onTap(1),
                   colorScheme: colorScheme,
+                  activeColor: activeColor,
                 ),
                 _NavItem(
                   icon: Icons.calendar_month_rounded,
@@ -68,6 +70,7 @@ class BottomNavV2 extends StatelessWidget {
                   isSelected: currentIndex == 2,
                   onTap: () => onTap(2),
                   colorScheme: colorScheme,
+                  activeColor: activeColor,
                 ),
                 _NavItem(
                   icon: Icons.dashboard_customize_rounded,
@@ -75,6 +78,7 @@ class BottomNavV2 extends StatelessWidget {
                   isSelected: currentIndex == 3,
                   onTap: () => onTap(3),
                   colorScheme: colorScheme,
+                  activeColor: activeColor,
                 ),
                 _NavItem(
                   icon: Icons.insights_rounded,
@@ -82,6 +86,7 @@ class BottomNavV2 extends StatelessWidget {
                   isSelected: currentIndex == 4,
                   onTap: () => onTap(4),
                   colorScheme: colorScheme,
+                  activeColor: activeColor,
                 ),
                 _NavItem(
                   icon: Icons.contacts_rounded,
@@ -89,6 +94,7 @@ class BottomNavV2 extends StatelessWidget {
                   isSelected: currentIndex == 5,
                   onTap: () => onTap(5),
                   colorScheme: colorScheme,
+                  activeColor: activeColor,
                 ),
                 _NavItem(
                   icon: Icons.person_rounded,
@@ -96,6 +102,7 @@ class BottomNavV2 extends StatelessWidget {
                   isSelected: currentIndex == 6,
                   onTap: () => onTap(6),
                   colorScheme: colorScheme,
+                  activeColor: activeColor,
                 ),
               ],
             ),

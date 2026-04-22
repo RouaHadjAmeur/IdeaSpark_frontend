@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/plan.dart';
 import '../../services/caption_generator_service.dart';
+import '../../services/trending_hashtags_service.dart';
 
 class CaptionGeneratorScreen extends StatefulWidget {
   final ContentBlock block;
@@ -21,8 +22,10 @@ class CaptionGeneratorScreen extends StatefulWidget {
 class _CaptionGeneratorScreenState extends State<CaptionGeneratorScreen> {
   String _selectedPlatform = 'Instagram';
   bool _isLoading = false;
+  bool _isLoadingHashtags = false;
   CaptionResult? _result;
   int _selectedCaption = 1; // 0=short, 1=medium, 2=long
+  List<String> _trendingHashtags = [];
 
   final _platforms = ['Instagram', 'TikTok', 'Facebook', 'LinkedIn'];
   final _service = CaptionGeneratorService();
@@ -39,6 +42,49 @@ class _CaptionGeneratorScreenState extends State<CaptionGeneratorScreen> {
       brandName: widget.brandName,
     );
     if (mounted) setState(() { _result = result; _isLoading = false; });
+  }
+
+  Future<void> _loadTrendingHashtags() async {
+    setState(() => _isLoadingHashtags = true);
+    
+    try {
+      // Détecter la catégorie (vous pouvez passer la description de la marque si disponible)
+      final category = TrendingHashtagsService.detectCategory(widget.block.pillar);
+      
+      final hashtags = await TrendingHashtagsService.generateHashtags(
+        brandName: widget.brandName,
+        postTitle: widget.block.title,
+        category: category,
+        platform: _selectedPlatform.toLowerCase(),
+      );
+      
+      if (mounted) {
+        setState(() {
+          _trendingHashtags = hashtags;
+          _isLoadingHashtags = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ ${hashtags.length} hashtags tendances ajoutés !'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingHashtags = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Erreur: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   void _copyToClipboard(String text) {
@@ -191,6 +237,30 @@ class _CaptionGeneratorScreenState extends State<CaptionGeneratorScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 10),
+
+                    // Trending Hashtags button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isLoadingHashtags ? null : _loadTrendingHashtags,
+                        icon: _isLoadingHashtags
+                            ? SizedBox(
+                                width: 18, height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: cs.primary))
+                            : const Icon(Icons.trending_up, size: 20),
+                        label: Text(_isLoadingHashtags 
+                            ? 'Chargement...' 
+                            : '🔥 Hashtags Tendances'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          side: BorderSide(color: cs.primary),
+                        ),
+                      ),
+                    ),
 
                     // Results
                     if (_result != null) ...[
@@ -306,6 +376,71 @@ class _CaptionGeneratorScreenState extends State<CaptionGeneratorScreen> {
                           ],
                         ),
                       ),
+                      
+                      // Trending Hashtags section
+                      if (_trendingHashtags.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Row(children: [
+                          const Icon(Icons.trending_up, size: 16, color: Colors.orange),
+                          const SizedBox(width: 6),
+                          Text('Hashtags Tendances',
+                              style: TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                        ]),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: _trendingHashtags.map((h) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.local_fire_department, 
+                                          size: 12, color: Colors.orange),
+                                      const SizedBox(width: 4),
+                                      Text(h,
+                                          style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.orange,
+                                              fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                )).toList(),
+                              ),
+                              const SizedBox(height: 10),
+                              GestureDetector(
+                                onTap: () => _copyToClipboard(_trendingHashtags.join(' ')),
+                                child: Row(children: [
+                                  const Icon(Icons.copy, size: 14, color: Colors.orange),
+                                  const SizedBox(width: 4),
+                                  const Text('Copier tous les hashtags tendances',
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.orange,
+                                          fontWeight: FontWeight.w500)),
+                                ]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
 
                       // Emojis
@@ -363,11 +498,19 @@ class _CaptionGeneratorScreenState extends State<CaptionGeneratorScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: () => _copyToClipboard(
-                            '${_getCaptionText()}\n\n${_result!.hashtags.join(' ')}',
-                          ),
+                          onPressed: () {
+                            final allHashtags = [
+                              ..._result!.hashtags,
+                              ..._trendingHashtags,
+                            ].join(' ');
+                            _copyToClipboard(
+                              '${_getCaptionText()}\n\n$allHashtags',
+                            );
+                          },
                           icon: const Icon(Icons.copy_all),
-                          label: const Text('Copier Caption + Hashtags'),
+                          label: Text(_trendingHashtags.isEmpty 
+                              ? 'Copier Caption + Hashtags'
+                              : 'Copier Caption + Tous les Hashtags'),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(

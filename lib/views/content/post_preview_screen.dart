@@ -59,14 +59,17 @@ class _PostPreviewScreenState extends State<PostPreviewScreen> {
             // Platform selector
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  _platformBtn('instagram', '📸 Instagram', cs),
-                  const SizedBox(width: 8),
-                  _platformBtn('tiktok', '🎵 TikTok', cs),
-                  const SizedBox(width: 8),
-                  _platformBtn('facebook', '👥 Facebook', cs),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _platformBtn('instagram', '📸 Instagram', cs),
+                    const SizedBox(width: 8),
+                    _platformBtn('tiktok', '🎵 TikTok', cs),
+                    const SizedBox(width: 8),
+                    _platformBtn('facebook', '👥 Facebook', cs),
+                  ],
+                ),
               ),
             ),
 

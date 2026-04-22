@@ -10,7 +10,9 @@ android {
     namespace = "com.example.ideaspark"
     compileSdk = flutter.compileSdkVersion
     // Pin to a stable NDK to avoid corrupted 28.2 downloads; use 26.x which installs reliably
-    ndkVersion = "27.0.12077973"
+    // Use the highest NDK required by plugins (speech_to_text requires 28.2.x).
+    // Set to 28.2.13676358 to satisfy plugin requirements; these NDK versions are backward compatible.
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -45,4 +47,5 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("com.facebook.android:facebook-android-sdk:latest.release")
 }

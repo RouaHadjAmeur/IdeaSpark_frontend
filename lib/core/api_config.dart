@@ -147,6 +147,7 @@ class ApiConfig {
 
   // Social & Community
   static String get socialBase => '$baseUrl/social';
+
   static String get socialFeed => '$baseUrl/social/feed';
   static String get socialSuggestions => '$baseUrl/social/suggestions';
   static String get socialAccept => '$baseUrl/social/accept'; // /id at end

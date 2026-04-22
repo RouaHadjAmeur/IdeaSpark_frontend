@@ -57,13 +57,19 @@ import 'package:ideaspark/views/generators/generators_screen.dart';
 
 import 'package:ideaspark/views/social/user_profile_screen.dart';
 import 'package:ideaspark/views/profile/subscription_screen.dart';
+import 'package:ideaspark/views/ai/image_generator_screen.dart';
+import 'package:ideaspark/views/ai/image_history_screen.dart';
+import 'package:ideaspark/views/ai/creative_ai_test_screen.dart';
+import 'package:ideaspark/views/ai/video_generator_screen.dart';
+import 'package:ideaspark/views/ai/video_history_screen.dart';
 
 import '../models/video_generator_models.dart';
 import '../models/brand.dart';
 import '../models/plan.dart';
 import '../services/auth_service.dart';
 
-final rootNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = _rootNavigatorKey;
 
 GoRouter createAppRouter() {
   return GoRouter(
@@ -392,6 +398,39 @@ GoRouter createAppRouter() {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: '/image-generator',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ImageGeneratorScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/image-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ImageHistoryScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/creative-ai-test',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CreativeAITestScreen(),
+      ),
+      GoRoute(
+        path: '/video-generator',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const VideoGeneratorScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/video-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const VideoHistoryScreen()),
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

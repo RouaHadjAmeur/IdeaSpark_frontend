@@ -45,7 +45,7 @@ dependencies:
   file_picker: ^8.1.2
   speech_to_text: ^7.0.0
   flutter_tts: ^4.2.0
-  url_launcher: ^6.2.2
+  url_launcher: ^6.3.0
   app_links: ^6.3.2
   share_plus: ^10.1.4
   pdf: ^3.11.1
@@ -59,18 +59,16 @@ dependencies:
   gal: ^2.3.2
   intl: ^0.19.0
   flutter_stripe: ^11.1.0
-  video_player: ^2.9.2
+  video_player: ^2.11.1
   sensors_plus: ^4.0.2
-  socket_io_client: ^2.0.2
   flutter_webrtc: ^0.12.3
   audioplayers: ^6.0.0
-  file_picker: ^8.0.0
   record: ^6.0.0
   just_audio: ^0.9.40
   dio: ^5.0.0
-  path_provider: ^2.0.0
+  path_provider: ^2.1.1
   path: ^1.9.0
-  url_launcher: ^6.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
