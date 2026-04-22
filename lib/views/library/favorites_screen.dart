@@ -22,7 +22,7 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   String _selectedFilter = 'Tous';
 
-  bool _isLoadingSlogans = false;
+  final bool _isLoadingSlogans = false;
 
   @override
   void initState() {

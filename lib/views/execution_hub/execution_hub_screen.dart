@@ -7,6 +7,7 @@ import '../../models/plan.dart';
 import '../../models/brand.dart';
 import '../../view_models/plan_view_model.dart';
 import '../../view_models/brand_view_model.dart';
+import '../../view_models/auth_view_model.dart';
 
 class ExecutionHubScreen extends StatefulWidget {
   const ExecutionHubScreen({super.key});
@@ -97,6 +98,8 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
                         ],
                       ),
                     ),
+                    if (vm.isLoading)
+                      const SizedBox(width: 8),
                     if (vm.isLoading)
                       SizedBox(
                         width: 18,
@@ -240,6 +243,7 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
                                 context.push('/plan-detail', extra: plan),
                             onDelete: () => _confirmDelete(vm, plan),
                             isSaving: vm.isSaving,
+                            isBrandOwner: context.read<AuthViewModel>().isBrandOwner,
                           );
                         },
                       ),
@@ -258,7 +262,8 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
     );
   }
 
-  Widget _buildEmpty(BuildContext context, ColorScheme cs) => Expanded(
+  Widget _buildEmpty(BuildContext context, ColorScheme cs) =>
+      Expanded(
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
@@ -359,6 +364,7 @@ class _ProjectCard extends StatelessWidget {
   final VoidCallback onViewDetail;
   final VoidCallback onDelete;
   final bool isSaving;
+  final bool isBrandOwner;
 
   const _ProjectCard({
     required this.plan,
@@ -368,6 +374,7 @@ class _ProjectCard extends StatelessWidget {
     required this.onViewDetail,
     required this.onDelete,
     required this.isSaving,
+    required this.isBrandOwner,
   });
 
   static const _statusColors = {
@@ -553,20 +560,22 @@ class _ProjectCard extends StatelessWidget {
                               size: 17, color: cs.primary),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: isSaving ? null : onDelete,
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: cs.error.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
+                      if (isBrandOwner) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: isSaving ? null : onDelete,
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: cs.error.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(Icons.delete_outline_rounded,
+                                size: 17, color: cs.error),
                           ),
-                          child: Icon(Icons.delete_outline_rounded,
-                              size: 17, color: cs.error),
                         ),
-                      ),
+                      ],
                     ]),
                   ],
                 ),

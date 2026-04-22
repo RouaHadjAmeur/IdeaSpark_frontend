@@ -191,7 +191,7 @@ class _UserListItem extends StatelessWidget {
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    user.role ?? 'Expert',
+                    user.role.name ?? 'Expert',
                     style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary),
                   ),
                   if (user.skills != null && user.skills!.isNotEmpty) ...[

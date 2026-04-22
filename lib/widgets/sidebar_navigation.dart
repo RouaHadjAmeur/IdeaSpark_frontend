@@ -5,6 +5,7 @@ import '../core/app_localizations.dart';
 import '../core/app_theme.dart';
 import '../models/plan.dart';
 import '../view_models/plan_view_model.dart';
+import '../view_models/auth_view_model.dart';
 
 class SidebarNavigation extends StatefulWidget {
   const SidebarNavigation({super.key});
@@ -29,13 +30,14 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
     final colorScheme = Theme.of(context).colorScheme;
     final isMobile = MediaQuery.of(context).size.width < 900;
     final location = GoRouterState.of(context).matchedLocation;
+    final authVm = context.watch<AuthViewModel>();
 
     return Container(
       width: isMobile ? MediaQuery.of(context).size.width * 0.8 : 280,
       color: colorScheme.surface,
       child: Column(
         children: [
-          _buildProfileHeader(context, colorScheme),
+          _buildProfileHeader(context, colorScheme, authVm),
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
@@ -55,6 +57,12 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                   onTap: () => context.push('/brands-list'),
                 ),
                 _SidebarItem(
+                  icon: Icons.analytics_outlined,
+                  label: context.tr('nav_insights'),
+                  isActive: location.startsWith('/insights'),
+                  onTap: () => context.push('/insights'),
+                ),
+                _SidebarItem(
                   icon: Icons.calendar_month_rounded,
                   label: context.tr('nav_calendar'),
                   badge: '3',
@@ -63,21 +71,13 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                 ),
                 _SidebarItem(
                   icon: Icons.dashboard_customize_rounded,
-                  label: 'Execution Hub',
+                  label: 'Projects',
                   isActive: location.startsWith('/projects') ||
                       location.startsWith('/project-board') ||
                       location.startsWith('/plan-project'),
                   onTap: () => context.go('/projects'),
                 ),
-                // ─── Plans expandable section ──────────────────────────
                 _buildPlansSection(context, colorScheme, location),
-                // ──────────────────────────────────────────────────────
-                _SidebarItem(
-                  icon: Icons.insights_rounded,
-                  label: context.tr('nav_insights'),
-                  isActive: location.startsWith('/insights'),
-                  onTap: () => context.go('/insights'),
-                ),
                 _SidebarItem(
                   icon: Icons.groups_rounded,
                   label: context.tr('nav_community'),
@@ -89,8 +89,8 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                 _SidebarItem(
                   icon: Icons.lightbulb_outline_rounded,
                   label: context.tr('nav_idea_gen'),
-                  isActive: GoRouterState.of(context).matchedLocation == '/home',
-                  onTap: () => context.push('/home'),
+                  isActive: location == '/generators',
+                  onTap: () => context.push('/generators'),
                 ),
                 _SidebarItem(
                   icon: Icons.favorite_border_rounded,
@@ -114,8 +114,8 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                 ),
                 _SidebarItem(
                   icon: Icons.star_border_rounded,
-                  label: 'Credits · 1,349',
-                  isActive: GoRouterState.of(context).matchedLocation.startsWith('/credits-shop'),
+                  label: 'Credits',
+                  isActive: location.startsWith('/credits-shop'),
                   onTap: () => context.push('/credits-shop'),
                 ),
                 _SidebarItem(
@@ -131,7 +131,7 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, ColorScheme colorScheme) {
+  Widget _buildProfileHeader(BuildContext context, ColorScheme colorScheme, AuthViewModel authVm) {
     final isMobile = MediaQuery.of(context).size.width < 900;
     return Container(
       padding: EdgeInsets.fromLTRB(20, isMobile ? 60 : 30, 20, 24),
@@ -169,20 +169,13 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                       color: colorScheme.onSurface,
                     ),
               ),
-              Container(
-                margin: const EdgeInsets.only(top: 2),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  'PRO',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                  ),
+              const SizedBox(height: 4),
+              Text(
+                'Professional Account',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],

@@ -37,6 +37,9 @@ class PlanViewModel extends ChangeNotifier {
   bool get isLoadingAlerts => _isLoadingAlerts;
   DateTime? get alertsLastRefreshed => _alertsLastRefreshed;
 
+  Map<String, dynamic> _aiInsights = {};
+  Map<String, dynamic> get aiInsights => _aiInsights;
+
   // ─── Plans CRUD ───────────────────────────────────────────────────────────
 
   Future<void> loadPlans({String? brandId}) async {
@@ -83,7 +86,17 @@ class PlanViewModel extends ChangeNotifier {
     }
   }
 
-  Future<Plan?> activatePlan(String planId) async {
+  Future<Plan?> activatePlan(String planId, {String? currentUserId, bool isBrandOwner = false}) async {
+    // RBAC: Simple users can only activate plans they generated
+    if (!isBrandOwner && currentUserId != null) {
+      final plan = _plans.firstWhere((p) => p.id == planId, orElse: () => _currentPlan!);
+      if (plan.userId != currentUserId) {
+        _error = "Unauthorized: You can only activate plans you generated.";
+        notifyListeners();
+        return null;
+      }
+    }
+
     _isSaving = true;
     _error = null;
     notifyListeners();
@@ -155,7 +168,7 @@ class PlanViewModel extends ChangeNotifier {
 
   // ─── Calendar loading ─────────────────────────────────────────────────────
 
-  /// Loads calendar entries for ALL active plans and merges them.
+  /// Loads calendar entries for ALL plans and merges them.
   Future<void> loadAllCalendar() async {
     _isLoading = true;
     _error = null;
@@ -164,20 +177,22 @@ class PlanViewModel extends ChangeNotifier {
       if (_plans.isEmpty) {
         _plans = await PlanService.getPlans();
       }
-      final activePlans = _plans.where((p) => p.status == PlanStatus.active).toList();
+      
       final List<CalendarEntry> combined = [];
-      for (final plan in activePlans) {
+      for (final plan in _plans) {
         try {
-          // Fetch plan detail (with phases) if not already loaded
+          // Fetch plan detail (with phases) if not already fully loaded
           Plan detail = plan;
           if (plan.phases.isEmpty) {
             detail = await PlanService.getPlanById(plan.id!);
             _updatePlanInList(detail);
           }
           final entries = await PlanService.getCalendar(plan.id!);
-          combined.addAll(_enrichEntries(entries, detail));
-        } catch (_) {
-          // Skip plans whose calendar can't be loaded
+          if (entries.isNotEmpty) {
+            combined.addAll(_enrichEntries(entries, detail));
+          }
+        } catch (e) {
+          debugPrint('Calendar load failed for plan ${plan.id}: $e');
         }
       }
       combined.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
@@ -249,6 +264,72 @@ class PlanViewModel extends ChangeNotifier {
   Future<void> refreshAiAlerts({required List<Brand> brands}) async {
     await _alertService.clearCache();
     await loadAiAlerts(brands: brands, forceRefresh: true);
+  }
+
+  // ─── Project DNA & AI Insights ──────────────────────────────────────────────
+
+  Future<bool> updateProjectDNA(String planId, Map<String, dynamic> dna) async {
+    _isSaving = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final updated = await PlanService.updateProjectDNA(planId, dna);
+      _updatePlanInList(updated);
+      if (_currentPlan?.id == planId) _currentPlan = updated;
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updatePlanNotes(String planId, String notes, {String? authorId}) async {
+    _isSaving = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final updated = await PlanService.updatePlan(planId, {
+        'notes': notes,
+        'notesSeen': false,
+        'lastNoteAuthorId': authorId,
+      });
+      _updatePlanInList(updated);
+      if (_currentPlan?.id == planId) _currentPlan = updated;
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> markNoteAsSeen(String planId) async {
+    try {
+      final updated = await PlanService.updatePlan(planId, {'notesSeen': true});
+      _updatePlanInList(updated);
+      if (_currentPlan?.id == planId) _currentPlan = updated;
+    } catch (e) {
+      debugPrint('Error marking note as seen: $e');
+    }
+  }
+
+  Future<void> loadAIInsights(String planId) async {
+    _isLoading = true;
+    _error = null;
+    Future.microtask(() => notifyListeners());
+    try {
+      _aiInsights = await PlanService.getAIInsights(planId);
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   // ─── Misc ─────────────────────────────────────────────────────────────────

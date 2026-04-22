@@ -22,11 +22,16 @@ class PlanService {
 
   static Future<Plan> createPlan(Map<String, dynamic> data, String brandId) async {
     final token = await _getToken();
+    final url = '${ApiConfig.createPlanUrl}?brandId=$brandId';
+    // ignore: avoid_print
+    print('[PlanService] POST $url body=${jsonEncode(data)}');
     final response = await http.post(
-      Uri.parse('${ApiConfig.createPlanUrl}?brandId=$brandId'),
+      Uri.parse(url),
       headers: _headers(token),
       body: jsonEncode(data),
     );
+    // ignore: avoid_print
+    print('[PlanService] createPlan status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 400))}');
     if (response.statusCode == 201) {
       return Plan.fromJson(jsonDecode(response.body));
     }
@@ -75,6 +80,37 @@ class PlanService {
     throw Exception('Failed to update plan: ${response.statusCode} - ${response.body}');
   }
 
+  static Future<Plan> updateCampaignCopy(String id, String copy) async {
+    final token = await _getToken();
+    final headers = _headers(token);
+    final body = jsonEncode({'notes': copy});
+
+    // 1. Try specialized endpoint
+    final response = await http.patch(
+      Uri.parse(ApiConfig.updateCampaignCopyUrl(id)),
+      headers: headers,
+      body: body,
+    );
+
+    if (response.statusCode == 200) {
+      return Plan.fromJson(jsonDecode(response.body));
+    }
+
+    // 2. Fallback to generic update if 400 or other failure
+    if (response.statusCode == 400 || response.statusCode == 404) {
+      final fallback = await http.patch(
+        Uri.parse(ApiConfig.planByIdUrl(id)),
+        headers: headers,
+        body: body,
+      );
+      if (fallback.statusCode == 200) {
+        return Plan.fromJson(jsonDecode(fallback.body));
+      }
+    }
+    
+    throw Exception('Failed to update campaign copy: ${response.statusCode} - ${response.body}');
+  }
+
   // ─── Delete ──────────────────────────────────────────────────────────────
 
   static Future<void> deletePlan(String id) async {
@@ -92,10 +128,18 @@ class PlanService {
 
   static Future<Plan> generatePlanStructure(String id) async {
     final token = await _getToken();
+    final url = ApiConfig.generatePlanUrl(id);
+    // ignore: avoid_print
+    print('[PlanService] POST $url (Gemini generation)');
     final response = await http.post(
-      Uri.parse(ApiConfig.generatePlanUrl(id)),
+      Uri.parse(url),
       headers: _headers(token),
+    ).timeout(
+      const Duration(seconds: 120),
+      onTimeout: () => throw Exception('Plan generation timed out (>120s). Please try again.'),
     );
+    // ignore: avoid_print
+    print('[PlanService] generatePlanStructure status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 400))}');
     if (response.statusCode == 200 || response.statusCode == 201) {
       return Plan.fromJson(jsonDecode(response.body));
     }
@@ -158,5 +202,32 @@ class PlanService {
       return Plan.fromJson(jsonDecode(response.body));
     }
     throw Exception('Failed to regenerate plan: ${response.statusCode} - ${response.body}');
+  }
+
+  // ─── Project DNA ───────────────────────────────────────────────────────────
+
+  static Future<Plan> updateProjectDNA(String id, Map<String, dynamic> dna) async {
+    final token = await _getToken();
+    final response = await http.patch(
+      Uri.parse(ApiConfig.planDNAUrl(id)),
+      headers: _headers(token),
+      body: jsonEncode(dna),
+    );
+    if (response.statusCode == 200) {
+      return Plan.fromJson(jsonDecode(response.body));
+    }
+    throw Exception('Failed to update project DNA: ${response.statusCode} - ${response.body}');
+  }
+
+  static Future<Map<String, dynamic>> getAIInsights(String id) async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse(ApiConfig.aiProjectInsightsUrl(id)),
+      headers: _headers(token),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to get AI insights: ${response.statusCode} - ${response.body}');
   }
 }

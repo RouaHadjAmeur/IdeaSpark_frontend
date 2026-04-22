@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -559,6 +558,21 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   onTap: () => context.push('/credits-shop'),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: Colors.amber.shade700,
+                  ),
+                  title: Text(
+                    vm.isPremium ? 'Manage Premium Subscription' : 'Upgrade to Premium',
+                    style: TextStyle(
+                      color: Colors.amber.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () => context.push('/subscription-upgrade'),
                 ),
                 const SizedBox(height: 24),
                 _SettingsGroup(

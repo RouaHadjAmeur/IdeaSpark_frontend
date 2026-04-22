@@ -93,7 +93,7 @@ class _FollowingTile extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(user.role ?? 'Member', style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary)),
+            Text(user.role.name ?? 'Member', style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary)),
             if (user.skills != null && user.skills!.isNotEmpty)
               Text(
                 user.skills!.take(3).join(' • '),

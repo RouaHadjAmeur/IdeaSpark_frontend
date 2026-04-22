@@ -12,6 +12,7 @@ import 'package:ideaspark/views/auth/forgot_password_screen.dart';
 import 'package:ideaspark/views/home/home_screen.dart';
 import 'package:ideaspark/views/criteria/criteria_screen.dart';
 import 'package:ideaspark/views/loading/loading_screen.dart';
+import 'package:ideaspark/views/loading/ai_plan_loading_screen.dart';
 import 'package:ideaspark/views/results/results_screen.dart';
 import 'package:ideaspark/views/results/idea_detail_screen.dart';
 import 'package:ideaspark/views/library/favorites_screen.dart';
@@ -42,14 +43,17 @@ import 'package:ideaspark/views/strategic_content_manager/insights_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/create_edit_brand_screen.dart';
 import 'package:ideaspark/views/execution_hub/execution_hub_screen.dart';
 import 'package:ideaspark/views/execution_hub/project_board_screen.dart';
-import 'package:ideaspark/views/strategic_content_manager/plan_detail_screen.dart';
+import '../views/strategic_content_manager/campaign_workspace_screen.dart';
+
 import 'package:ideaspark/widgets/bottom_nav_v2.dart';
 import 'package:ideaspark/widgets/sidebar_navigation.dart';
 import 'package:ideaspark/widgets/page_shell.dart';
 import 'package:ideaspark/views/collaboration/notifications_screen.dart';
-import 'package:ideaspark/views/social/community_feed_screen.dart';
+import 'package:ideaspark/views/collaboration/community_hub_screen.dart';
+import 'package:ideaspark/views/generators/generators_screen.dart';
 
 import 'package:ideaspark/views/social/user_profile_screen.dart';
+import 'package:ideaspark/views/profile/subscription_screen.dart';
 
 import '../models/video_generator_models.dart';
 import '../models/brand.dart';
@@ -150,6 +154,14 @@ GoRouter createAppRouter() {
             };
           }
           return LocaleRebuilder(builder: (_) => LoadingScreen(redirectTo: redirectTo, forwardData: forwardData));
+        },
+      ),
+      GoRoute(
+        path: '/loading-ai',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final brandName = state.extra is String ? state.extra as String : 'Brand';
+          return LocaleRebuilder(builder: (_) => AiPlanLoadingScreen(brandName: brandName));
         },
       ),
       GoRoute(
@@ -333,7 +345,7 @@ GoRouter createAppRouter() {
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final plan = state.extra as Plan;
-          return PlanDetailScreen(plan: plan);
+          return CampaignWorkspaceScreen(plan: plan);
         },
       ),
       GoRoute(
@@ -349,6 +361,15 @@ GoRouter createAppRouter() {
         path: '/camera-coach',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CameraCoachScreen(),
+      ),
+      GoRoute(
+        path: '/subscription-upgrade',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(
+            builder: (_) => const SubscriptionScreen(),
+          ),
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -418,6 +439,17 @@ GoRouter createAppRouter() {
               ),
             ],
           ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/generators',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const GeneratorsScreen(),
+                ),
+              ),
+            ],
+          ),
           // Additional branches for legacy screens that should have the shell
           StatefulShellBranch(
             routes: [
@@ -447,7 +479,7 @@ GoRouter createAppRouter() {
                 path: '/community',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: const CommunityFeedScreen(),
+                  child: const CommunityHubScreen(),
                 ),
               ),
             ],

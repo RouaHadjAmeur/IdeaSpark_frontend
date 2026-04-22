@@ -92,7 +92,7 @@ class _UserTile extends StatelessWidget {
               : null,
         ),
         title: Text(user.displayName, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-        subtitle: Text(user.role ?? 'Member', style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary)),
+        subtitle: Text(user.role.name ?? 'Member', style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary)),
         trailing: TextButton(
           onPressed: () => vm.toggleFollow(user.id),
           style: TextButton.styleFrom(

@@ -19,6 +19,184 @@ enum ContentBlockStatus { draft, scheduled, edited }
 
 enum CalendarEntryStatus { scheduled, published, cancelled }
 
+// ─── Project DNA ─────────────────────────────────────────────────────────────
+
+class StrategicDNA {
+  final String vision;
+  final List<String> targetAudience;
+  final String offer;
+  final String positioning;
+  final String campaignAngle;
+  final List<String> kpis;
+
+  const StrategicDNA({
+    this.vision = '',
+    this.targetAudience = const [],
+    this.offer = '',
+    this.positioning = '',
+    this.campaignAngle = '',
+    this.kpis = const [],
+  });
+
+  factory StrategicDNA.fromJson(Map<String, dynamic> json) => StrategicDNA(
+        vision: json['vision'] ?? '',
+        targetAudience: List<String>.from(json['targetAudience'] ?? []),
+        offer: json['offer'] ?? '',
+        positioning: json['positioning'] ?? '',
+        campaignAngle: json['campaignAngle'] ?? '',
+        kpis: List<String>.from(json['kpis'] ?? []),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'vision': vision,
+        'targetAudience': targetAudience,
+        'offer': offer,
+        'positioning': positioning,
+        'campaignAngle': campaignAngle,
+        'kpis': kpis,
+      };
+}
+
+class ExecutionDNA {
+  final int progressPercentage;
+  final List<String> taskIds;
+  final DateTime? overallDeadline;
+
+  const ExecutionDNA({
+    this.progressPercentage = 0,
+    this.taskIds = const [],
+    this.overallDeadline,
+  });
+
+  factory ExecutionDNA.fromJson(Map<String, dynamic> json) => ExecutionDNA(
+        progressPercentage: (json['progressPercentage'] as num?)?.toInt() ?? 0,
+        taskIds: List<String>.from(json['taskIds'] ?? []),
+        overallDeadline: json['overallDeadline'] != null ? DateTime.tryParse(json['overallDeadline']) : null,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'progressPercentage': progressPercentage,
+        'taskIds': taskIds,
+        'overallDeadline': overallDeadline?.toIso8601String(),
+      };
+}
+
+class ResourceAsset {
+  final String type;
+  final String url;
+  final String label;
+
+  const ResourceAsset({required this.type, required this.url, required this.label});
+
+  factory ResourceAsset.fromJson(Map<String, dynamic> json) => ResourceAsset(
+        type: json['type'] ?? '',
+        url: json['url'] ?? '',
+        label: json['label'] ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {'type': type, 'url': url, 'label': label};
+}
+
+class ResourceDNA {
+  final List<ResourceAsset> assets;
+  final List<String> landingPages;
+  final List<String> references;
+
+  const ResourceDNA({
+    this.assets = const [],
+    this.landingPages = const [],
+    this.references = const [],
+  });
+
+  factory ResourceDNA.fromJson(Map<String, dynamic> json) => ResourceDNA(
+        assets: (json['assets'] as List<dynamic>?)?.map((a) => ResourceAsset.fromJson(a)).toList() ?? [],
+        landingPages: List<String>.from(json['landingPages'] ?? []),
+        references: List<String>.from(json['references'] ?? []),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'assets': assets.map((a) => a.toJson()).toList(),
+        'landingPages': landingPages,
+        'references': references,
+      };
+}
+
+class SkillDNA {
+  final List<String> requiredRoles;
+  final List<String> missingRoles;
+
+  const SkillDNA({
+    this.requiredRoles = const [],
+    this.missingRoles = const [],
+  });
+
+  factory SkillDNA.fromJson(Map<String, dynamic> json) => SkillDNA(
+        requiredRoles: List<String>.from(json['requiredRoles'] ?? []),
+        missingRoles: List<String>.from(json['missingRoles'] ?? []),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'requiredRoles': requiredRoles,
+        'missingRoles': missingRoles,
+      };
+}
+
+class PerformanceDNA {
+  final int readinessScore;
+  final List<String> weakPoints;
+  final List<String> blockers;
+
+  const PerformanceDNA({
+    this.readinessScore = 0,
+    this.weakPoints = const [],
+    this.blockers = const [],
+  });
+
+  factory PerformanceDNA.fromJson(Map<String, dynamic> json) => PerformanceDNA(
+        readinessScore: (json['readinessScore'] as num?)?.toInt() ?? 0,
+        weakPoints: List<String>.from(json['weakPoints'] ?? []),
+        blockers: List<String>.from(json['blockers'] ?? []),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'readinessScore': readinessScore,
+        'weakPoints': weakPoints,
+        'blockers': blockers,
+      };
+}
+
+class ProjectDNA {
+  final StrategicDNA strategic;
+  final ExecutionDNA execution;
+  final ResourceDNA resource;
+  final SkillDNA skill;
+  final PerformanceDNA performance;
+
+  const ProjectDNA({
+    this.strategic = const StrategicDNA(),
+    this.execution = const ExecutionDNA(),
+    this.resource = const ResourceDNA(),
+    this.skill = const SkillDNA(),
+    this.performance = const PerformanceDNA(),
+  });
+
+  factory ProjectDNA.fromJson(Map<String, dynamic> json) => ProjectDNA(
+        strategic: StrategicDNA.fromJson(json['strategic'] ?? {}),
+        execution: ExecutionDNA.fromJson(json['execution'] ?? {}),
+        resource: ResourceDNA.fromJson(json['resource'] ?? {}),
+        skill: SkillDNA.fromJson(json['skill'] ?? {}),
+        performance: PerformanceDNA.fromJson(json['performance'] ?? {}),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'strategic': strategic.toJson(),
+        'execution': execution.toJson(),
+        'resource': resource.toJson(),
+        'skill': skill.toJson(),
+        'performance': performance.toJson(),
+      };
+}
+
 // ─── Nested models ────────────────────────────────────────────────────────────
 
 class ContentBlock {
@@ -186,6 +364,10 @@ class Plan {
   final PlanStatus status;
   final String userId;
   final List<Phase> phases;
+  final ProjectDNA projectDNA;
+  final String notes;
+  final bool notesSeen;
+  final String? lastNoteAuthorId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -210,6 +392,10 @@ class Plan {
     this.status = PlanStatus.draft,
     required this.userId,
     this.phases = const [],
+    this.projectDNA = const ProjectDNA(),
+    this.notes = '',
+    this.notesSeen = true,
+    this.lastNoteAuthorId,
     this.createdAt,
     this.updatedAt,
   });
@@ -243,10 +429,35 @@ class Plan {
               ?.map((p) => Phase.fromJson(p as Map<String, dynamic>))
               .toList() ??
           [],
+      projectDNA: ProjectDNA.fromJson(json['projectDNA'] ?? {}),
+      notes: json['notes'] ?? '',
+      notesSeen: json['notesSeen'] ?? true,
+      lastNoteAuthorId: json['lastNoteAuthorId'],
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'brandId': brandId,
+    'name': name,
+    'objective': objective.name,
+    'startDate': startDate.toIso8601String(),
+    'endDate': endDate.toIso8601String(),
+    'durationWeeks': durationWeeks,
+    'promotionIntensity': promotionIntensity,
+    'postingFrequency': postingFrequency,
+    'platforms': platforms,
+    'productIds': productIds,
+    'contentMixPreference': contentMixPreference,
+    'status': status.name,
+    'userId': userId,
+    'projectDNA': projectDNA.toJson(),
+    'notes': notes,
+    'notesSeen': notesSeen,
+    'lastNoteAuthorId': lastNoteAuthorId,
+  };
 
   /// Look up a [ContentBlock] by its id within this plan's embedded phases.
   ContentBlock? findBlock(String blockId) {

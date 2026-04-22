@@ -22,14 +22,13 @@ class _CaptionGeneratorScreenState extends State<CaptionGeneratorScreen> {
   String _selectedPlatform = 'Instagram';
   bool _isLoading = false;
   CaptionResult? _result;
-  String? _error;
   int _selectedCaption = 1; // 0=short, 1=medium, 2=long
 
   final _platforms = ['Instagram', 'TikTok', 'Facebook', 'LinkedIn'];
   final _service = CaptionGeneratorService();
 
   Future<void> _generate() async {
-    setState(() { _isLoading = true; _error = null; _result = null; });
+    setState(() { _isLoading = true; _result = null; });
     await Future.delayed(const Duration(milliseconds: 500)); // simulate loading
     final result = _service.generate(
       postTitle: widget.block.title,

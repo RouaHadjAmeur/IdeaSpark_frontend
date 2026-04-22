@@ -2,22 +2,20 @@ import 'package:flutter/material.dart';
 import '../models/social_post.dart';
 import '../services/social_service.dart';
 import '../services/auth_service.dart';
-import '../services/collaboration_service.dart';
 
 class SocialViewModel extends ChangeNotifier {
   final SocialService _socialService = SocialService();
-  final CollaborationService _collabService = CollaborationService();
 
   List<SocialPost> _feed = [];
   List<AppUser> _suggestions = [];
   final List<AppUser> _searchResults = [];
   List<AppUser> _pendingRequests = [];
   Set<String> _followingIds = {};
-  Set<String> _requestedIds = {};
+  final Set<String> _requestedIds = {};
   Set<String> _followerIds = {};
   List<AppUser> _followers = [];
   List<AppUser> _following = [];
-  List<dynamic> _sharedPlans = [];
+  final List<dynamic> _sharedPlans = [];
   List<Map<String, dynamic>> _friends = [];
   bool _isLoading = false;
   String? _error;
@@ -177,17 +175,6 @@ class SocialViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> fetchSharedPlans(String targetId) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
-      _sharedPlans = await _collabService.getSharedPlans(targetId);
-    } catch (e) {
-      _error = e.toString();
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+  // Shared plans logic was removed in the collaboration service refactor
+  // Future<void> fetchSharedPlans(String targetId) async { ... }
 }

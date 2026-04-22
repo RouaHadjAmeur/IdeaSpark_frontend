@@ -14,7 +14,9 @@ class ApiConfig {
     if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
       return 'http://10.0.2.2:3000';
     }
-    return 'http://localhost:3000';
+    // Physical iOS device — uses Mac's Bonjour hostname (stable, never changes with IP)
+    // Find yours with: scutil --get LocalHostName  → e.g. MacBook-Pro-de-Roua
+    return 'http://Macs-AIr-Roua.local:3000';
   }
 
   static String get authBase => '$baseUrl/auth';
@@ -62,6 +64,15 @@ class ApiConfig {
   static String get getBrandsUrl => brandsBase;
   static String brandByIdUrl(String id) => '$brandsBase/$id';
 
+  // Brand Collaboration Endpoints
+  static String inviteBrandCollaboratorUrl(String brandId) => '$brandsBase/$brandId/collaborators/invite';
+  static String listBrandCollaboratorsUrl(String brandId) => '$brandsBase/$brandId/collaborators';
+  static String removeBrandCollaboratorUrl(String brandId, String userId) => '$brandsBase/$brandId/collaborators/$userId';
+  static String acceptBrandInviteUrl(String id) => '$brandsBase/invitations/$id/accept';
+  static String declineBrandInviteUrl(String id) => '$brandsBase/invitations/$id/decline';
+  static String get myBrandCollaborationsUrl => '$brandsBase/my/collaborations';
+  static String get myPendingBrandInvitationsUrl => '$brandsBase/my/pending-invitations';
+
   // Plans Endpoints
   static String get plansBase => '$baseUrl/plans';
   static String get createPlanUrl => plansBase;
@@ -75,6 +86,8 @@ class ApiConfig {
   static String getPlanCalendarUrl(String id) => '$plansBase/$id/calendar';
   static String regeneratePlanUrl(String id) => '$plansBase/$id/regenerate';
   static String updateCampaignCopyUrl(String id) => '$plansBase/$id/campaign-copy';
+  static String planDNAUrl(String id) => '$plansBase/$id/dna';
+  static String aiProjectInsightsUrl(String id) => '$plansBase/$id/ai-insights';
 
   // Content Blocks Endpoints
   static String get contentBlocksBase => '$baseUrl/content-blocks';
@@ -89,6 +102,7 @@ class ApiConfig {
   }
   static String contentBlockByIdUrl(String id)        => '$contentBlocksBase/$id';
   static String updateBlockStatusUrl(String id)       => '$contentBlocksBase/$id/status';
+  static String updateChecklistUrl(String id)         => '$contentBlocksBase/$id/checklist';
   static String attachBlockToPlanUrl(String id)       => '$contentBlocksBase/$id/attach-plan';
   static String scheduleBlockUrl(String id)           => '$contentBlocksBase/$id/schedule';
   static String replaceBlockUrl(String id)            => '$contentBlocksBase/$id/replace';
@@ -114,13 +128,24 @@ class ApiConfig {
   static String markNotificationReadUrl(String id) => '$collaborationBase/notifications/$id/read';
   static String sharedPlansUrl(String targetId) => '$collaborationBase/shared/$targetId';
 
+  // Comments
+  static String getCommentsUrl(String postId) => '$collaborationBase/posts/$postId/comments';
+  static String get addCommentUrl => '$collaborationBase/comments';
+
+  // Tasks & Deliverables
+  static String listTasksUrl(String planId) => '$collaborationBase/plans/$planId/tasks';
+  static String createTaskUrl(String planId) => '$collaborationBase/plans/$planId/tasks';
+  static String updateTaskUrl(String taskId) => '$collaborationBase/tasks/$taskId';
+  static String submitDeliverableUrl(String taskId) => '$collaborationBase/tasks/$taskId/deliverables';
+  static String reviewDeliverableUrl(String id) => '$collaborationBase/deliverables/$id/review';
+
   // Social & Community
   static String get socialBase => '$baseUrl/social';
-  static const String socialFeed = '$baseUrl/social/feed';
-  static const String socialSuggestions = '$baseUrl/social/suggestions';
-  static const String socialAccept = '$baseUrl/social/accept'; // /id at end
-  static const String socialPendingRequests = '$baseUrl/social/pending-requests';
-  static const String publicProfile = '$baseUrl/users/public-profile'; // /id at end
+  static String get socialFeed => '$baseUrl/social/feed';
+  static String get socialSuggestions => '$baseUrl/social/suggestions';
+  static String get socialAccept => '$baseUrl/social/accept'; // /id at end
+  static String get socialPendingRequests => '$baseUrl/social/pending-requests';
+  static String get publicProfile => '$baseUrl/users/public-profile'; // /id at end
   static String get socialFollowingUrl => '$socialBase/following';
   static String get socialFollowersUrl => '$socialBase/followers';
   static String followUrl(String id) => '$socialBase/follow/$id';
@@ -130,6 +155,28 @@ class ApiConfig {
 
   // User Search
   static String searchUsersUrl(String query) => '$usersBase/search?q=$query';
+
+  // Challenges Endpoints
+  static String get challengesBase => '$baseUrl/challenges';
+  static String get discoverChallengesUrl => '$challengesBase/discover/all';
+  static String brandChallengesUrl(String brandId) => '$challengesBase/brand/$brandId';
+  static String publishChallengeUrl(String id) => '$challengesBase/$id/publish';
+  static String getBrandChallengeStatsUrl(String brandId) => '$challengesBase/brand/$brandId/stats';
+
+  // Submissions Endpoints
+  static String get submissionsBase => '$baseUrl/submissions';
+  static String submitVideoUrl(String challengeId) => '$submissionsBase/challenge/$challengeId/submit';
+  static String getChallengeSubmissionsUrl(String challengeId) => '$submissionsBase/challenge/$challengeId';
+  static String shortlistSubmissionUrl(String id) => '$submissionsBase/$id/shortlist';
+  static String declareWinnerUrl(String id) => '$submissionsBase/$id/declare-winner';
+  static String submissionRevisionUrl(String id) => '$submissionsBase/$id/request-revision';
+  static String get getMySubmissionsUrl => '$submissionsBase/my';
+  static String rateSubmissionUrl(String id) => '$submissionsBase/$id/rate';
+
+  // Stripe Endpoints
+  static String get stripeBase => '$baseUrl/stripe';
+  static String get stripeCreateSubscriptionUrl => '$stripeBase/create-subscription';
+  static String get usersConfirmSubscriptionUrl => '$usersBase/confirm-subscription';
 
   // Google Sign-In Web Client ID (set via --dart-define=GOOGLE_WEB_CLIENT_ID=...)
   static const String googleWebClientId = String.fromEnvironment(

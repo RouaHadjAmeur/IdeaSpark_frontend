@@ -8,6 +8,19 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 
 import '../core/api_config.dart';
 
+enum UserRole {
+  brandOwner('brand_owner'),
+  collaborator('collaborator');
+
+  final String value;
+  const UserRole(this.value);
+
+  static UserRole fromString(String? val) {
+    if (val == 'collaborator') return UserRole.collaborator;
+    return UserRole.brandOwner;
+  }
+}
+
 /// User model matching backend User entity (id, email, name, profilePicture).
 class AppUser {
   final String id;
@@ -17,8 +30,9 @@ class AppUser {
   final String? profilePicture;
   final String? username;
   final List<String>? skills;
-  final String? role;
+  final UserRole role; // Changed from String? to UserRole
   final List<String>? interests;
+  final bool isPremium;
 
   String get name => displayName;
 
@@ -30,21 +44,29 @@ class AppUser {
     this.profilePicture,
     this.username,
     this.skills,
-    this.role,
+    this.role = UserRole.collaborator,
     this.interests,
+    this.isPremium = false,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
       id: (json['id'] as String?) ?? (json['_id'] as String?) ?? '',
       email: json['email'] as String? ?? '',
-      displayName: (json['name'] as String?) ?? (json['email'] as String?).toString().split('@').first,
+      displayName: (json['name'] as String?) ??
+          (json['email'] as String?).toString().split('@').first,
       phone: json['phone'] as String?,
-      profilePicture: (json['profile_img'] as String?) ?? (json['profilePicture'] as String?),
+      profilePicture:
+          (json['profile_img'] as String?) ?? (json['profilePicture'] as String?),
       username: json['username'] as String?,
-      skills: (json['skills'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
-      role: json['role'] as String?,
-      interests: (json['interests'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      skills: (json['skills'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
+      role: UserRole.fromString(json['role'] as String?),
+      interests: (json['interests'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
+      isPremium: json['isPremium'] as bool? ?? false,
     );
   }
 }
@@ -119,8 +141,9 @@ class AuthService {
       'profile_img': user.profilePicture,
       'username': user.username,
       'skills': user.skills,
-      'role': user.role,
+      'role': user.role.value,
       'interests': user.interests,
+      'isPremium': user.isPremium,
     }));
   }
 
@@ -482,6 +505,100 @@ class AuthService {
     // Backend returns the updated user object
     final updatedUser = AppUser.fromJson(data);
     // Keep existing token
+    await _saveSession(_accessToken!, updatedUser);
+  }
+
+  /// Fetch the latest user profile from the backend to ensure local state is synced.
+  Future<void> fetchProfile() async {
+    await _loadStored();
+    final token = _accessToken;
+    if (token == null || token.isEmpty) return;
+
+    final uri = Uri.parse('${ApiConfig.usersBase}/profile');
+    try {
+      final res = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 8));
+
+      if (res.statusCode == 200) {
+        final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+        final user = AppUser.fromJson(data);
+        await _saveSession(token, user);
+      }
+    } catch (_) {
+      // Network/timeout — keep cached session, navigate normally.
+    }
+  }
+
+  /// Step 1: Ask backend to create a Stripe PaymentIntent.
+  /// Returns { clientSecret, publishableKey, paymentIntentId }.
+  Future<Map<String, dynamic>> createStripeSubscription() async {
+    await _loadStored();
+    final token = _accessToken;
+    if (token == null || token.isEmpty) throw Exception('Not logged in');
+    final user = _currentUser!;
+
+    final res = await http.post(
+      Uri.parse(ApiConfig.stripeCreateSubscriptionUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'email': user.email, 'name': user.displayName}),
+    );
+    if (res.statusCode != 200) throw Exception(_errorMessage(res));
+    return _tryDecode(res.body) as Map<String, dynamic>;
+  }
+
+  /// Step 2: After the PaymentSheet succeeds, tell the backend to verify and
+  /// unlock isPremium = true.
+  Future<void> confirmSubscription(String paymentIntentId) async {
+    await _loadStored();
+    final token = _accessToken;
+    if (token == null || token.isEmpty) throw Exception('Not logged in');
+
+    final res = await http.post(
+      Uri.parse(ApiConfig.usersConfirmSubscriptionUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'paymentIntentId': paymentIntentId}),
+    );
+    if (res.statusCode != 200) throw Exception(_errorMessage(res));
+
+    final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+    final updatedUser = AppUser.fromJson(data);
+    await _saveSession(_accessToken!, updatedUser);
+  }
+
+  /// Legacy mock upgrade — kept for development without Stripe keys.
+  Future<void> upgradeToPremium() async {
+    await _loadStored();
+    final token = _accessToken;
+    if (token == null || token.isEmpty) {
+      throw Exception('Not logged in');
+    }
+
+    final uri = Uri.parse('${ApiConfig.usersBase}/upgrade');
+    final res = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
+
+    final data = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+    final updatedUser = AppUser.fromJson(data);
     await _saveSession(_accessToken!, updatedUser);
   }
 

@@ -73,28 +73,75 @@ class _PlansListScreenState extends State<PlansListScreen> {
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: () => vm.loadPlans(),
-                      child: ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                        itemCount: filtered.length,
-                        separatorBuilder: (context, i) => const SizedBox(height: 10),
-                        itemBuilder: (_, i) {
-                          final plan = filtered[i];
-                          final brand = brandVm.brands
-                              .cast<Brand?>()
-                              .firstWhere((b) => b?.id == plan.brandId,
-                                  orElse: () => null);
-                          return _PlanCard(
-                            plan: plan,
-                            brand: brand,
-                            brandColor: _brandColor(plan.brandId),
-                            onTap: () =>
-                                context.push('/plan-detail', extra: plan),
-                            onAddToCalendar: () => _addToCalendar(vm, plan),
-                            onDelete: () => _confirmDelete(vm, plan),
-                            isSaving: vm.isSaving,
-                          );
-                        },
-                      ),
+                      child: Builder(builder: (context) {
+                        // Grouping filtered plans by brand
+                        final groups = <String, List<Plan>>{};
+                        for (final p in filtered) {
+                          groups.putIfAbsent(p.brandId, () => []).add(p);
+                        }
+                        final brandIds = groups.keys.toList();
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                          itemCount: brandIds.length,
+                          itemBuilder: (context, bIdx) {
+                            final bId = brandIds[bIdx];
+                            final brandPlans = groups[bId]!;
+                            final brand = brandVm.brands
+                                .cast<Brand?>()
+                                .firstWhere((b) => b?.id == bId,
+                                    orElse: () => null);
+                            
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Brand Header
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 12, height: 12,
+                                        decoration: BoxDecoration(
+                                          color: _brandColor(bId),
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        brand?.name.toUpperCase() ?? context.tr('detail_unknown_brand'),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w900,
+                                          letterSpacing: 1.2,
+                                          color: cs.onSurfaceVariant,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(child: Divider(color: cs.outlineVariant.withValues(alpha: 0.5))),
+                                    ],
+                                  ),
+                                ),
+                                // Projects in this brand
+                                ...brandPlans.map((plan) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: _PlanCard(
+                                    plan: plan,
+                                    brand: brand,
+                                    brandColor: _brandColor(plan.brandId),
+                                    onTap: () =>
+                                        context.push('/plan-detail', extra: plan),
+                                    onAddToCalendar: () => _addToCalendar(vm, plan),
+                                    onDelete: () => _confirmDelete(vm, plan),
+                                    isSaving: vm.isSaving,
+                                  ),
+                                )),
+                                const SizedBox(height: 8),
+                              ],
+                            );
+                          },
+                        );
+                      }),
                     ),
                   ),
               ],
@@ -281,11 +328,29 @@ class _PlansListScreenState extends State<PlansListScreen> {
       );
       if (ok != true || !mounted) return;
       final activated = await vm.activatePlan(plan.id!);
-      if (activated == null || !mounted) return;
+      if (activated == null) {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Activation failed: ${vm.error ?? "Unknown error"}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ));
+        }
+        return;
+      }
+      if (!mounted) return;
       target = activated;
     }
     if (target.id != null) {
-      await vm.addToCalendar(target.id!);
+      final entries = await vm.addToCalendar(target.id!);
+      if (entries == null && vm.error != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed: ${vm.error}'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ));
+        }
+        return;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -315,7 +380,15 @@ class _PlansListScreenState extends State<PlansListScreen> {
         ],
       ),
     );
-    if (ok == true) await vm.deletePlan(plan.id!);
+    if (ok == true) {
+      await vm.deletePlan(plan.id!);
+      if (vm.error != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Delete failed: ${vm.error}'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ));
+      }
+    }
   }
 }
 

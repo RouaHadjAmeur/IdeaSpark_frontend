@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/content_block.dart';
 import '../core/api_config.dart';
@@ -38,21 +39,21 @@ class ContentBlockService {
     final headers = await _authHeaders();
     final body = <String, dynamic>{
       'productName': productName,
-      if (productCategory != null) 'productCategory': productCategory,
-      if (keyBenefits     != null) 'keyBenefits':     keyBenefits,
-      if (painPoint       != null) 'painPoint':        painPoint,
-      if (brandId         != null) 'brandId':          brandId,
-      if (brandTone       != null) 'brandTone':        brandTone,
-      if (brandAudience   != null) 'brandAudience':    brandAudience,
-      if (contentPillars  != null) 'contentPillars':   contentPillars,
-      if (activePlanPhase != null) 'activePlanPhase':  activePlanPhase,
-      if (currentWeek     != null) 'currentWeek':      currentWeek,
-      if (promoRatio      != null) 'promoRatio':       promoRatio,
-      if (calendarContext != null) 'calendarContext':  calendarContext,
+      'productCategory': ?productCategory,
+      'keyBenefits':     ?keyBenefits,
+      'painPoint':        ?painPoint,
+      'brandId':          ?brandId,
+      'brandTone':        ?brandTone,
+      'brandAudience':    ?brandAudience,
+      'contentPillars':   ?contentPillars,
+      'activePlanPhase':  ?activePlanPhase,
+      'currentWeek':      ?currentWeek,
+      'promoRatio':       ?promoRatio,
+      'calendarContext':  ?calendarContext,
       if (platform        != null) 'platform':         platform.toJson(),
-      if (language        != null) 'language':         language,
-      if (planId          != null) 'planId':            planId,
-      if (planPhaseId     != null) 'planPhaseId':       planPhaseId,
+      'language':         ?language,
+      'planId':            ?planId,
+      'planPhaseId':       ?planPhaseId,
     };
 
     final response = await http.post(
@@ -128,6 +129,104 @@ class ContentBlockService {
     throw Exception('Update status failed: ${response.statusCode} ${response.body}');
   }
 
+  // ─── Progression Calculation ──────────────────────────────────────────────
+
+  Future<double> getPlanProgression(String planId) async {
+    try {
+      final blocks = await list(planId: planId);
+      if (blocks.isEmpty) return 0.0;
+      int totalItems = 0;
+      int completedItems = 0;
+      for (final b in blocks) {
+        final checklist = b.productionChecklist.isEmpty ? {
+          'Script': false,
+          'Shoot / Record': false,
+          'Edit': false,
+          'Upload': false,
+        } : b.productionChecklist;
+        totalItems += checklist.length;
+        completedItems += checklist.values.where((v) => v).length;
+      }
+      return totalItems == 0 ? 0.0 : completedItems / totalItems;
+    } catch (_) {
+      return 0.0;
+    }
+  }
+
+  // ─── Task Count ───────────────────────────────────────────────────────────
+
+  Future<int> countActiveTasks(List<String> planIds) async {
+    try {
+      int count = 0;
+      for (final pid in planIds) {
+        final blocks = await list(planId: pid);
+        for (final b in blocks) {
+           final checklist = b.productionChecklist.isEmpty ? {
+             'Script': false,
+             'Shoot / Record': false,
+             'Edit': false,
+             'Upload': false,
+           } : b.productionChecklist;
+           count += checklist.values.where((v) => !v).length;
+        }
+      }
+      return count;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  // ─── Update Checklist ─────────────────────────────────────────────────────
+
+  Future<void> updateChecklist(String id, Map<String, bool> checklist, {String? userId}) async {
+    final headers = await _authHeaders();
+    try {
+      final response = await http.patch(
+        Uri.parse(ApiConfig.updateChecklistUrl(id)),
+        headers: headers,
+        body: jsonEncode({
+          'productionChecklist': checklist,
+          'updatedBy': ?userId,
+        }),
+      );
+      if (response.statusCode == 200 || response.statusCode == 204) return;
+      // Fallback: try the generic update route
+      final fallback = await http.patch(
+        Uri.parse(ApiConfig.contentBlockByIdUrl(id)),
+        headers: headers,
+        body: jsonEncode({
+          'productionChecklist': checklist,
+          'updatedBy': ?userId,
+        }),
+      );
+      if (fallback.statusCode != 200 && fallback.statusCode != 204) {
+        // Backend doesn't support checklist sync yet — local update only.
+        debugPrint('[ContentBlockService] Checklist sync unavailable '
+            '(${fallback.statusCode}). Saved locally only.');
+      }
+    } catch (e) {
+      debugPrint('[ContentBlockService] updateChecklist error: $e');
+    }
+  }
+
+  // ─── Update Assignment ──────────────────────────────────────────────────
+
+  Future<ContentBlock> updateAssignment(String id, {String? userId, String? userName}) async {
+    final headers = await _authHeaders();
+    final response = await http.patch(
+      Uri.parse(ApiConfig.contentBlockByIdUrl(id)),
+      headers: headers,
+      body: jsonEncode({
+        'assignedTo': userId,
+        'assignedToName': userName,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return ContentBlock.fromJson(jsonDecode(response.body));
+    }
+    throw Exception('Update assignment failed: ${response.statusCode} ${response.body}');
+  }
+
   // ─── Attach to Plan ───────────────────────────────────────────────────────
 
   Future<ContentBlock> attachToPlan(
@@ -142,8 +241,8 @@ class ContentBlockService {
       headers: headers,
       body: jsonEncode({
         'planId': planId,
-        if (planPhaseId != null) 'planPhaseId': planPhaseId,
-        if (phaseLabel  != null) 'phaseLabel':  phaseLabel,
+        'planPhaseId': ?planPhaseId,
+        'phaseLabel':  ?phaseLabel,
       }),
     );
     if (response.statusCode == 200 || response.statusCode == 201) {

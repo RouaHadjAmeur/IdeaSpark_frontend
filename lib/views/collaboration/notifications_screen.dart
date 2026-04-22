@@ -67,6 +67,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       final isFollowAccepted = type == 'follow_accepted';
                       
                       final isRead = notification['read'] ?? false;
+                      final notificationId = notification['_id']?.toString() ?? notification['id']?.toString() ?? '';
+                      final isHandled = vm.handledNotifications.contains(notificationId);
                       final dateStr = notification['createdAt'] as String;
                       final date = DateTime.parse(dateStr).toLocal();
                       
@@ -86,9 +88,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         child: InkWell(
                           onTap: () {
-                            vm.markNotificationAsRead(notification['_id']);
-                            if (relatedUser != null) {
-                              final userId = relatedUser['_id'] ?? relatedUser['id'];
+                            vm.markNotificationAsRead(notification['_id'].toString());
+                            if (isInvite) {
+                              _showInvitationDetails(context, notification, vm);
+                            } else if (relatedUser != null) {
+                              final userId = (relatedUser['_id'] ?? relatedUser['id'])?.toString();
                               if (userId != null) {
                                 context.push('/user/$userId');
                               }
@@ -164,7 +168,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       ),
                                   ],
                                 ),
-                                if ((isInvite || isFollowRequest) && !isRead) ...[
+                                if ((isInvite || isFollowRequest) && !isHandled) ...[
                                   const SizedBox(height: 16),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
@@ -172,9 +176,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       TextButton(
                                         onPressed: () {
                                           if (isInvite) {
-                                            vm.declineInvitation(notification['_id']);
+                                            final raw = notification['relatedInvitationId'];
+                                            String invitationId = '';
+                                            if (raw is Map) {
+                                              invitationId = (raw['_id'] ?? raw['id'] ?? '').toString();
+                                            } else if (raw != null) {
+                                              invitationId = raw.toString();
+                                            }
+                                            if (invitationId.isNotEmpty) {
+                                              vm.declineInvitation(invitationId, notificationId: notificationId);
+                                            }
                                           } else {
-                                            // Handle decline follow request if needed
+                                            vm.markNotificationHandled(notificationId);
                                           }
                                         },
                                         style: TextButton.styleFrom(foregroundColor: colorScheme.error),
@@ -184,12 +197,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       FilledButton(
                                         onPressed: () async {
                                           if (isInvite) {
-                                            await vm.acceptInvitation(notification['_id']);
+                                            final raw = notification['relatedInvitationId'];
+                                            String invitationId = '';
+                                            if (raw is Map) {
+                                              invitationId = (raw['_id'] ?? raw['id'] ?? '').toString();
+                                            } else if (raw != null) {
+                                              invitationId = raw.toString();
+                                            }
+                                            if (invitationId.isNotEmpty) {
+                                              await vm.acceptInvitation(invitationId, notificationId: notificationId);
+                                            }
                                           } else if (isFollowRequest && relatedUser != null) {
-                                            final followerId = relatedUser['_id'] ?? relatedUser['id'];
-                                            await socialVm.acceptRequest(followerId);
-                                            await vm.markNotificationAsRead(notification['_id']);
-                                            await vm.loadNotifications();
+                                            final followerId = (relatedUser['_id'] ?? relatedUser['id'])?.toString();
+                                            if (followerId != null) {
+                                              vm.markNotificationHandled(notificationId);
+                                              await socialVm.acceptRequest(followerId);
+                                              await vm.markNotificationAsRead(notificationId);
+                                              await vm.loadNotifications();
+                                            }
                                           }
                                         },
                                         style: FilledButton.styleFrom(
@@ -209,6 +234,63 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     },
                   ),
                 ),
+    );
+  }
+
+  void _showInvitationDetails(BuildContext context, Map<String, dynamic> notification, CollaborationViewModel vm) {
+    final relatedUser = notification['relatedUserId'];
+    final relatedUserName = relatedUser != null ? (relatedUser['name'] ?? relatedUser['username'] ?? 'Quelqu\'un') : 'Quelqu\'un';
+    final plan = notification['relatedPlanId'];
+    final planName = plan != null ? (plan is Map ? (plan['name'] ?? 'Un projet') : 'Un projet') : 'Un projet';
+    final notificationId = notification['_id']?.toString() ?? notification['id']?.toString() ?? '';
+    
+    final raw = notification['relatedInvitationId'];
+    String invitationId = '';
+    if (raw is Map) {
+      invitationId = (raw['_id'] ?? raw['id'] ?? '').toString();
+    } else if (raw != null) {
+      invitationId = raw.toString();
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Détails de l\'invitation'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('$relatedUserName vous a invité à collaborer.'),
+              const SizedBox(height: 12),
+              if (planName != 'Un projet')
+                Text('Projet : $planName', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(notification['message'] ?? 'Rejoignez le projet pour contribuer.'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (invitationId.isNotEmpty) {
+                  vm.declineInvitation(invitationId, notificationId: notificationId);
+                }
+              },
+              child: const Text('Refuser', style: TextStyle(color: Colors.red)),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                if (invitationId.isNotEmpty) {
+                  await vm.acceptInvitation(invitationId, notificationId: notificationId);
+                }
+              },
+              child: const Text('Accepter'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
+import '../services/socket_service.dart';
 
 /// ViewModel for authentication (Login, SignUp).
 /// Uses static [AuthService] — no Firebase.
@@ -20,8 +21,24 @@ class AuthViewModel extends ChangeNotifier {
   /// Returns true if a valid session was restored (user stays logged in).
   Future<bool> restoreSession() async {
     final loggedIn = await _authService.isLoggedIn();
+    if (loggedIn) {
+      await _authService.fetchProfile();
+    }
     notifyListeners();
     return loggedIn;
+  }
+
+  /// Manually sync the user's profile with the backend.
+  Future<void> syncProfile() async {
+    _setLoading(true);
+    try {
+      await _authService.fetchProfile();
+    } catch (e) {
+      debugPrint('Sync profile error: $e');
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
   }
 
   void clearError() {
@@ -178,6 +195,7 @@ class AuthViewModel extends ChangeNotifier {
 
   Future<void> signOut() async {
     await _authService.signOut();
+    SocketService().disconnect();
     notifyListeners();
   }
 
@@ -254,9 +272,13 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   AppUser? get currentUser => _authService.currentUser;
+  UserRole get userRole => _authService.currentUser?.role ?? UserRole.brandOwner;
+  bool get isBrandOwner => userRole == UserRole.brandOwner;
   String? get displayName => _authService.currentUser?.displayName;
   String? get email => _authService.currentUser?.email;
   String? get userId => _authService.currentUser?.id;
+  bool get isPremium => _authService.currentUser?.isPremium ?? false;
+  bool get isPremiumBrandOwner => isBrandOwner && isPremium;
 
   void _setLoading(bool value) {
     if (_isLoading != value) {

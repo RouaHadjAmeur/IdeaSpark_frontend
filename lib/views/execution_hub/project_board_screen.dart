@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+
+import '../../view_models/plan_view_model.dart';
+import '../../view_models/collaboration_view_model.dart';
 
 import '../../models/plan.dart' as pl;
 import '../../models/content_block.dart';
+import '../../models/collaboration.dart';
+import '../../view_models/auth_view_model.dart';
 import '../../services/content_block_service.dart';
+import '../../services/collaboration_service.dart';
+import '../../services/in_app_notification_service.dart';
 
 class ProjectBoardScreen extends StatefulWidget {
   final pl.Plan plan;
@@ -34,16 +42,120 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
     (ContentBlockStatus.terminated, 'Terminated', Color(0xFFE91E63)),
   ];
 
+  late TextEditingController _notesCtrl;
+  List<CollabMember> _mentionSuggestions = [];
+  bool _showMentions = false;
+  bool _isMonthlyView = true;
+  DateTime _currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.index == 3 && widget.plan.notesSeen == false) {
+        // Notes tab selected
+        final authVm = context.read<AuthViewModel>();
+        if (!authVm.isBrandOwner) {
+           context.read<PlanViewModel>().markNoteAsSeen(widget.plan.id!);
+        }
+      }
+    });
+
+    _notesCtrl = TextEditingController(text: widget.plan.notes);
+    _notesCtrl.addListener(_onNotesChanged);
     _loadBlocks();
+    // Defer to post-frame so CollaborationViewModel.notifyListeners()
+    // is not triggered during the initial build phase.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadCollaborators();
+    });
+  }
+
+  void _loadCollaborators() {
+    context.read<CollaborationViewModel>().loadMembers(widget.plan.id!);
+  }
+
+  void _onNotesChanged() {
+    final text = _notesCtrl.text;
+    final selection = _notesCtrl.selection;
+    if (selection.baseOffset <= 0) {
+      if (_showMentions) setState(() => _showMentions = false);
+      return;
+    }
+
+    final lastChar = text.substring(selection.baseOffset - 1, selection.baseOffset);
+    if (lastChar == '@') {
+      setState(() {
+        _showMentions = true;
+        _mentionSuggestions = context.read<CollaborationViewModel>().members;
+      });
+    } else if (_showMentions) {
+      // Find current word
+      final beforeCursor = text.substring(0, selection.baseOffset);
+      final atIndex = beforeCursor.lastIndexOf('@');
+      if (atIndex != -1) {
+        final query = beforeCursor.substring(atIndex + 1).toLowerCase();
+        setState(() {
+          _mentionSuggestions = context.read<CollaborationViewModel>().members
+              .where((m) => m.name.toLowerCase().contains(query) || m.email.toLowerCase().contains(query))
+              .toList();
+          if (_mentionSuggestions.isEmpty && query.isNotEmpty) _showMentions = false;
+        });
+      } else {
+        setState(() => _showMentions = false);
+      }
+    }
+  }
+
+  void _insertMention(CollabMember member) {
+    final text = _notesCtrl.text;
+    final selection = _notesCtrl.selection;
+    final beforeCursor = text.substring(0, selection.baseOffset);
+    final atIndex = beforeCursor.lastIndexOf('@');
+    
+    if (atIndex != -1) {
+      final newText = text.replaceRange(atIndex, selection.baseOffset, '@${member.name} ');
+      _notesCtrl.text = newText;
+      _notesCtrl.selection = TextSelection.collapsed(offset: atIndex + member.name.length + 2);
+    }
+    setState(() => _showMentions = false);
+  }
+
+  // ─── Monthly Calendar Helpers ─────────────────────────────────────────────
+
+  String get _monthLabel {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return '${months[_currentMonth.month - 1]} ${_currentMonth.year}';
+  }
+
+  void _prevMonth() => setState(() {
+        _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
+      });
+
+  void _nextMonth() => setState(() {
+        _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
+      });
+
+  Map<int, List<ContentBlock>> _monthEntries() {
+    final result = <int, List<ContentBlock>>{};
+    for (final b in _blocks) {
+      if (b.scheduledAt != null &&
+          b.scheduledAt!.year == _currentMonth.year &&
+          b.scheduledAt!.month == _currentMonth.month) {
+        result.putIfAbsent(b.scheduledAt!.day, () => []).add(b);
+      }
+    }
+    return result;
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _notesCtrl.dispose();
     super.dispose();
   }
 
@@ -96,6 +208,47 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
     }
   }
 
+  Future<void> _updateAssignment(String id, String? userId, String? userName) async {
+    try {
+      final updated = await _service.updateAssignment(id, userId: userId, userName: userName);
+      setState(() {
+        final idx = _blocks.indexWhere((b) => b.id == id);
+        if (idx >= 0) _blocks[idx] = updated;
+      });
+
+      // Notify the collaborator
+      if (userId != null && userId.isNotEmpty) {
+        InAppNotificationService().add(AppNotification(
+          id: DateTime.now().millisecondsSinceEpoch,
+          title: 'Nouvelle tâche assignée ! 📋',
+          body: 'On vous a assigné la tâche "${updated.title}"',
+          time: DateTime.now(),
+          type: 'assignment',
+        ));
+        
+        // Add to history
+        await CollaborationService().addHistory(
+          widget.plan.id!,
+          HistoryEntry(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            planId: widget.plan.id!,
+            authorName: context.read<AuthViewModel>().displayName ?? 'Admin',
+            action: 'ASSIGNMENT',
+            description: 'A assigné "${updated.title}" à $userName',
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Assignment failed: $e'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  }
+
   // ── Build ───────────────────────────────────────────────────────────────────
 
   @override
@@ -139,6 +292,25 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ── Detail Sheet ─────────────────────────────────────────────────────────────
+
+  void _showItemDetail(ContentBlock block) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _ContentItemDetailSheet(
+        block: block,
+        onStatusChange: (s) => _updateStatus(block.id, s),
+        onSchedule: (dt) => _scheduleBlock(block.id, dt),
+        onAssign: (userId, userName) => _updateAssignment(block.id, userId, userName),
       ),
     );
   }
@@ -266,33 +438,155 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
               size: 48,
               color: cs.onSurfaceVariant.withValues(alpha: 0.4)),
           const SizedBox(height: 12),
-          Text('No phases yet',
+          Text('No phases defined',
               style: TextStyle(
                   color: cs.onSurface, fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          Text('Generate a plan to see its phases.',
-              style: TextStyle(
-                  fontSize: 12, color: cs.onSurfaceVariant)),
+          Text('Phases are created automatically when a plan is generated.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
         ]),
       );
     }
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       itemCount: phases.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, i) =>
-          _PhaseCard(phase: phases[i], cs: cs),
+      separatorBuilder: (context, i) => const SizedBox(height: 8),
+      itemBuilder: (_, i) => _PhaseCard(phase: phases[i], cs: cs),
     );
   }
 
-  // ── Calendar Tab ────────────────────────────────────────────────────────────
-
   Widget _buildCalendarTab(ColorScheme cs) {
-    final scheduled = _blocks
-        .where((b) => b.scheduledAt != null)
-        .toList()
-      ..sort((a, b) => a.scheduledAt!.compareTo(b.scheduledAt!));
+    return Column(
+      children: [
+        // Header with view toggle and month navigation
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: Row(
+            children: [
+              if (_isMonthlyView) ...[
+                GestureDetector(onTap: _prevMonth, child: Icon(Icons.chevron_left_rounded, size: 20, color: cs.onSurfaceVariant)),
+                const SizedBox(width: 8),
+                Text(_monthLabel, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                const SizedBox(width: 8),
+                GestureDetector(onTap: _nextMonth, child: Icon(Icons.chevron_right_rounded, size: 20, color: cs.onSurfaceVariant)),
+              ] else
+                Text('SCHEDULED POSTS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+              const Spacer(),
+              _viewToggle(cs),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: _isMonthlyView ? _buildMonthlyGrid(cs) : _buildScheduledList(cs),
+        ),
+      ],
+    );
+  }
 
+  Widget _viewToggle(ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _toggleItem('MO', _isMonthlyView, () => setState(() => _isMonthlyView = true), cs),
+          _toggleItem('LI', !_isMonthlyView, () => setState(() => _isMonthlyView = false), cs),
+        ],
+      ),
+    );
+  }
+
+  Widget _toggleItem(String label, bool active, VoidCallback onTap, ColorScheme cs) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: active ? cs.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: active ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)] : null,
+        ),
+        child: Text(label, style: TextStyle(fontSize: 10, fontWeight: active ? FontWeight.w800 : FontWeight.w500, color: active ? cs.primary : cs.onSurfaceVariant)),
+      ),
+    );
+  }
+
+  Widget _buildMonthlyGrid(ColorScheme cs) {
+    final byDay = _monthEntries();
+    const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final firstWeekday = DateTime(_currentMonth.year, _currentMonth.month, 1).weekday;
+    final daysInMonth = DateUtils.getDaysInMonth(_currentMonth.year, _currentMonth.month);
+    final leadingBlanks = firstWeekday - 1;
+    final totalCells = leadingBlanks + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+    final today = DateTime.now();
+    final isCurrentMonth = today.year == _currentMonth.year && today.month == _currentMonth.month;
+
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(children: dayLabels.map((l) => Expanded(child: Center(child: Text(l, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant))))).toList()),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7, childAspectRatio: 0.85),
+            itemCount: rows * 7,
+            itemBuilder: (context, index) {
+              final dayNum = index - leadingBlanks + 1;
+              if (dayNum < 1 || dayNum > daysInMonth) return const SizedBox();
+              final isToday = isCurrentMonth && dayNum == today.day;
+              final dayBlocks = byDay[dayNum] ?? [];
+              final hasDots = dayBlocks.isNotEmpty;
+
+              return GestureDetector(
+                onTap: () {
+                   if (dayBlocks.isNotEmpty) {
+                     // Show detail for first block or a list? 
+                     // For now, list is simpler if multiple, but user said "dots"
+                     _showItemDetail(dayBlocks.first);
+                   }
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: isToday ? cs.primary.withValues(alpha: 0.1) : null,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: isToday ? cs.primary.withValues(alpha: 0.3) : Colors.transparent),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('$dayNum', style: TextStyle(fontSize: 11, color: isToday ? cs.primary : cs.onSurface, fontWeight: isToday ? FontWeight.bold : FontWeight.normal)),
+                      if (hasDots) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: dayBlocks.take(3).map((b) => Container(
+                            width: 5, height: 5, margin: const EdgeInsets.symmetric(horizontal: 1),
+                            decoration: const BoxDecoration(color: Color(0xFFFF9800), shape: BoxShape.circle),
+                          )).toList(),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScheduledList(ColorScheme cs) {
+    final scheduled = _blocks.where((b) => b.scheduledAt != null).toList()..sort((a, b) => a.scheduledAt!.compareTo(b.scheduledAt!));
     if (scheduled.isEmpty) {
       return Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -315,20 +609,185 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       itemCount: scheduled.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (_, i) => _ScheduledTile(
-        block: scheduled[i],
-        cs: cs,
-        onTap: () => _showItemDetail(scheduled[i]),
-      ),
+      itemBuilder: (_, i) => _ScheduledTile(block: scheduled[i], cs: cs, onTap: () => _showItemDetail(scheduled[i])),
     );
   }
 
   // ── Notes Tab ───────────────────────────────────────────────────────────────
 
   Widget _buildNotesTab(ColorScheme cs) {
+    final vm = context.read<PlanViewModel>();
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _SectionLabel('CAMPAIGN NOTEBOOK', cs),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.primaryContainer.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.primary.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                children: [
+                  TextField(
+                    controller: _notesCtrl,
+                    maxLines: 8,
+                    minLines: 4,
+                    style: TextStyle(fontSize: 14, color: cs.onSurface, height: 1.5),
+                    decoration: InputDecoration(
+                      hintText: 'Jot down ideas, reminders, or @mention collaborators...',
+                      hintStyle: TextStyle(fontSize: 13, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                  if (_showMentions && _mentionSuggestions.isNotEmpty)
+                    Positioned(
+                      left: 0, right: 0, bottom: 0,
+                      child: Container(
+                        constraints: const BoxConstraints(maxHeight: 150),
+                        decoration: BoxDecoration(
+                          color: cs.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
+                          border: Border.all(color: cs.outlineVariant),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _mentionSuggestions.length,
+                          itemBuilder: (context, i) {
+                            final m = _mentionSuggestions[i];
+                            return ListTile(
+                              dense: true,
+                              visualDensity: VisualDensity.compact,
+                              title: Text(m.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                              subtitle: Text(m.email, style: const TextStyle(fontSize: 11)),
+                              onTap: () => _insertMention(m),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  if (widget.plan.lastNoteAuthorId != null && widget.plan.lastNoteAuthorId!.isNotEmpty)
+                    Positioned(
+                      top: 4, right: 8,
+                      child: Text(
+                        'Last edit by brand owner',
+                        style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant.withValues(alpha: 0.5), fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                ],
+              ),
+              const Divider(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // Reaction/Confirm button (Seen ✅)
+                  if (!context.read<AuthViewModel>().isBrandOwner)
+                    TextButton.icon(
+                      onPressed: widget.plan.notesSeen
+                          ? null
+                          : () => context.read<PlanViewModel>().markNoteAsSeen(widget.plan.id!),
+                      icon: Icon(
+                        widget.plan.notesSeen ? Icons.check_circle_rounded : Icons.remove_red_eye_outlined,
+                        size: 16,
+                        color: widget.plan.notesSeen ? Colors.green : cs.primary,
+                      ),
+                      label: Text(
+                        widget.plan.notesSeen ? 'Seen' : 'Mark as Seen',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: widget.plan.notesSeen ? Colors.green : cs.primary,
+                        ),
+                      ),
+                    )
+                  else
+                    // Admin view of "seen" status
+                    Row(
+                      children: [
+                        Icon(
+                          widget.plan.notesSeen ? Icons.done_all_rounded : Icons.done_rounded,
+                          size: 16,
+                          color: widget.plan.notesSeen ? Colors.blue : Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.plan.notesSeen ? 'Seen by collaborator' : 'Not seen yet',
+                          style: TextStyle(fontSize: 11, color: widget.plan.notesSeen ? Colors.blue : Colors.grey),
+                        ),
+                      ],
+                    ),
+                  const Spacer(),
+                  if (vm.isSaving)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  const SizedBox(width: 8),
+                  TextButton.icon(
+                    onPressed: vm.isSaving
+                        ? null
+                        : () async {
+                            final authVm = context.read<AuthViewModel>();
+                            final text = _notesCtrl.text.trim();
+                            // Pass current user ID as authorId to track who made the note
+                            final ok = await vm.updatePlanNotes(
+                              widget.plan.id!, 
+                              text, 
+                              authorId: authVm.userId
+                            );
+                            if (ok && mounted) {
+                              // Notify collaborators if author is brand owner
+                              if (authVm.isBrandOwner) {
+                                InAppNotificationService().add(AppNotification(
+                                  id: DateTime.now().millisecondsSinceEpoch,
+                                  title: 'Note de l\'admin 📝',
+                                  body: 'L\'admin a ajouté une note sur votre plan "${widget.plan.name}"',
+                                  time: DateTime.now(),
+                                  type: 'note',
+                                ));
+                              }
+
+                              // Trigger mention notifications locally (Simulating Backend)
+                              final collabVm = context.read<CollaborationViewModel>();
+                              final mentions = collabVm.members.where((m) => text.contains('@${m.name}')).toList();
+                              for (final _ in mentions) {
+                                InAppNotificationService().add(AppNotification(
+                                  id: DateTime.now().millisecondsSinceEpoch,
+                                  title: 'You were mentioned! 💬',
+                                  body: 'You were mentioned in the notes for "${widget.plan.name}"',
+                                  time: DateTime.now(),
+                                  type: 'mention',
+                                ));
+                              }
+                              
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(mentions.isNotEmpty ? 'Notes saved & collaborators notified' : 'Notes saved successfully'),
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 2),
+                              ));
+                            } else if (!ok && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text('Failed to save notes: ${vm.error ?? "Unknown error"}'),
+                                backgroundColor: Theme.of(context).colorScheme.error,
+                                behavior: SnackBarBehavior.floating,
+                              ));
+                            }
+                          },
+                    icon: const Icon(Icons.save_rounded, size: 18),
+                    label: const Text('Save Notes'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 32),
         _SectionLabel('PLAN OVERVIEW', cs),
         const SizedBox(height: 12),
         _InfoCard(cs: cs, children: [
@@ -351,7 +810,8 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
         _InfoCard(
           cs: cs,
           children: widget.plan.contentMixPreference.entries
-              .map((e) => _InfoRow(e.key, '${e.value}%', cs))
+              .where((e) => !e.key.toLowerCase().contains('id'))
+              .map((e) => _InfoRow(e.key.toUpperCase(), '${e.value}%', cs))
               .toList(),
         ),
         if (widget.plan.phases
@@ -400,23 +860,6 @@ class _ProjectBoardScreenState extends State<ProjectBoardScreen>
     );
   }
 
-  // ── Detail Sheet ─────────────────────────────────────────────────────────────
-
-  void _showItemDetail(ContentBlock block) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => _ContentItemDetailSheet(
-        block: block,
-        onStatusChange: (s) => _updateStatus(block.id, s),
-        onSchedule: (dt) => _scheduleBlock(block.id, dt),
-      ),
-    );
-  }
 }
 
 // ── Kanban Column ─────────────────────────────────────────────────────────────
@@ -924,11 +1367,13 @@ class _ContentItemDetailSheet extends StatefulWidget {
   final ContentBlock block;
   final void Function(ContentBlockStatus) onStatusChange;
   final void Function(DateTime) onSchedule;
+  final void Function(String?, String?) onAssign;
 
   const _ContentItemDetailSheet({
     required this.block,
     required this.onStatusChange,
     required this.onSchedule,
+    required this.onAssign,
   });
 
   @override
@@ -939,17 +1384,21 @@ class _ContentItemDetailSheet extends StatefulWidget {
 class _ContentItemDetailSheetState
     extends State<_ContentItemDetailSheet> {
   late ContentBlockStatus _selectedStatus;
-  final _checklist = <String, bool>{
-    'Script': false,
-    'Shoot / Record': false,
-    'Edit': false,
-    'Upload': false,
-  };
+  late Map<String, bool> _checklist;
+  final _service = ContentBlockService();
 
   @override
   void initState() {
     super.initState();
     _selectedStatus = widget.block.status;
+    _checklist = Map<String, bool>.from(widget.block.productionChecklist.isEmpty
+        ? {
+            'Script': false,
+            'Shoot / Record': false,
+            'Edit': false,
+            'Upload': false,
+          }
+        : widget.block.productionChecklist);
   }
 
   static Color _statusColor(ContentBlockStatus s) {
@@ -1046,6 +1495,83 @@ class _ContentItemDetailSheetState
                       cs.secondary,
                       cs),
                 ]),
+                const SizedBox(height: 16),
+
+                // Assignment Section
+                _SectionLabel('ASSIGNED TO', cs),
+                const SizedBox(height: 8),
+                Consumer<CollaborationViewModel>(
+                  builder: (context, collabVm, _) {
+                    final members = collabVm.members;
+                    final assignedTo = widget.block.assignedTo;
+                    final assignedName = widget.block.assignedToName ?? 'Unassigned';
+
+                    return GestureDetector(
+                      onTap: () async {
+                        final selected = await showDialog<CollabMember>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: cs.surface,
+                            title: const Text('Assign to...', style: TextStyle(fontFamily: 'Syne', fontWeight: FontWeight.bold)),
+                            content: SizedBox(
+                              width: double.maxFinite,
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: members.length + 1,
+                                itemBuilder: (ctx, i) {
+                                  if (i == 0) {
+                                    return ListTile(
+                                      title: const Text('Unassigned', style: TextStyle(color: Colors.red)),
+                                      onTap: () => Navigator.pop(ctx, null),
+                                    );
+                                  }
+                                  final m = members[i - 1];
+                                  return ListTile(
+                                    leading: CircleAvatar(
+                                      radius: 14,
+                                      backgroundColor: cs.primaryContainer,
+                                      child: Text(m.name[0].toUpperCase(), style: TextStyle(fontSize: 10, color: cs.primary)),
+                                    ),
+                                    title: Text(m.name, style: const TextStyle(fontSize: 13)),
+                                    onTap: () => Navigator.pop(ctx, m),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                        if (context.mounted) {
+                           // Always trigger if unassigning or assigning 
+                           widget.onAssign(selected?.id, selected?.name);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: cs.outlineVariant),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 12,
+                              backgroundColor: assignedTo != null ? cs.primaryContainer : cs.outlineVariant.withValues(alpha: 0.2),
+                              child: Text(
+                                assignedName.isNotEmpty ? assignedName[0].toUpperCase() : '?',
+                                style: TextStyle(fontSize: 10, color: assignedTo != null ? cs.primary : cs.onSurfaceVariant),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(assignedName, style: TextStyle(fontSize: 13, fontWeight: assignedTo != null ? FontWeight.w600 : FontWeight.normal)),
+                            const Spacer(),
+                            Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: cs.onSurfaceVariant),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(height: 16),
 
                 // Description
@@ -1270,18 +1796,18 @@ class _ContentItemDetailSheetState
                       lastDate: DateTime.now()
                           .add(const Duration(days: 365)),
                     );
-                    if (date == null || !mounted) return;
+                    if (date == null || !context.mounted) return;
                     final time = await showTimePicker(
                       context: context,
                       initialTime: TimeOfDay.fromDateTime(
                           widget.block.scheduledAt ??
                               DateTime.now()),
                     );
-                    if (time == null || !mounted) return;
+                    if (time == null || !context.mounted) return;
                     final dt = DateTime(date.year, date.month,
                         date.day, time.hour, time.minute);
                     widget.onSchedule(dt);
-                    if (mounted) Navigator.pop(context);
+                    if (context.mounted) Navigator.pop(context);
                   },
                   icon: const Icon(Icons.calendar_today_rounded,
                       size: 15),
@@ -1309,8 +1835,51 @@ class _ContentItemDetailSheetState
                         ListTileControlAffinity.leading,
                     dense: true,
                     contentPadding: EdgeInsets.zero,
-                    onChanged: (v) => setState(
-                        () => _checklist[e.key] = v ?? false),
+                    onChanged: (v) async {
+                        final newValue = v ?? false;
+                        final oldValue = _checklist[e.key] ?? false;
+                        setState(() => _checklist[e.key] = newValue);
+                        
+                        final authVm = context.read<AuthViewModel>();
+                        final userName = authVm.currentUser?.name ?? 'User';
+                        final planId = widget.block.planId ?? '';
+
+                        try {
+                          await _service.updateChecklist(
+                            widget.block.id, 
+                            _checklist, 
+                            userId: authVm.currentUser?.id
+                          );
+                          
+                          // Log activity locally for "Activities" feed
+                          if (planId.isNotEmpty) {
+                            await CollaborationService().addHistory(
+                              planId,
+                              HistoryEntry(
+                                id: DateTime.now().millisecondsSinceEpoch.toString(),
+                                planId: planId,
+                                authorName: userName,
+                                action: 'CHECKLIST_UPDATE',
+                                description: '$userName ${newValue ? "completed" : "reverted"} "${e.key}" for "${widget.block.title}"',
+                                createdAt: DateTime.now(),
+                              ),
+                            );
+                            // Refresh activity log if board is listening
+                            if (mounted) {
+                              context.read<CollaborationViewModel>().loadActivityLog(planId);
+                            }
+                          }
+                        } catch (err) {
+                          if (mounted) {
+                            setState(() => _checklist[e.key] = oldValue);
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text('Failed to save: $err'),
+                              backgroundColor: Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                            ));
+                          }
+                        }
+                    },
                   ),
                 ),
               ],

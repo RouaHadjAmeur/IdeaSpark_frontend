@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/app_localizations.dart';
-import '../core/app_theme.dart';
+import '../view_models/auth_view_model.dart';
 
 class BottomNavV2 extends StatelessWidget {
   final int currentIndex;
@@ -16,6 +18,22 @@ class BottomNavV2 extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final authVm = context.watch<AuthViewModel>();
+    
+    // Change label and icon for non-premium users
+    final brandsLabel = authVm.isPremium ? context.tr('nav_brands') : 'Challenges';
+    final brandsIcon = authVm.isPremium ? Icons.label_important_outline_rounded : Icons.lightbulb_outline_rounded;
+    
+    // Unified tabs for all users
+    final List<Map<String, dynamic>> tabs = [
+      {'icon': Icons.home_rounded, 'label': context.tr('nav_dashboard'), 'index': 0},
+      {'icon': brandsIcon, 'label': brandsLabel, 'index': 1},
+      {'icon': Icons.calendar_month_rounded, 'label': context.tr('nav_calendar'), 'index': 2},
+      {'icon': Icons.rocket_launch_rounded, 'label': 'Projects', 'index': 3},
+      {'icon': Icons.analytics_outlined, 'label': context.tr('nav_insights'), 'index': 4},
+    ];
+
+    final activeColor = colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -26,53 +44,19 @@ class BottomNavV2 extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
-            children: [
-              Expanded(
+            children: tabs.map((tab) {
+              final int branchIndex = tab['index'];
+              return Expanded(
                 child: _NavItem(
-                  icon: Icons.home_rounded,
-                  label: context.tr('nav_dashboard'),
-                  isSelected: currentIndex == 0,
-                  onTap: () => onTap(0),
+                  icon: tab['icon'],
+                  label: tab['label'],
+                  isSelected: currentIndex == branchIndex,
+                  onTap: () => onTap(branchIndex),
                   colorScheme: colorScheme,
+                  activeColor: activeColor,
                 ),
-              ),
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.label_important_outline_rounded,
-                  label: context.tr('nav_brands'),
-                  isSelected: currentIndex == 1,
-                  onTap: () => onTap(1),
-                  colorScheme: colorScheme,
-                ),
-              ),
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.calendar_month_rounded,
-                  label: context.tr('nav_calendar'),
-                  isSelected: currentIndex == 2,
-                  onTap: () => onTap(2),
-                  colorScheme: colorScheme,
-                ),
-              ),
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.rocket_launch_rounded,
-                  label: context.tr('nav_projects'),
-                  isSelected: currentIndex == 3,
-                  onTap: () => onTap(3),
-                  colorScheme: colorScheme,
-                ),
-              ),
-              Expanded(
-                child: _NavItem(
-                  icon: Icons.insights_rounded,
-                  label: context.tr('nav_insights'),
-                  isSelected: currentIndex == 4,
-                  onTap: () => onTap(4),
-                  colorScheme: colorScheme,
-                ),
-              ),
-            ],
+              );
+            }).toList(),
           ),
         ),
       ),
@@ -86,6 +70,7 @@ class _NavItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final ColorScheme colorScheme;
+  final Color activeColor;
 
   const _NavItem({
     required this.icon,
@@ -93,6 +78,7 @@ class _NavItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.colorScheme,
+    required this.activeColor,
   });
 
   @override
@@ -108,11 +94,11 @@ class _NavItem extends StatelessWidget {
             Icon(
               icon,
               size: 20,
-              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
+              color: isSelected ? activeColor : colorScheme.onSurfaceVariant,
               shadows: isSelected
                   ? [
                       Shadow(
-                        color: colorScheme.primary.withOpacity(0.5),
+                        color: activeColor.withOpacity(0.5),
                         blurRadius: 6,
                       )
                     ]
@@ -123,10 +109,10 @@ class _NavItem extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 9,
-                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              style: GoogleFonts.syne(
+                fontSize: 8,
+                color: isSelected ? activeColor : colorScheme.onSurfaceVariant,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
           ],

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+
 import '../../models/collaboration.dart';
+import '../../models/content_block.dart';
 import '../../services/collaboration_service.dart';
+import '../../services/content_block_service.dart';
+import '../../view_models/auth_view_model.dart';
 
 class _PostWithComments {
   final String postId;
@@ -31,12 +34,13 @@ class _CollaborationScreenState extends State<CollaborationScreen>
   final _service = CollaborationService();
   List<CollabMember> _members = [];
   List<HistoryEntry> _history = [];
+  List<ContentBlock> _blocks = [];
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 4, vsync: this);
     _load();
   }
 
@@ -49,10 +53,12 @@ class _CollaborationScreenState extends State<CollaborationScreen>
   Future<void> _load() async {
     final members = await _service.getMembers(widget.planId);
     final history = await _service.getHistory(widget.planId);
+    final blocks = await ContentBlockService().list(planId: widget.planId);
     if (mounted) {
       setState(() {
         _members = members;
         _history = history;
+        _blocks = blocks;
         _loading = false;
       });
     }
@@ -98,23 +104,24 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                     ),
                   ),
                   // Invite button
-                  GestureDetector(
-                    onTap: _showInviteDialog,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: cs.primary,
-                        borderRadius: BorderRadius.circular(8),
+                  if (context.watch<AuthViewModel>().isBrandOwner)
+                    GestureDetector(
+                      onTap: _showInviteDialog,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: cs.primary,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(children: [
+                          Icon(Icons.person_add, size: 16, color: cs.onPrimary),
+                          const SizedBox(width: 6),
+                          Text('Inviter',
+                              style: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600, color: cs.onPrimary)),
+                        ]),
                       ),
-                      child: Row(children: [
-                        Icon(Icons.person_add, size: 16, color: cs.onPrimary),
-                        const SizedBox(width: 6),
-                        Text('Inviter',
-                            style: TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w600, color: cs.onPrimary)),
-                      ]),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -127,12 +134,13 @@ class _CollaborationScreenState extends State<CollaborationScreen>
               child: TabBar(
                 controller: _tabs,
                 tabs: const [
+                  Tab(text: '📋 Mes Tâches'),
                   Tab(text: '👥 Membres'),
                   Tab(text: '💬 Commentaires'),
-                  Tab(text: '📋 Historique'),
+                  Tab(text: '🕒 Activité'),
                 ],
-                labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                unselectedLabelStyle: const TextStyle(fontSize: 12),
+                labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                unselectedLabelStyle: const TextStyle(fontSize: 11),
                 indicatorWeight: 2,
               ),
             ),
@@ -143,6 +151,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                   : TabBarView(
                       controller: _tabs,
                       children: [
+                        _buildActiveTasksTab(cs),
                         _buildMembersTab(cs),
                         _buildCommentsTab(cs),
                         _buildHistoryTab(cs),
@@ -152,6 +161,99 @@ class _CollaborationScreenState extends State<CollaborationScreen>
           ],
         ),
       ),
+    );
+  }
+
+  // ── Active Tasks Tab ─────────────────────────────────────────────────────
+
+  Widget _buildActiveTasksTab(ColorScheme cs) {
+    final authVm = context.read<AuthViewModel>();
+    final myBlocks = _blocks.where((b) => b.assignedTo == authVm.userId).toList();
+
+    if (myBlocks.isEmpty) {
+      return _buildEmpty(
+        cs,
+        Icons.assignment_turned_in_outlined,
+        'Aucune tâche active',
+        'Les posts qui vous sont assignés apparaîtront ici',
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: myBlocks.length,
+      itemBuilder: (context, i) {
+        final block = myBlocks[i];
+        final pending = block.productionChecklist.entries.where((e) => !e.value).length;
+        final total = block.productionChecklist.isEmpty ? 4 : block.productionChecklist.length;
+        final progress = total == 0 ? 0.0 : (total - pending) / total;
+
+        return Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: cs.outlineVariant)),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        block.format?.label ?? 'Post',
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: cs.primary),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${(progress * 100).toInt()}%',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.primary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  block.title,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  block.phaseLabel ?? '',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 6,
+                    backgroundColor: cs.surfaceContainerHighest,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle_outline, size: 14, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$pending tâches restantes',
+                      style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -170,7 +272,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _members.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (_, i) => _buildMemberCard(_members[i], cs),
     );
   }
@@ -184,82 +286,116 @@ class _CollaborationScreenState extends State<CollaborationScreen>
             : Colors.red;
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cs.outlineVariant),
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(children: [
-        CircleAvatar(
-          radius: 22,
-          backgroundColor: roleColor.withValues(alpha: 0.15),
-          child: Text(
-            member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
-            style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.w700, color: roleColor),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(member.name,
+        Stack(
+          children: [
+            CircleAvatar(
+              radius: 26,
+              backgroundColor: roleColor.withValues(alpha: 0.1),
+              child: Text(
+                member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
                 style: TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
-            Text(member.email,
-                style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
-            const SizedBox(height: 4),
-            Row(children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    fontSize: 18, fontWeight: FontWeight.w800, color: roleColor),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 14, height: 14,
                 decoration: BoxDecoration(
-                  color: roleColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
-                child: Text(member.roleLabel,
-                    style: TextStyle(
-                        fontSize: 10, fontWeight: FontWeight.w600, color: roleColor)),
+                child: Container(
+                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                ),
               ),
-              const SizedBox(width: 6),
-              Container(
-                width: 6, height: 6,
-                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                member.status == CollabStatus.accepted ? 'Accepté'
-                    : member.status == CollabStatus.pending ? 'En attente'
-                    : 'Refusé',
-                style: TextStyle(fontSize: 10, color: statusColor),
-              ),
-            ]),
-          ]),
-        ),
-        PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert, size: 18, color: cs.onSurfaceVariant),
-          onSelected: (value) async {
-            if (value == 'admin') {
-              await _service.updateRole(widget.planId, member.id, CollabRole.admin);
-            } else if (value == 'editor') {
-              await _service.updateRole(widget.planId, member.id, CollabRole.editor);
-            } else if (value == 'viewer') {
-              await _service.updateRole(widget.planId, member.id, CollabRole.viewer);
-            } else if (value == 'remove') {
-              await _service.removeMember(widget.planId, member.id);
-            }
-            await _load();
-          },
-          itemBuilder: (_) => [
-            const PopupMenuItem(value: 'admin', child: Text('Rendre Admin')),
-            const PopupMenuItem(value: 'editor', child: Text('Rendre Éditeur')),
-            const PopupMenuItem(value: 'viewer', child: Text('Rendre Lecteur')),
-            const PopupMenuDivider(),
-            const PopupMenuItem(
-              value: 'remove',
-              child: Text('Retirer', style: TextStyle(color: Colors.red)),
             ),
           ],
         ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(
+              children: [
+                Flexible(
+                  child: Text(member.name,
+                      style: TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: roleColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: roleColor.withValues(alpha: 0.3)),
+                  ),
+                  child: Text(member.roleLabel.toUpperCase(),
+                      style: TextStyle(
+                          fontSize: 9, fontWeight: FontWeight.w900, color: roleColor, letterSpacing: 0.5)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(member.email,
+                style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 6),
+            Text(
+              member.status == CollabStatus.accepted ? 'Membre actif'
+                  : member.status == CollabStatus.pending ? 'Invitation en attente'
+                  : 'Invitation refusée',
+              style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600),
+            ),
+          ]),
+        ),
+        if (context.read<AuthViewModel>().isBrandOwner)
+          Container(
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: PopupMenuButton<String>(
+              icon: Icon(Icons.settings_outlined, size: 20, color: cs.onSurfaceVariant),
+              onSelected: (value) async {
+                if (value == 'admin') {
+                  await _service.updateRole(widget.planId, member.id, CollabRole.admin);
+                } else if (value == 'editor') {
+                  await _service.updateRole(widget.planId, member.id, CollabRole.editor);
+                } else if (value == 'viewer') {
+                  await _service.updateRole(widget.planId, member.id, CollabRole.viewer);
+                } else if (value == 'remove') {
+                  await _service.removeMember(widget.planId, member.id);
+                }
+                await _load();
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(value: 'admin', child: Row(children: [Icon(Icons.security_rounded, size: 18), SizedBox(width: 12), Text('Passer en Admin')])),
+                const PopupMenuItem(value: 'editor', child: Row(children: [Icon(Icons.edit_rounded, size: 18), SizedBox(width: 12), Text('Passer en Éditeur')])),
+                const PopupMenuItem(value: 'viewer', child: Row(children: [Icon(Icons.visibility_rounded, size: 18), SizedBox(width: 12), Text('Passer en Lecteur')])),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'remove',
+                  child: Row(children: [Icon(Icons.person_remove_rounded, size: 18, color: Colors.red), SizedBox(width: 12), Text('Retirer du projet', style: TextStyle(color: Colors.red))]),
+                ),
+              ],
+            ),
+          ),
       ]),
     );
   }
@@ -290,7 +426,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: allComments.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
           itemBuilder: (_, i) {
             final comment = allComments[i];
             Color? actionColor;
@@ -379,7 +515,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: _history.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, i) => _buildHistoryCard(_history[i], cs),
     );
   }
@@ -389,31 +525,60 @@ class _CollaborationScreenState extends State<CollaborationScreen>
     final icon = _actionIcon(entry.action);
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 2),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: cs.outlineVariant),
+        color: cs.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
-      child: Row(children: [
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
-          width: 36, height: 36,
+          width: 38, height: 38,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, size: 18, color: color),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(entry.description,
-                style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w500, color: cs.onSurface)),
-            const SizedBox(height: 2),
+            // Author name — bold, then action label beside it
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    entry.authorName,
+                    style: TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w800, color: cs.onSurface),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _actionLabel(entry.action),
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color, letterSpacing: 0.4),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            // Description
             Text(
-              '${entry.authorName} · ${_formatTime(entry.createdAt)}',
-              style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+              entry.description,
+              style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, height: 1.4),
+            ),
+            const SizedBox(height: 4),
+            // Timestamp
+            Text(
+              _formatTime(entry.createdAt),
+              style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
             ),
           ]),
         ),
@@ -438,45 +603,14 @@ class _CollaborationScreenState extends State<CollaborationScreen>
 
   // ── Invite Dialog ─────────────────────────────────────────────────────────
 
-  Future<void> _sendInvitationEmail({
-    required String email,
-    required String name,
-    required String role,
-  }) async {
-    final message = '''
-Bonjour $name,
-
-Vous avez été invité(e) à collaborer sur le plan "${widget.planName}" dans IdeaSpark.
-
-📧 Email : $email
-👤 Rôle : $role
-
-Téléchargez IdeaSpark et connectez-vous avec cet email pour accéder au plan.
-
-Cordialement,
-L'équipe IdeaSpark
-''';
-
-    // Essayer d'ouvrir l'app email
-    final subject = Uri.encodeComponent('Invitation IdeaSpark - ${widget.planName}');
-    final body = Uri.encodeComponent(message);
-    final emailUri = Uri.parse('mailto:$email?subject=$subject&body=$body');
-
-    bool launched = false;
-    try {
-      launched = await launchUrl(emailUri, mode: LaunchMode.externalApplication);
-    } catch (_) {}
-
-    // Si l'email ne s'ouvre pas, utiliser Share
-    if (!launched) {
-      await Share.share(message, subject: 'Invitation IdeaSpark - ${widget.planName}');
-    }
-  }
+  // Note: _sendInvitationEmail removed as it was unused and replaced by backend invitation logic.
 
   Future<void> _showInviteDialog() async {
-    final emailCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
+    final searchCtrl = TextEditingController();
     CollabRole selectedRole = CollabRole.editor;
+    List<Map<String, dynamic>> searchResults = [];
+    Map<String, dynamic>? selectedUser;
+    bool isSearching = false;
     final cs = Theme.of(context).colorScheme;
 
     await showDialog(
@@ -484,58 +618,147 @@ L'équipe IdeaSpark
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           title: const Text('Inviter un membre'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Nom',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: emailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Role selector
-              Row(children: [
-                Text('Rôle :', style: TextStyle(fontSize: 13, color: cs.onSurface)),
-                const SizedBox(width: 12),
-                ...CollabRole.values.map((r) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
-                    onTap: () => setS(() => selectedRole = r),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                  // Search field
+                  TextField(
+                    controller: searchCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Rechercher par nom ou email',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: isSearching
+                          ? const Padding(
+                              padding: EdgeInsets.all(12),
+                              child: SizedBox(
+                                width: 16, height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            )
+                          : null,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onChanged: (q) async {
+                      if (q.length < 2) {
+                        if (ctx.mounted) setS(() { searchResults = []; selectedUser = null; });
+                        return;
+                      }
+                      if (ctx.mounted) setS(() => isSearching = true);
+                      final results = await _service.searchUsers(q);
+                      if (ctx.mounted) setS(() { searchResults = results; isSearching = false; });
+                    },
+                  ),
+  
+                  // Search results — Column inside SingleChildScrollView avoids
+                  // the IntrinsicWidth/ShrinkWrappingViewport conflict in AlertDialog
+                  if (searchResults.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      constraints: const BoxConstraints(maxHeight: 160),
                       decoration: BoxDecoration(
-                        color: selectedRole == r
-                            ? _roleColor(r)
-                            : _roleColor(r).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: cs.outlineVariant),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
-                        r == CollabRole.admin ? 'Admin'
-                            : r == CollabRole.editor ? 'Éditeur' : 'Lecteur',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: selectedRole == r ? Colors.white : _roleColor(r),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (int i = 0; i < searchResults.length; i++) ...[
+                                if (i > 0) Divider(height: 1, color: cs.outlineVariant),
+                                Builder(builder: (_) {
+                                  final u = searchResults[i];
+                                  final name = (u['username'] ?? u['name'] ?? u['email'] ?? '').toString();
+                                  final email = (u['email'] ?? '').toString();
+                                  final isSelected = selectedUser?['_id'] == u['_id'] || selectedUser?['id'] == u['id'];
+                                  return ListTile(
+                                    dense: true,
+                                    selected: isSelected,
+                                    selectedTileColor: cs.primaryContainer.withValues(alpha: 0.3),
+                                    leading: CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: cs.primaryContainer,
+                                      child: Text(
+                                        name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                        style: TextStyle(fontSize: 12, color: cs.primary),
+                                      ),
+                                    ),
+                                    title: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                                    subtitle: Text(email, style: const TextStyle(fontSize: 11)),
+                                    onTap: () => setS(() {
+                                      selectedUser = u;
+                                      searchCtrl.text = name;
+                                      searchResults = [];
+                                    }),
+                                  );
+                                }),
+                              ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
+                  ],
+  
+                  // Selected user banner
+                  if (selectedUser != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(children: [
+                        Icon(Icons.check_circle, size: 16, color: cs.primary),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            (selectedUser!['username'] ?? selectedUser!['email'] ?? '').toString(),
+                            style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
+  
+                  const SizedBox(height: 12),
+                  // Role selector — Column to avoid Row overflow inside dialog
+                  Text('Rôle :', style: TextStyle(fontSize: 13, color: cs.onSurface)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: CollabRole.values.map((r) => GestureDetector(
+                      onTap: () => setS(() => selectedRole = r),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: selectedRole == r
+                              ? _roleColor(r)
+                              : _roleColor(r).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          r == CollabRole.admin ? 'Admin'
+                              : r == CollabRole.editor ? 'Éditeur' : 'Lecteur',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: selectedRole == r ? Colors.white : _roleColor(r),
+                          ),
+                        ),
+                      ),
+                    )).toList(),
                   ),
-                )),
-              ]),
-            ],
+                  const SizedBox(height: 4),
+                ],
+              ),
           ),
           actions: [
             TextButton(
@@ -543,36 +766,54 @@ L'équipe IdeaSpark
               child: const Text('Annuler'),
             ),
             FilledButton(
-              onPressed: () async {
-                if (emailCtrl.text.isEmpty || nameCtrl.text.isEmpty) return;
-                final member = CollabMember(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  email: emailCtrl.text.trim(),
-                  name: nameCtrl.text.trim(),
-                  role: selectedRole,
-                  status: CollabStatus.pending,
-                  invitedAt: DateTime.now(),
-                );
-                await _service.inviteMember(widget.planId, member);
+              onPressed: selectedUser == null ? null : () async {
+                final user = selectedUser!;
+                final userId = (user['_id'] ?? user['id'] ?? '').toString();
+                if (userId.isEmpty) return;
+                
+                // Capture data before context becomes invalid
+                final authVm = context.read<AuthViewModel>(); 
+                final currentUserName = authVm.displayName ?? 'Propriétaire';
+                final invitedUserName = (user['username'] ?? user['name'] ?? user['email']).toString();
+                final roleName = selectedRole == CollabRole.admin ? 'Admin'
+                    : selectedRole == CollabRole.editor ? 'Éditeur' : 'Lecteur';
+
                 Navigator.pop(ctx);
-                await _load();
-                _tabs.animateTo(0); // Switch to Members tab
+                try {
+                  await _service.inviteByUserId(widget.planId, userId, role: selectedRole.name);
+                  
+                  // Log this activity in the timeline
+                  await _service.addHistory(widget.planId, HistoryEntry(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    planId: widget.planId,
+                    authorName: currentUserName,
+                    action: 'invitation',
+                    description: '$currentUserName a invité $invitedUserName en tant qu\'$roleName',
+                    createdAt: DateTime.now(),
+                  ));
 
-                // Envoyer un vrai email d'invitation
-                await _sendInvitationEmail(
-                  email: member.email,
-                  name: member.name,
-                  role: member.roleLabel,
-                );
-
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if (!mounted) return;
+                  final messenger = ScaffoldMessenger.of(context);
+                  await _load();
+                  _tabs.animateTo(3);
+                  
+                  messenger.showSnackBar(
                     SnackBar(
-                      content: Text('✅ ${member.name} invité ! Email envoyé.'),
+                      content: Text('✅ Invitation envoyée à $invitedUserName !'),
                       backgroundColor: Colors.green,
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('❌ $e'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text('Inviter'),
@@ -600,6 +841,16 @@ L'équipe IdeaSpark
       case 'rejected': return const Color(0xFFE53935);
       case 'commented': return const Color(0xFFFF9800);
       default: return const Color(0xFF9C27B0);
+    }
+  }
+
+  String _actionLabel(String action) {
+    switch (action) {
+      case 'invitation': return 'INVITÉ';
+      case 'approved': return 'ACCEPTÉ';
+      case 'rejected': return 'REFUSÉ';
+      case 'commented': return 'COMMENTÉ';
+      default: return 'MODIFIÉ';
     }
   }
 

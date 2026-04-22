@@ -6,6 +6,7 @@ import '../../models/brand.dart';
 import '../../models/plan.dart';
 import '../../view_models/brand_view_model.dart';
 import '../../view_models/plan_view_model.dart';
+import '../loading/ai_plan_loading_screen.dart';
 
 class PlanProjectFlow extends StatefulWidget {
   const PlanProjectFlow({super.key});
@@ -112,6 +113,16 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final working = context.watch<PlanViewModel>().isGenerating || context.watch<PlanViewModel>().isSaving;
+    
+    // If working, show full immersive loading view
+    if (working && _step == 3) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: AiPlanLoadingView(brandName: _selectedBrand?.name ?? 'Brand'),
+      );
+    }
+
     return Scaffold(
       backgroundColor: cs.surface,
       body: SafeArea(
@@ -447,32 +458,10 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
           );
         }
 
-        // Loading
+        // Loading state is now handled at the build() level for full-screen immersion.
+        // If we happen to be here without valid success state, show a small indicator or empty
         if (working || _generatedPlan == null) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: CircularProgressIndicator(strokeWidth: 3, color: cs.primary),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    vm.isGenerating ? context.tr('plan_generating_title') : context.tr('plan_creating_title'),
-                    style: TextStyle(fontFamily: 'Syne', fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(context.tr('plan_analysing_desc'),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
-                ],
-              ),
-            ),
-          );
+          return const SizedBox.shrink();
         }
 
         // Success – user was already pushed to PlanDetailScreen automatically.

@@ -33,7 +33,8 @@ class DashboardContent extends StatefulWidget {
   State<DashboardContent> createState() => _DashboardContentState();
 }
 
-class _DashboardContentState extends State<DashboardContent> {
+class _DashboardContentState extends State<DashboardContent>
+    with WidgetsBindingObserver {
   String? _selectedBrandId; // null = All Brands
   bool _profileChecked = false;
 
@@ -51,7 +52,22 @@ class _DashboardContentState extends State<DashboardContent> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-fetch notifications whenever the user brings the app to foreground
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<CollaborationViewModel>().loadNotifications();
+    }
   }
 
   Future<void> _loadData() async {
@@ -82,7 +98,7 @@ class _DashboardContentState extends State<DashboardContent> {
     if (user == null) return;
 
     final isIncomplete = (user.username?.isEmpty ?? true) ||
-        (user.role?.isEmpty ?? true) ||
+        (user.role == null) ||
         (user.skills?.isEmpty ?? true) ||
         (user.interests?.isEmpty ?? true);
 

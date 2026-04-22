@@ -120,6 +120,17 @@ enum ContentFormat {
   }
 
   String toJson() => name;
+
+  String get label {
+    switch (this) {
+      case ContentFormat.reel:     return 'Reel';
+      case ContentFormat.short:    return 'Short';
+      case ContentFormat.post:     return 'Post';
+      case ContentFormat.carousel: return 'Carousel';
+      case ContentFormat.story:    return 'Story';
+      case ContentFormat.live:     return 'Live';
+    }
+  }
 }
 
 enum ContentCtaType {
@@ -161,6 +172,9 @@ class ContentBlock {
   final List<String> tags;
   final DateTime? scheduledAt;
   final ContentBlockStatus status;
+  final String? assignedTo;
+  final String? assignedToName;
+  final Map<String, bool> productionChecklist;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -184,6 +198,9 @@ class ContentBlock {
     required this.tags,
     this.scheduledAt,
     required this.status,
+    this.assignedTo,
+    this.assignedToName,
+    this.productionChecklist = const {},
     required this.createdAt,
     required this.updatedAt,
   });
@@ -209,6 +226,9 @@ class ContentBlock {
       tags:         List<String>.from(json['tags'] ?? []),
       scheduledAt:  json['scheduledAt'] != null ? DateTime.parse(json['scheduledAt']) : null,
       status:       ContentBlockStatus.fromString(json['status'] ?? 'idea'),
+      assignedTo:   json['assignedTo'],
+      assignedToName: json['assignedToName'],
+      productionChecklist: Map<String, bool>.from(json['productionChecklist'] ?? {}),
       createdAt:    DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       updatedAt:    DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
     );
@@ -232,6 +252,9 @@ class ContentBlock {
       'productId':    productId,
       'tags':         tags,
       if (scheduledAt != null) 'scheduledAt': scheduledAt!.toIso8601String(),
+      'productionChecklist': productionChecklist,
+      if (assignedTo != null) 'assignedTo': assignedTo,
+      if (assignedToName != null) 'assignedToName': assignedToName,
     };
   }
 
@@ -262,6 +285,8 @@ class ContentBlock {
       tags:         tags,
       scheduledAt:  scheduledAt  ?? this.scheduledAt,
       status:       status       ?? this.status,
+      assignedTo:   assignedTo   ?? assignedTo,
+      assignedToName: assignedToName ?? assignedToName,
       createdAt:    createdAt,
       updatedAt:    DateTime.now(),
     );

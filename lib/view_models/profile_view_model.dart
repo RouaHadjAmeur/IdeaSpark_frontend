@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../services/auth_service.dart';
 import '../models/persona_model.dart';
 import '../services/persona_service.dart';
@@ -98,6 +99,8 @@ class ProfileViewModel extends ChangeNotifier {
   String? _changePasswordErrorMessage;
   bool _isUpdateProfileLoading = false;
   String? _updateProfileErrorMessage;
+  bool _isUpgradeLoading = false;
+  String? _upgradeErrorMessage;
   
   File? _selectedImage;
   File? get selectedImage => _selectedImage;
@@ -109,6 +112,8 @@ class ProfileViewModel extends ChangeNotifier {
   String? get changePasswordErrorMessage => _changePasswordErrorMessage;
   bool get isUpdateProfileLoading => _isUpdateProfileLoading;
   String? get updateProfileErrorMessage => _updateProfileErrorMessage;
+  bool get isUpgradeLoading => _isUpgradeLoading;
+  String? get upgradeErrorMessage => _upgradeErrorMessage;
 
   String get displayName =>
       _authService.currentUser?.displayName ?? 'Utilisateur';
@@ -118,8 +123,9 @@ class ProfileViewModel extends ChangeNotifier {
   String? get profilePicture => _authService.currentUser?.profilePicture;
   String? get username => _authService.currentUser?.username;
   List<String> get skills => _authService.currentUser?.skills ?? [];
-  String? get role => _authService.currentUser?.role;
+  String? get role => _authService.currentUser?.role.name;
   List<String> get interests => _authService.currentUser?.interests ?? [];
+  bool get isPremium => _authService.currentUser?.isPremium ?? false;
 
   void refresh() {
     _selectedImage = null;
@@ -135,6 +141,72 @@ class ProfileViewModel extends ChangeNotifier {
     if (_dailyReminder != value) {
       _dailyReminder = value;
       notifyListeners();
+    }
+  }
+
+  /// Real Stripe upgrade: creates PaymentIntent, presents PaymentSheet,
+  /// then confirms with the backend. Returns true on success.
+  Future<bool> stripeUpgradeAccount() async {
+    _isUpgradeLoading = true;
+    _upgradeErrorMessage = null;
+    notifyListeners();
+    try {
+      // Step 1 — backend creates PaymentIntent, returns clientSecret
+      final data = await _authService.createStripeSubscription();
+      final clientSecret = data['clientSecret'] as String;
+      final paymentIntentId = data['paymentIntentId'] as String;
+
+      // Step 2 — initialise & present the native PaymentSheet
+      // Apply the publishable key from the backend before initialising
+      final publishableKey = data['publishableKey'] as String?;
+      if (publishableKey != null && publishableKey.isNotEmpty) {
+        Stripe.publishableKey = publishableKey;
+        await Stripe.instance.applySettings();
+      }
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'IdeaSpark',
+        ),
+      );
+      await Stripe.instance.presentPaymentSheet();
+
+      // Step 3 — tell the backend to verify and unlock isPremium
+      await _authService.confirmSubscription(paymentIntentId);
+
+      _isUpgradeLoading = false;
+      notifyListeners();
+      return true;
+    } on StripeException catch (e) {
+      // User cancelled or card was declined
+      _upgradeErrorMessage =
+          e.error.localizedMessage ?? e.error.message ?? 'Payment cancelled.';
+      _isUpgradeLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _upgradeErrorMessage = e.toString();
+      _isUpgradeLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Legacy mock upgrade — kept for development without Stripe keys.
+  Future<bool> upgradeAccount() async {
+    _isUpgradeLoading = true;
+    _upgradeErrorMessage = null;
+    notifyListeners();
+    try {
+      await _authService.upgradeToPremium();
+      _isUpgradeLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _upgradeErrorMessage = e.toString();
+      _isUpgradeLoading = false;
+      notifyListeners();
+      return false;
     }
   }
 

@@ -22,6 +22,7 @@ import '../analytics/plan_stats_screen.dart';
 import '../../services/pdf_export_service.dart';
 import '../plan-collaboration/collaboration_screen.dart';
 import '../plan-collaboration/post_comments_screen.dart';
+import '../../view_models/auth_view_model.dart';
 
 class PlanDetailScreen extends StatefulWidget {
   final Plan plan;
@@ -393,10 +394,15 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
       children: [
         // Activate (draft + has phases)
         if (isDraft && hasPhases)
-          _actionButton(
-            label: context.tr('detail_activate_btn'),
-            color: Colors.green,
-            onPressed: vm.isSaving ? null : () => _activatePlan(vm),
+          Consumer<AuthViewModel>(
+            builder: (context, authVm, _) {
+              final canActivate = authVm.isBrandOwner || authVm.userId == _plan.userId;
+              return _actionButton(
+                label: context.tr('detail_activate_btn'),
+                color: canActivate ? Colors.green : Colors.grey,
+                onPressed: (vm.isSaving || !canActivate) ? null : () => _activatePlan(vm, authVm),
+              );
+            }
           ),
 
         // Google Calendar button (active only)
@@ -420,14 +426,19 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
           ),
         ],
 
-        // Regenerate (has id + any status)
+        // Regenerate (has id + any status) - restricted to Brand Owner for now
         if (_plan.id != null) ...[
           if (isDraft || isActive) const SizedBox(height: 8),
-          _actionButton(
-            label: context.tr('detail_regen_btn'),
-            color: cs.secondary,
-            outlined: true,
-            onPressed: vm.isGenerating ? null : () => _regenerate(vm),
+          Consumer<AuthViewModel>(
+            builder: (context, authVm, _) {
+              final canRegen = authVm.isBrandOwner;
+              return _actionButton(
+                label: context.tr('detail_regen_btn'),
+                color: canRegen ? cs.secondary : Colors.grey,
+                outlined: true,
+                onPressed: (vm.isGenerating || !canRegen) ? null : () => _regenerate(vm),
+              );
+            }
           ),
           const SizedBox(height: 8),
           _actionButton(
@@ -436,6 +447,8 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             outlined: true,
             onPressed: _saveAsTemplate,
           ),
+          const SizedBox(height: 8),
+/* ... (sharing, stats, pdf export) ... */
           const SizedBox(height: 8),
           _actionButton(
             label: '📤 Partager ce plan',
@@ -474,16 +487,28 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
                 ),
               ),
             ),
+            trailing: _plan.notesSeen == false 
+                ? Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    width: 8, height: 8,
+                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  )
+                : null,
           ),
         ],
 
         const SizedBox(height: 8),
-        // Delete
-        _actionButton(
-          label: context.tr('detail_delete_btn'),
-          color: cs.error,
-          outlined: true,
-          onPressed: vm.isSaving ? null : () => _confirmDelete(vm),
+        // Delete - restricted to Brand Owner
+        Consumer<AuthViewModel>(
+          builder: (context, authVm, _) {
+            final canDelete = authVm.isBrandOwner;
+            return _actionButton(
+              label: context.tr('detail_delete_btn'),
+              color: canDelete ? cs.error : Colors.grey,
+              outlined: true,
+              onPressed: (vm.isSaving || !canDelete) ? null : () => _confirmDelete(vm),
+            );
+          }
         ),
 
         // Loading indicator
@@ -550,6 +575,7 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
     required Color color,
     required VoidCallback? onPressed,
     bool outlined = false,
+    Widget? trailing,
   }) {
     final style = outlined
         ? OutlinedButton.styleFrom(
@@ -573,16 +599,28 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
           ? OutlinedButton(
               onPressed: onPressed,
               style: style,
-              child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  ?trailing,
+                ],
+              ),
             )
           : FilledButton(
               onPressed: onPressed,
               style: style,
-              child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.w600)),
+                  ?trailing,
+                ],
+              ),
             ),
     );
   }
@@ -984,7 +1022,12 @@ $phases
 Créé avec IdeaSpark ✨
 ''';
 
-    await Share.share(text, subject: 'Plan Marketing - ${_plan.name}');
+    final box = context.findRenderObject() as RenderBox?;
+    await Share.share(
+      text, 
+      subject: 'Plan Marketing - ${_plan.name}',
+      sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null,
+    );
   }
 
   Future<void> _saveAsTemplate() async {
@@ -1083,13 +1126,24 @@ Créé avec IdeaSpark ✨
     }
   }
 
-  Future<void> _activatePlan(PlanViewModel vm) async {
-    final activated = await vm.activatePlan(_plan.id!);
+  Future<void> _activatePlan(PlanViewModel vm, AuthViewModel authVm) async {
+    final activated = await vm.activatePlan(
+      _plan.id!, 
+      currentUserId: authVm.userId, 
+      isBrandOwner: authVm.isBrandOwner
+    );
     if (activated != null && mounted) {
       setState(() => _plan = activated);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(context.tr('detail_plan_activated')),
+            behavior: SnackBarBehavior.floating),
+      );
+    } else if (activated == null && mounted && vm.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(vm.error!),
+            backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating),
       );
     }
@@ -1143,7 +1197,16 @@ Créé avec IdeaSpark ✨
     );
     if (ok == true) {
       await vm.deletePlan(_plan.id!);
-      if (mounted) Navigator.pop(context);
+      if (vm.error != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Delete failed: ${vm.error}'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating),
+        );
+      } else if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 
@@ -1193,7 +1256,8 @@ Créé avec IdeaSpark ✨
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: Text('Failed to update: $e'),
+                content: Text('Failed to update name: $e'),
+                backgroundColor: Theme.of(context).colorScheme.error,
                 behavior: SnackBarBehavior.floating),
           );
         }

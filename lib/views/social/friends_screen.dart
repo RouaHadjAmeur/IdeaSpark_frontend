@@ -125,7 +125,7 @@ class _FriendCardState extends State<_FriendCard> {
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        widget.user.role ?? 'Member',
+                        widget.user.role.name ?? 'Member',
                         style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.primary),
                       ),
                       if (widget.user.skills != null && widget.user.skills!.isNotEmpty)

@@ -106,7 +106,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           body: SafeArea(
             child: Column(
               children: [
-                _buildHeader(context),
+                _buildHeader(context, planVm),
                 _buildFilters(context, brandVm),
                 if (_isMonthlyView) _buildSmartRotationBanner(context),
                 if (planVm.isLoading)
@@ -132,7 +132,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   // ─── Header ───────────────────────────────────────────────────────────────
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, PlanViewModel planVm) {
     final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
@@ -173,6 +173,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
             onTap: () => setState(() => _isMonthlyView = false),
           ),
           const SizedBox(width: 12),
+          // Refresh
+          GestureDetector(
+            onTap: planVm.isLoading ? null : planVm.loadAllCalendar,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest,
+                border: Border.all(color: cs.outlineVariant),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: planVm.isLoading
+                  ? Center(
+                      child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: cs.primary)))
+                  : Icon(Icons.refresh_rounded, size: 20, color: cs.onSurface),
+            ),
+          ),
+          const SizedBox(width: 8),
           // Menu
           GestureDetector(
             onTap: () => _scaffoldKey.currentState?.openDrawer(),

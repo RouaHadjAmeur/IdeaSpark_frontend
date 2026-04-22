@@ -136,16 +136,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            if (_user!.role != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                _user!.role!,
-                style: TextStyle(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 16,
-                ),
+            ...[
+            const SizedBox(height: 4),
+            Text(
+              _user!.role!.name,
+              style: TextStyle(
+                color: colorScheme.onSurfaceVariant,
+                fontSize: 16,
               ),
-            ],
+            ),
+          ],
             const SizedBox(height: 24),
             
             // Follow Button
@@ -180,7 +180,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInfoRow(Icons.email_outlined, _user!.email),
-                if (_user!.role != null) _buildInfoRow(Icons.work_outline, _user!.role!),
+                _buildInfoRow(Icons.work_outline, _user!.role!.name),
               ],
             )),
             
