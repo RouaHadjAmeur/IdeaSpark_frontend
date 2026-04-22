@@ -34,6 +34,8 @@ import 'package:ideaspark/views/profile/edit_profile_screen.dart';
 import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
 import 'package:ideaspark/modules/camera_coach/camera_coach_screen.dart';
 
+import 'package:ideaspark/modules/contacts/contacts_screen.dart';
+import 'package:ideaspark/modules/chat/chat_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brands_list_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brand_workspace_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/calendar_screen.dart';
@@ -41,6 +43,7 @@ import 'package:ideaspark/views/strategic_content_manager/plan_project_flow.dart
 import 'package:ideaspark/views/strategic_content_manager/ai_campaign_roadmap_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/insights_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/create_edit_brand_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/agent_full_access_screen.dart';
 import 'package:ideaspark/views/execution_hub/execution_hub_screen.dart';
 import 'package:ideaspark/views/execution_hub/project_board_screen.dart';
 import '../views/strategic_content_manager/campaign_workspace_screen.dart';
@@ -60,41 +63,41 @@ import '../models/brand.dart';
 import '../models/plan.dart';
 import '../services/auth_service.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 
 GoRouter createAppRouter() {
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     routes: [
       GoRoute(
         path: '/splash',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => LocaleRebuilder(builder: (_) => const SplashScreen()),
       ),
       GoRoute(
         path: '/onboarding',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => LocaleRebuilder(builder: (_) => const OnboardingScreen()),
       ),
       GoRoute(
         path: '/login',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => LocaleRebuilder(builder: (_) => const LoginScreen()),
       ),
       GoRoute(
         path: '/signup',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => LocaleRebuilder(builder: (_) => const SignUpScreen()),
       ),
       GoRoute(
         path: '/forgot-password',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => LocaleRebuilder(builder: (_) => const ForgotPasswordScreen()),
       ),
       GoRoute(
         path: '/verify-email',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra;
           String email = '';
@@ -119,7 +122,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/persona-onboarding',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         redirect: (context, state) async {
           final authService = AuthService();
           final isLoggedIn = await authService.isLoggedIn();
@@ -138,7 +141,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/loading',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra;
           String? redirectTo;
@@ -166,14 +169,14 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/video-ideas-form',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const VideoIdeasFormScreen()),
         ),
       ),
       GoRoute(
         path: '/video-ideas-results',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           VideoRequest? request;
           bool useRemoteGeneration = true;
@@ -198,63 +201,63 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/business-ideas-form',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const BusinessIdeasFormScreen()),
         ),
       ),
       GoRoute(
         path: '/business-idea-detail',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const BusinessIdeaDetailScreen()),
         ),
       ),
       GoRoute(
         path: '/product-ideas-form',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const ProductIdeasFormScreen()),
         ),
       ),
       GoRoute(
         path: '/product-idea-result',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const ProductIdeaResultScreen()),
         ),
       ),
       GoRoute(
         path: '/slogans-form',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const SlogansFormScreen()),
         ),
       ),
       GoRoute(
         path: '/slogans-results',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const SlogansResultsScreen()),
         ),
       ),
       GoRoute(
         path: '/saved-ideas',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const SavedIdeasLibraryScreen()),
         ),
       ),
       GoRoute(
         path: '/trends',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const TrendsAnalysisScreen()),
         ),
       ),
       GoRoute(
         path: '/criteria',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final String? type = state.extra is String ? state.extra as String : null;
           return PageShell(
@@ -264,14 +267,14 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/results',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const ResultsScreen()),
         ),
       ),
       GoRoute(
         path: '/idea/:id',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final id = state.pathParameters['id'] ?? '';
           return PageShell(
@@ -281,14 +284,14 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/credits-shop',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const CreditsShopScreen()),
         ),
       ),
       GoRoute(
         path: '/payment',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final raw = state.extra;
           final extra = raw is Map ? raw : null;
@@ -310,7 +313,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/project-board',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final plan = state.extra as Plan;
           return ProjectBoardScreen(plan: plan);
@@ -318,7 +321,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/brand-workspace',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final brand = state.extra as Brand?;
           if (brand == null) return const SizedBox.shrink();
@@ -327,7 +330,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/brand-form',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final brand = state.extra is Brand ? state.extra as Brand : null;
           return CreateEditBrandScreen(brand: brand);
@@ -342,7 +345,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/plan-detail',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final plan = state.extra as Plan;
           return CampaignWorkspaceScreen(plan: plan);
@@ -350,7 +353,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/edit-profile',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(
             builder: (_) => EditProfileScreen(),
@@ -359,7 +362,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/camera-coach',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CameraCoachScreen(),
       ),
       GoRoute(
@@ -370,6 +373,25 @@ GoRouter createAppRouter() {
             builder: (_) => const SubscriptionScreen(),
           ),
         ),
+      ),
+      GoRoute(
+        path: '/agent-full-access',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AgentFullAccessScreen(),
+      ),
+      GoRoute(
+        path: '/chat/:receiverId',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final receiverId = state.pathParameters['receiverId']!;
+          final receiverName = state.extra is String ? state.extra as String : 'Utilisateur';
+          return LocaleRebuilder(
+            builder: (_) => ChatScreen(
+              receiverId: receiverId,
+              receiverName: receiverName,
+            ),
+          );
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -417,14 +439,16 @@ GoRouter createAppRouter() {
                   key: state.pageKey,
                   child: const ExecutionHubScreen(),
                 ),
-              ),
-              GoRoute(
-                path: '/projects-flow',
-                builder: (context, state) => const PlanProjectFlow(),
-              ),
-              GoRoute(
-                path: '/ai-campaign-roadmap',
-                builder: (context, state) => const AICampaignRoadmapScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'flow',
+                    builder: (context, state) => const PlanProjectFlow(),
+                  ),
+                  GoRoute(
+                    path: 'ai-campaign-roadmap',
+                    builder: (context, state) => const AICampaignRoadmapScreen(),
+                  ),
+                ],
               ),
             ],
           ),
@@ -450,14 +474,24 @@ GoRouter createAppRouter() {
               ),
             ],
           ),
-          // Additional branches for legacy screens that should have the shell
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/favorites',
+                path: '/contacts',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: LocaleRebuilder(builder: (_) => const FavoritesScreen()),
+                  child: const ContactsScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: LocaleRebuilder(builder: (_) => const ProfileScreen()),
                 ),
               ),
             ],
@@ -487,10 +521,10 @@ GoRouter createAppRouter() {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/profile',
+                path: '/favorites',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: LocaleRebuilder(builder: (_) => const ProfileScreen()),
+                  child: LocaleRebuilder(builder: (_) => const FavoritesScreen()),
                 ),
               ),
             ],

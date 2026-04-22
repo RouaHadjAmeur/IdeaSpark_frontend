@@ -71,6 +71,7 @@ class AppLocalizations {
     'nav_history': 'Historique',
     'nav_profile': 'Profil',
     'nav_community': 'Communauté',
+    'nav_contacts': 'Contacts',
 
     // Home generators (titles)
     'gen_camera-coach': 'Camera Coach',
@@ -589,6 +590,7 @@ class AppLocalizations {
     'nav_history': 'History',
     'nav_profile': 'Profile',
     'nav_community': 'Community',
+    'nav_contacts': 'Contacts',
 
     'gen_camera-coach': 'Camera Coach',
     'gen_video': 'Video Ideas',

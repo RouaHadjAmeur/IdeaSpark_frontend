@@ -107,6 +107,12 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                 const SizedBox(height: 16),
                 _buildSectionHeader(context, context.tr('nav_account')),
                 _SidebarItem(
+                  icon: Icons.contacts_rounded,
+                  label: context.tr('nav_contacts'),
+                  isActive: location.startsWith('/contacts'),
+                  onTap: () => context.go('/contacts'),
+                ),
+                _SidebarItem(
                   icon: Icons.person_outline_rounded,
                   label: context.tr('nav_profile'),
                   isActive: GoRouterState.of(context).matchedLocation == '/profile',

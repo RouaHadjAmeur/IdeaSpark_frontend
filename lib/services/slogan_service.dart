@@ -36,9 +36,42 @@ class SloganService {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
-      return PromptRefinerResult.fromJson(data);
+      final result = PromptRefinerResult.fromJson(data);
+      
+      // Save trace after successful refinement
+      _saveRefinerTrace(prompt, result);
+      
+      return result;
     } else {
       throw Exception('Échec du raffinement: ${response.statusCode} - ${response.body}');
+    }
+  }
+
+  static Future<void> _saveRefinerTrace(String inputPrompt, PromptRefinerResult result) async {
+    try {
+      final authService = AuthService();
+      final authToken = authService.accessToken;
+      if (authToken == null) return;
+
+      final url = Uri.parse(ApiConfig.promptRefinerTraceUrl);
+      final body = {
+        'inputPrompt': inputPrompt,
+        'refinedResult': result.result,
+        'modelLoaded': result.modelLoaded,
+        'status': 'success',
+      };
+
+      await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+        body: jsonEncode(body),
+      );
+      print('✅ Trace saved for Prompt Refiner');
+    } catch (e) {
+      print('❌ Error saving Prompt Refiner trace: $e');
     }
   }
 

@@ -73,6 +73,9 @@ class _SplashScreenState extends State<SplashScreen>
     final loggedIn = await authVm.restoreSession();
     if (!mounted) return;
     if (loggedIn) {
+      // Initialize call service as soon as we are logged in
+      CallService().connect();
+      
       final onboardingDone = await authVm.isOnboardingDone();
       if (!mounted) return;
       if (onboardingDone) {

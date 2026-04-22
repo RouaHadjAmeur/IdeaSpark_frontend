@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
+import 'package:ideaspark/services/call_service.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   const VerifyEmailScreen({
@@ -43,6 +44,8 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
     if (!context.mounted) return;
     if (success) {
+      // Initialize call service as soon as we are logged in
+      CallService().connect();
       final userId = vm.userId ?? '';
       context.go('/persona-onboarding', extra: userId);
     }

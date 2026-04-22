@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
+import 'package:ideaspark/services/call_service.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -47,6 +48,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!context.mounted) return;
     if (result == null) return;
     if (result.loggedIn) {
+      // Initialize call service as soon as we are logged in
+      CallService().connect();
       final userId = vm.userId ?? '';
       context.go('/persona-onboarding', extra: userId);
     } else if (result.requiresVerification && result.emailForVerification != null) {
@@ -64,6 +67,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (!context.mounted) return;
     if (result == null) return;
     if (result.loggedIn) {
+      // Initialize call service as soon as we are logged in
+      CallService().connect();
       final userId = vm.userId ?? '';
       context.go('/persona-onboarding', extra: userId);
     } else if (result.requiresVerification && result.emailForVerification != null) {

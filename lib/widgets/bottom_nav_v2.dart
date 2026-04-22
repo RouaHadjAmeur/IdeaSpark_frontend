@@ -41,22 +41,64 @@ class BottomNavV2 extends StatelessWidget {
         border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
       ),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: tabs.map((tab) {
-              final int branchIndex = tab['index'];
-              return Expanded(
-                child: _NavItem(
-                  icon: tab['icon'],
-                  label: tab['label'],
-                  isSelected: currentIndex == branchIndex,
-                  onTap: () => onTap(branchIndex),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _NavItem(
+                  icon: Icons.home_rounded,
+                  label: context.tr('nav_dashboard'),
+                  isSelected: currentIndex == 0,
+                  onTap: () => onTap(0),
                   colorScheme: colorScheme,
-                  activeColor: activeColor,
                 ),
-              );
-            }).toList(),
+                _NavItem(
+                  icon: Icons.label_important_outline_rounded,
+                  label: context.tr('nav_brands'),
+                  isSelected: currentIndex == 1,
+                  onTap: () => onTap(1),
+                  colorScheme: colorScheme,
+                ),
+                _NavItem(
+                  icon: Icons.calendar_month_rounded,
+                  label: context.tr('nav_calendar'),
+                  isSelected: currentIndex == 2,
+                  onTap: () => onTap(2),
+                  colorScheme: colorScheme,
+                ),
+                _NavItem(
+                  icon: Icons.dashboard_customize_rounded,
+                  label: 'Execution',
+                  isSelected: currentIndex == 3,
+                  onTap: () => onTap(3),
+                  colorScheme: colorScheme,
+                ),
+                _NavItem(
+                  icon: Icons.insights_rounded,
+                  label: context.tr('nav_insights'),
+                  isSelected: currentIndex == 4,
+                  onTap: () => onTap(4),
+                  colorScheme: colorScheme,
+                ),
+                _NavItem(
+                  icon: Icons.contacts_rounded,
+                  label: context.tr('nav_contacts'),
+                  isSelected: currentIndex == 5,
+                  onTap: () => onTap(5),
+                  colorScheme: colorScheme,
+                ),
+                _NavItem(
+                  icon: Icons.person_rounded,
+                  label: context.tr('nav_profile'),
+                  isSelected: currentIndex == 6,
+                  onTap: () => onTap(6),
+                  colorScheme: colorScheme,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -87,14 +129,15 @@ class _NavItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 20,
-              color: isSelected ? activeColor : colorScheme.onSurfaceVariant,
+              size: 22,
+              color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
               shadows: isSelected
                   ? [
                       Shadow(

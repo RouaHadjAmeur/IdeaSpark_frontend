@@ -10,15 +10,11 @@ class ApiConfig {
   static String get baseUrl {
     const envUrl = String.fromEnvironment('API_BASE_URL');
     if (envUrl.isNotEmpty) return envUrl;
-    // Android emulator uses 10.0.2.2 to reach host localhost
     if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
       return 'http://10.0.2.2:3000';
     }
-    // Physical iOS device — uses Mac's Bonjour hostname (stable, never changes with IP)
-    // Find yours with: scutil --get LocalHostName  → e.g. MacBook-Pro-de-Roua
     return 'http://Macs-AIr-Roua.local:3000';
   }
-
   static String get authBase => '$baseUrl/auth';
   static String get usersBase => '$baseUrl/users';
   static String get trendsBase => '$baseUrl/trends';
@@ -50,13 +46,23 @@ class ApiConfig {
   static String get toggleSloganFavoriteUrl => '$sloganGeneratorBase/slogans/toggle-favorite'; // Needs /id
   static String get deleteSloganUrl => '$sloganGeneratorBase/slogans'; // Needs /id
 
-  // Product Generator (IA Scratch) Endpoints
-  static String get iaScratchBase => '$baseUrl/ia-scratch';
-  static String get generateProductIdeaUrl => '$iaScratchBase/generate';
+  // Product Generator (IA Finetuning) Endpoints
+  static String get iaFinetuningBase => '$baseUrl/ia-finetuning';
+  static String get generateProductIdeaUrl => '$iaFinetuningBase/generate';
+  static String get saveProductIdeaUrl => '$iaFinetuningBase/product-ideas/save';
+  static String get getProductIdeasHistoryUrl => '$iaFinetuningBase/product-ideas/history';
+  static String get getProductIdeasFavoritesUrl => '$iaFinetuningBase/product-ideas/favorites';
+  static String toggleProductIdeaFavoriteUrl(String id) => '$iaFinetuningBase/product-ideas/toggle-favorite/$id';
+  static String deleteProductIdeaUrl(String id) => '$iaFinetuningBase/product-ideas/$id';
 
   // Prompt Refiner Endpoints
   static String get promptRefinerBase => '$baseUrl/prompt-refiner';
   static String get refinePromptUrl => '$promptRefinerBase/refine';
+
+  // Traces Endpoints
+  static String get productIdeaTraceUrl => '$iaFinetuningBase/traces/product-idea';
+  static String get promptRefinerTraceUrl => '$iaFinetuningBase/traces/prompt-refiner';
+  static String get tracesStatsUrl => '$iaFinetuningBase/traces/stats';
 
   // Brands Endpoints
   static String get brandsBase => '$baseUrl/brands';

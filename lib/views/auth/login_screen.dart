@@ -6,6 +6,7 @@ import 'package:ideaspark/core/app_theme.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/auth_view_model.dart';
 import 'package:ideaspark/services/persona_completion_service.dart';
+import 'package:ideaspark/services/call_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,6 +36,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!context.mounted) return;
       if (success) {
+        // Initialize call service as soon as we are logged in
+        CallService().connect();
+
         // Check if there's a returnTo parameter
         final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
         if (returnTo != null && returnTo.isNotEmpty) {
@@ -69,6 +73,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!context.mounted) return;
     if (result == null) return;
     if (result.loggedIn) {
+      // Initialize call service as soon as we are logged in
+      CallService().connect();
+
       // Check if there's a returnTo parameter
       final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
       if (returnTo != null && returnTo.isNotEmpty) {
@@ -102,6 +109,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!context.mounted) return;
     if (result == null) return;
     if (result.loggedIn) {
+      // Initialize call service as soon as we are logged in
+      CallService().connect();
+
       // Check if there's a returnTo parameter
       final returnTo = GoRouterState.of(context).uri.queryParameters['returnTo'];
       if (returnTo != null && returnTo.isNotEmpty) {
