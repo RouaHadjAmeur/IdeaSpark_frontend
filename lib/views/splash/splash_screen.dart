@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _pulseController;
   late AnimationController _bubble1Controller;
   late AnimationController _bubble2Controller;
+  Timer? _navigationTimer;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
@@ -67,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateNext() async {
-    await Future.delayed(const Duration(seconds: 3));
+    _navigationTimer = Timer(const Duration(seconds: 3), () async {
     if (!mounted) return;
     final authVm = context.read<AuthViewModel>();
     final loggedIn = await authVm.restoreSession();
@@ -95,10 +97,12 @@ class _SplashScreenState extends State<SplashScreen>
     } else {
       context.go('/login');
     }
+    });
   }
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _entranceController.dispose();
     _pulseController.dispose();
     _bubble1Controller.dispose();

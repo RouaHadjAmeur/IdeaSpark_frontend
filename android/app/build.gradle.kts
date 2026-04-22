@@ -9,8 +9,8 @@ plugins {
 android {
     namespace = "com.example.ideaspark"
     compileSdk = flutter.compileSdkVersion
-    // Pin to a stable NDK to avoid corrupted 28.2 downloads; use 26.x which installs reliably
-    ndkVersion = "27.0.12077973"
+    // Match plugin requirement (speech_to_text) to avoid NDK version conflict during assembleDebug.
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

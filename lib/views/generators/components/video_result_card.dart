@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../models/video_generator_models.dart';
 import '../../../models/content_block.dart';
@@ -8,6 +11,7 @@ import '../../../models/brand.dart';
 import '../../../models/plan.dart' as pl;
 import '../../../services/brand_service.dart';
 import '../../../services/plan_service.dart';
+import '../../../services/youtube_upload_service.dart';
 import '../../../view_models/content_block_view_model.dart';
 
 // ─── Main Card ────────────────────────────────────────────────────────────────
@@ -213,7 +217,7 @@ class _VideoResultCardState extends State<VideoResultCard> {
                         ),
                       )
                     else
-                      _buildActions(context, cs, block),
+                      _buildActions(context, cs, block, result.platform),
                   ],
                 ),
               ),
@@ -442,13 +446,19 @@ class _VideoResultCardState extends State<VideoResultCard> {
 
   // ─── Action buttons ────────────────────────────────────────────────────────
 
-  Widget _buildActions(BuildContext context, ColorScheme cs, ContentBlock? block) {
+  Widget _buildActions(
+    BuildContext context,
+    ColorScheme cs,
+    ContentBlock? block,
+    ContentPlatform platform,
+  ) {
     final hasSavedBlock = block != null;
     final canApprove = block?.status == ContentBlockStatus.idea;
     final canAddToPlan =
         block != null && block.status != ContentBlockStatus.terminated;
     final canSchedule = block?.status == ContentBlockStatus.approved ||
         block?.status == ContentBlockStatus.scheduled;
+    final isYoutube = platform == ContentPlatform.youtube;
 
     return Column(
       children: [
@@ -520,6 +530,22 @@ class _VideoResultCardState extends State<VideoResultCard> {
             ),
           ),
         ),
+        if (isYoutube) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _onPublishToYouTube(context),
+              icon: const Icon(Icons.ondemand_video, size: 16),
+              label: const Text('Publish Video From Phone'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -565,6 +591,25 @@ class _VideoResultCardState extends State<VideoResultCard> {
       builder: (_) => _ScheduleSheet(
         cbVm: _cbVm,
         onSuccess: (msg) => _snack(context, msg, const Color(0xFF3B82F6)),
+      ),
+    );
+  }
+
+  void _onPublishToYouTube(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _YouTubePublishSheet(
+        defaultTitle: widget.idea.title,
+        defaultDescription: widget.idea.caption,
+        onPublished: (url) async {
+          _snack(context, 'Published to YouTube ✓', const Color(0xFFEF4444));
+          final uri = Uri.tryParse(url);
+          if (uri != null) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        },
       ),
     );
   }
@@ -1342,6 +1387,257 @@ class _PickerButton extends StatelessWidget {
             const Spacer(),
             const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.white38),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── YouTube Publish Sheet ────────────────────────────────────────────────────
+
+class _YouTubePublishSheet extends StatefulWidget {
+  final String defaultTitle;
+  final String defaultDescription;
+  final ValueChanged<String> onPublished;
+
+  const _YouTubePublishSheet({
+    required this.defaultTitle,
+    required this.defaultDescription,
+    required this.onPublished,
+  });
+
+  @override
+  State<_YouTubePublishSheet> createState() => _YouTubePublishSheetState();
+}
+
+class _YouTubePublishSheetState extends State<_YouTubePublishSheet> {
+  final _titleCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _tagsCtrl = TextEditingController();
+  final _picker = ImagePicker();
+  final _service = YoutubeUploadService();
+
+  XFile? _video;
+  String _privacy = 'private';
+  bool _checking = true;
+  bool _connected = false;
+  bool _publishing = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleCtrl.text = widget.defaultTitle;
+    _descCtrl.text = widget.defaultDescription;
+    _checkConnection();
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _descCtrl.dispose();
+    _tagsCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkConnection() async {
+    try {
+      final ok = await _service.isConnected();
+      if (!mounted) return;
+      setState(() {
+        _connected = ok;
+        _checking = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _connected = false;
+        _checking = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    final picked = await _picker.pickVideo(source: ImageSource.gallery);
+    if (!mounted || picked == null) return;
+    setState(() {
+      _video = picked;
+      _error = null;
+    });
+  }
+
+  Future<void> _publish() async {
+    if (!_connected) {
+      setState(() => _error = 'Connect YouTube from Linked Accounts in Profile first.');
+      return;
+    }
+    if (_video == null) {
+      setState(() => _error = 'Please choose a video from your phone.');
+      return;
+    }
+    if (_titleCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Title is required.');
+      return;
+    }
+
+    setState(() {
+      _publishing = true;
+      _error = null;
+    });
+
+    try {
+      final url = await _service.publishUpload(
+        filePath: _video!.path,
+        title: _titleCtrl.text,
+        description: _descCtrl.text,
+        tagsCsv: _tagsCtrl.text,
+        privacyStatus: _privacy,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      widget.onPublished(url);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _publishing = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.of(context).viewInsets;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + viewInsets.bottom),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF111827),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Publish to YouTube',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+                const SizedBox(height: 10),
+                if (_checking)
+                  const Text('Checking YouTube connection...', style: TextStyle(color: Colors.white54))
+                else
+                  Text(
+                    _connected ? 'YouTube connected ✓' : 'YouTube not connected',
+                    style: TextStyle(
+                      color: _connected ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                if (!_checking && !_connected) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _publishing
+                              ? null
+                              : () async {
+                                  Navigator.of(context).pop();
+                                  context.push('/profile');
+                                },
+                          icon: const Icon(Icons.manage_accounts_outlined),
+                          label: const Text('Open Linked Accounts'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _publishing ? null : _checkConnection,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('I connected, refresh'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Connect YouTube in Profile > Linked Accounts, then come back and refresh.',
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _publishing || !_connected ? null : _pickVideo,
+                  icon: const Icon(Icons.video_library_outlined),
+                  label: Text(
+                    _video == null
+                        ? 'Choose video from phone'
+                        : _video!.name,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _titleCtrl,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                  maxLength: 100,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _descCtrl,
+                  decoration: const InputDecoration(labelText: 'Description'),
+                  maxLines: 2,
+                  maxLength: 5000,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _tagsCtrl,
+                  decoration: const InputDecoration(labelText: 'Tags (comma separated)'),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: _privacy,
+                  items: const [
+                    DropdownMenuItem(value: 'private', child: Text('Private')),
+                    DropdownMenuItem(value: 'unlisted', child: Text('Unlisted')),
+                    DropdownMenuItem(value: 'public', child: Text('Public')),
+                  ],
+                  onChanged: _publishing
+                      ? null
+                      : (v) => setState(() => _privacy = v ?? 'private'),
+                  decoration: const InputDecoration(labelText: 'Privacy'),
+                ),
+                if (_error != null) ...[
+                  const SizedBox(height: 8),
+                  Text(_error!, style: const TextStyle(color: Color(0xFFEF4444))),
+                ],
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _publishing || _checking ? null : _publish,
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
+                    child: _publishing
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('Upload & Publish'),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

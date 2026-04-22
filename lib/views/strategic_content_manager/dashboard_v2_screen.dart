@@ -18,9 +18,7 @@ class DashboardV2Screen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: DashboardContent(),
-    );
+    return const Scaffold(body: DashboardContent());
   }
 }
 
@@ -48,6 +46,31 @@ class _DashboardContentState extends State<DashboardContent> {
 
   Color _colorForIndex(int i) => _brandColors[i % _brandColors.length];
 
+  List<_TrendSectionColors> _trendSectionColors(ColorScheme cs) {
+    return [
+      _TrendSectionColors(
+        background: cs.primaryContainer,
+        title: cs.onPrimaryContainer,
+        subtitle: cs.onPrimaryContainer.withValues(alpha: 0.84),
+      ),
+      _TrendSectionColors(
+        background: cs.secondaryContainer,
+        title: cs.onSecondaryContainer,
+        subtitle: cs.onSecondaryContainer.withValues(alpha: 0.84),
+      ),
+      _TrendSectionColors(
+        background: cs.tertiaryContainer,
+        title: cs.onTertiaryContainer,
+        subtitle: cs.onTertiaryContainer.withValues(alpha: 0.84),
+      ),
+      _TrendSectionColors(
+        background: cs.surfaceContainerHighest,
+        title: cs.onSurface,
+        subtitle: cs.onSurfaceVariant,
+      ),
+    ];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -57,7 +80,7 @@ class _DashboardContentState extends State<DashboardContent> {
   Future<void> _loadData() async {
     if (!mounted) return;
     final brandVm = context.read<BrandViewModel>();
-    final planVm  = context.read<PlanViewModel>();
+    final planVm = context.read<PlanViewModel>();
     final collabVm = context.read<CollaborationViewModel>();
     await Future.wait([
       brandVm.loadBrands(),
@@ -69,7 +92,7 @@ class _DashboardContentState extends State<DashboardContent> {
     if (!mounted) return;
     // Load AI alerts after calendar is ready (uses cached result if < 24 h old)
     await planVm.loadAiAlerts(brands: brandVm.brands);
-    
+
     if (mounted) _checkProfileCompletion();
   }
 
@@ -81,7 +104,8 @@ class _DashboardContentState extends State<DashboardContent> {
     final user = authVm.currentUser;
     if (user == null) return;
 
-    final isIncomplete = (user.username?.isEmpty ?? true) ||
+    final isIncomplete =
+        (user.username?.isEmpty ?? true) ||
         (user.role?.isEmpty ?? true) ||
         (user.skills?.isEmpty ?? true) ||
         (user.interests?.isEmpty ?? true);
@@ -90,14 +114,19 @@ class _DashboardContentState extends State<DashboardContent> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Row(
             children: [
               const Text('👋 ', style: TextStyle(fontSize: 24)),
               Expanded(
                 child: Text(
                   ctx.tr('profile_incomplete_title'),
-                  style: const TextStyle(fontFamily: 'Syne', fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontFamily: 'Syne',
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -143,12 +172,14 @@ class _DashboardContentState extends State<DashboardContent> {
             : activePlans.where((p) => p.brandId == _selectedBrandId).toList();
 
         // ─── Stats ────────────────────────────────────────────────────────
-        final weekStart =
-            todayStart.subtract(Duration(days: now.weekday - 1));
+        final weekStart = todayStart.subtract(Duration(days: now.weekday - 1));
         final weekEnd = weekStart.add(const Duration(days: 6));
         final thisWeekCount = entries.where((e) {
           final d = DateTime(
-              e.scheduledDate.year, e.scheduledDate.month, e.scheduledDate.day);
+            e.scheduledDate.year,
+            e.scheduledDate.month,
+            e.scheduledDate.day,
+          );
           return !d.isBefore(weekStart) && !d.isAfter(weekEnd);
         }).length;
 
@@ -156,35 +187,42 @@ class _DashboardContentState extends State<DashboardContent> {
         if (filteredActive.isNotEmpty) {
           int total = 0;
           for (final p in filteredActive) {
-            total +=
-                ((p.contentMixPreference['promotional'] ?? 0) as num).toInt();
+            total += ((p.contentMixPreference['promotional'] ?? 0) as num)
+                .toInt();
           }
           avgPromo = total ~/ filteredActive.length;
         }
 
         // ─── Active campaign ──────────────────────────────────────────────
-        final activeCampaign =
-            filteredActive.isNotEmpty ? filteredActive.first : null;
+        final activeCampaign = filteredActive.isNotEmpty
+            ? filteredActive.first
+            : null;
         String campaignBrandName = '';
         if (activeCampaign != null) {
-          campaignBrandName = brands
-              .where((b) => b.id == activeCampaign.brandId)
-              .map((b) => b.name)
-              .firstOrNull ?? '—';
+          campaignBrandName =
+              brands
+                  .where((b) => b.id == activeCampaign.brandId)
+                  .map((b) => b.name)
+                  .firstOrNull ??
+              '—';
         }
 
         // ─── Next 7 days entries ──────────────────────────────────────────
         final next7End = todayStart.add(const Duration(days: 7));
         final next7Entries = entries.where((e) {
           final d = DateTime(
-              e.scheduledDate.year, e.scheduledDate.month, e.scheduledDate.day);
+            e.scheduledDate.year,
+            e.scheduledDate.month,
+            e.scheduledDate.day,
+          );
           return !d.isBefore(todayStart) && d.isBefore(next7End);
         }).toList();
 
         // ─── AI Alerts (Gemini-powered, 24 h cache) ───────────────────────
         final aiAlerts = planVm.aiAlerts;
 
-        final isLoading = (brandVm.isLoading || planVm.isLoading) &&
+        final isLoading =
+            (brandVm.isLoading || planVm.isLoading) &&
             brands.isEmpty &&
             planVm.plans.isEmpty;
 
@@ -223,22 +261,37 @@ class _DashboardContentState extends State<DashboardContent> {
                     const SizedBox(height: 24),
                     _buildLibraryButton(context),
                     const SizedBox(height: 32),
-                    _buildSectionHeader(context, 'Active Campaign',
-                        onSeeAll: () => context.push('/projects')),
-                    _buildActiveCampaignStrip(context, activeCampaign,
-                        campaignBrandName, filteredActive.length),
+                    _buildSectionHeader(
+                      context,
+                      'Active Campaign',
+                      onSeeAll: () => context.push('/projects'),
+                    ),
+                    _buildActiveCampaignStrip(
+                      context,
+                      activeCampaign,
+                      campaignBrandName,
+                      filteredActive.length,
+                    ),
                     const SizedBox(height: 24),
                     _buildSectionHeader(context, 'Next 7 Days'),
                     _buildWeekPreview(
-                        context, todayStart, next7Entries,
-                        planVm.plans, brands),
+                      context,
+                      todayStart,
+                      next7Entries,
+                      planVm.plans,
+                      brands,
+                    ),
                     const SizedBox(height: 24),
-                    _buildSectionHeader(context, 'AI Suggestions',
-                        onSeeAll: planVm.isLoadingAlerts
-                            ? null
-                            : () => planVm.refreshAiAlerts(brands: brands)),
+                    _buildSectionHeader(
+                      context,
+                      'AI Suggestions',
+                      onSeeAll: planVm.isLoadingAlerts
+                          ? null
+                          : () => planVm.refreshAiAlerts(brands: brands),
+                    ),
                     _buildAIPanel(
-                      context, aiAlerts,
+                      context,
+                      aiAlerts,
                       isLoading: planVm.isLoadingAlerts,
                       lastRefreshed: planVm.alertsLastRefreshed,
                     ),
@@ -257,7 +310,8 @@ class _DashboardContentState extends State<DashboardContent> {
   Widget _buildTopBar(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final authVm = context.watch<AuthViewModel>();
-    final fullName = authVm.displayName ?? authVm.email?.split('@').first ?? '—';
+    final fullName =
+        authVm.displayName ?? authVm.email?.split('@').first ?? '—';
     final firstName = fullName.split(' ').first;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -267,8 +321,10 @@ class _DashboardContentState extends State<DashboardContent> {
           children: [
             Text(
               context.tr('hello'),
-              style:
-                  TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
+              style: TextStyle(
+                fontSize: 12,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
             Text(
               '$firstName 👋',
@@ -290,8 +346,11 @@ class _DashboardContentState extends State<DashboardContent> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: colorScheme.outlineVariant),
             ),
-            child: Icon(Icons.menu_rounded,
-                size: 20, color: colorScheme.onSurface),
+            child: Icon(
+              Icons.menu_rounded,
+              size: 20,
+              color: colorScheme.onSurface,
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -312,8 +371,11 @@ class _DashboardContentState extends State<DashboardContent> {
                   child: Badge(
                     label: Text('$count'),
                     isLabelVisible: count > 0,
-                    child: Icon(Icons.notifications_none_rounded,
-                        size: 20, color: colorScheme.onSurface),
+                    child: Icon(
+                      Icons.notifications_none_rounded,
+                      size: 20,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ),
@@ -347,9 +409,11 @@ class _DashboardContentState extends State<DashboardContent> {
                 label: brand.name,
                 color: _colorForIndex(idx),
                 isActive: _selectedBrandId == brand.id,
-                onTap: () => setState(() => _selectedBrandId == brand.id
-                    ? _selectedBrandId = null
-                    : _selectedBrandId = brand.id),
+                onTap: () => setState(
+                  () => _selectedBrandId == brand.id
+                      ? _selectedBrandId = null
+                      : _selectedBrandId = brand.id,
+                ),
               ),
             );
           }),
@@ -388,11 +452,7 @@ class _DashboardContentState extends State<DashboardContent> {
           value: '$activePlansCount',
           sub: 'Campaigns running',
         ),
-        _StatCard(
-          label: 'Brands',
-          value: '$brandsCount',
-          sub: 'In workspace',
-        ),
+        _StatCard(label: 'Brands', value: '$brandsCount', sub: 'In workspace'),
         _StatCard(
           label: 'Promo %',
           value: activePlansCount > 0 ? '$avgPromo%' : '—',
@@ -409,23 +469,49 @@ class _DashboardContentState extends State<DashboardContent> {
 
   // ─── Generators grid ─────────────────────────────────────────────────────────
 
-  Widget _buildGeneratorsGrid(BuildContext context, HomeViewModel vm) {
+    Widget _buildGeneratorsGrid(BuildContext context, HomeViewModel vm) {
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+      mainAxisSpacing: 14,
+      crossAxisSpacing: 14,
+      childAspectRatio: 1.35,
       children: vm.generatorList.map((e) {
+        final visual = _quickActionVisualForType(e.typeId);
         return _QuickToolCard(
-          icon: e.icon,
           label: context.tr('gen_${e.typeId}'),
+          logoUrl: visual.logoUrl,
           onTap: () => context.push(_formRouteForType(e.typeId)),
         );
       }).toList(),
     );
-  }
+    }
+
+    _QuickActionVisual _quickActionVisualForType(String typeId) {
+    switch (typeId) {
+      case 'camera-coach':
+        return const _QuickActionVisual(
+          logoUrl: 'assets/images/camera_logo-removebg-preview.png',
+        );
+      case 'video':
+        return const _QuickActionVisual(
+          logoUrl: 'assets/images/video_logo-removebg-preview.png',
+        );
+      case 'product':
+        return const _QuickActionVisual(
+          logoUrl: 'assets/images/productidea_logo-removebg-preview.png',
+        );
+      case 'slogans':
+        return const _QuickActionVisual(
+          logoUrl: 'assets/images/slogans_logo-removebg-preview.png',
+        );
+      default:
+        return const _QuickActionVisual(
+          logoUrl: 'assets/images/video_logo-removebg-preview.png',
+        );
+    }
+    }
 
   String _formRouteForType(String typeId) {
     switch (typeId) {
@@ -461,10 +547,11 @@ class _DashboardContentState extends State<DashboardContent> {
               ),
             ),
             TextButton(
-              onPressed: () => context.push('/trends'),
-              child: Text(context.tr('see_all'),
-                  style:
-                      TextStyle(color: colorScheme.primary, fontSize: 13)),
+              onPressed: () => _showTrendsMenuSheet(context),
+              child: Text(
+                context.tr('see_all'),
+                style: TextStyle(color: colorScheme.primary, fontSize: 13),
+              ),
             ),
           ],
         ),
@@ -484,6 +571,162 @@ class _DashboardContentState extends State<DashboardContent> {
     );
   }
 
+  Future<void> _showTrendsMenuSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        final colorScheme = Theme.of(sheetContext).colorScheme;
+        final bottomInset = MediaQuery.of(sheetContext).padding.bottom;
+        final trendColors = _trendSectionColors(colorScheme);
+
+        return FractionallySizedBox(
+          heightFactor: 0.82,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 14, 16, 12 + bottomInset),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Explore Trends',
+                    style: GoogleFonts.syne(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      height: 1,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          const gap = 8.0;
+                          const baseTop = 136.0;
+                          const baseMid = 124.0;
+                          const baseBottom = 176.0;
+                          final baseTotal =
+                              baseTop +
+                              baseMid +
+                              baseMid +
+                              baseBottom +
+                              (gap * 3);
+                          final scale = (constraints.maxHeight / baseTotal)
+                              .clamp(0.82, 1.2);
+
+                          final topHeight = baseTop * scale;
+                          final midHeight = baseMid * scale;
+                          final bottomHeight =
+                              constraints.maxHeight -
+                              topHeight -
+                              midHeight -
+                              midHeight -
+                              (gap * 3);
+
+                          return Column(
+                            children: [
+                              SizedBox(
+                                height: topHeight,
+                                child: _TrendsPanelSection(
+                                  title: 'YouTube Trends',
+                                  subtitle:
+                                      'Explore viral videos\nand channels',
+                                  background: trendColors[0].background,
+                                  titleColor: trendColors[0].title,
+                                  subtitleColor: trendColors[0].subtitle,
+                                  logoUrl:
+                                      'assets/images/Youtube_logo-removebg-preview.png',
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/social-video-trends');
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: gap),
+                              SizedBox(
+                                height: midHeight,
+                                child: _TrendsPanelSection(
+                                  title: 'TikTok Trends',
+                                  subtitle:
+                                      'Discover new creative\nshort videos',
+                                  background: trendColors[1].background,
+                                  titleColor: trendColors[1].title,
+                                  subtitleColor: trendColors[1].subtitle,
+                                  logoUrl:
+                                      'assets/images/tiktok_logo-removebg-preview.png',
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/trends');
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: gap),
+                              SizedBox(
+                                height: midHeight,
+                                child: _TrendsPanelSection(
+                                  title: 'Instagram\nTrends',
+                                  subtitle: 'Explore viral photos\nand reels',
+                                  background: trendColors[2].background,
+                                  titleColor: trendColors[2].title,
+                                  subtitleColor: trendColors[2].subtitle,
+                                  logoUrl:
+                                      'assets/images/insta_logo-removebg-preview.png',
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/trends');
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: gap),
+                              SizedBox(
+                                height: bottomHeight,
+                                child: _TrendsPanelSection(
+                                  title: 'News Trends',
+                                  subtitle: 'Stay updated on\ncurrent events',
+                                  background: trendColors[3].background,
+                                  titleColor: trendColors[3].title,
+                                  subtitleColor: trendColors[3].subtitle,
+                                  logoUrl:
+                                      'assets/images/news_logo-removebg-preview.png',
+                                  showCta: true,
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/trends');
+                                  },
+                                  onCtaTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/trends');
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // ─── Library button ──────────────────────────────────────────────────────────
 
   Widget _buildLibraryButton(BuildContext context) {
@@ -495,18 +738,19 @@ class _DashboardContentState extends State<DashboardContent> {
       style: OutlinedButton.styleFrom(
         foregroundColor: colorScheme.onSurface,
         side: BorderSide(color: colorScheme.outlineVariant),
-        padding:
-            const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
 
   // ─── Section header ──────────────────────────────────────────────────────────
 
-  Widget _buildSectionHeader(BuildContext context, String title,
-      {VoidCallback? onSeeAll}) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title, {
+    VoidCallback? onSeeAll,
+  }) {
     final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -558,15 +802,19 @@ class _DashboardContentState extends State<DashboardContent> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add_circle_outline_rounded,
-                  color: colorScheme.primary, size: 20),
+              Icon(
+                Icons.add_circle_outline_rounded,
+                color: colorScheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Text(
                 'Start your first campaign',
                 style: TextStyle(
-                    fontSize: 13,
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600),
+                  fontSize: 13,
+                  color: colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -576,11 +824,12 @@ class _DashboardContentState extends State<DashboardContent> {
 
     final now = DateTime.now();
     final elapsed = now.difference(campaign.startDate).inDays;
-    final currentWeek =
-        (elapsed ~/ 7).clamp(0, campaign.durationWeeks - 1) + 1;
+    final currentWeek = (elapsed ~/ 7).clamp(0, campaign.durationWeeks - 1) + 1;
     final totalWeeks = campaign.durationWeeks;
-    final progressPercent =
-        ((currentWeek / totalWeeks) * 100).round().clamp(0, 100);
+    final progressPercent = ((currentWeek / totalWeeks) * 100).round().clamp(
+      0,
+      100,
+    );
 
     return GestureDetector(
       onTap: () => context.push('/projects'),
@@ -588,14 +837,17 @@ class _DashboardContentState extends State<DashboardContent> {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: colorScheme.surfaceContainerHighest,
-          border:
-              Border.all(color: colorScheme.primary.withValues(alpha: 0.25)),
+          border: Border.all(
+            color: colorScheme.primary.withValues(alpha: 0.25),
+          ),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Row(
           children: [
-            Text(campaign.objective.emoji,
-                style: const TextStyle(fontSize: 28)),
+            Text(
+              campaign.objective.emoji,
+              style: const TextStyle(fontSize: 28),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -604,23 +856,27 @@ class _DashboardContentState extends State<DashboardContent> {
                   Text(
                     campaign.name,
                     style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     '$brandName · Week $currentWeek of $totalWeeks',
                     style: TextStyle(
-                        fontSize: 11,
-                        color: colorScheme.onSurfaceVariant),
+                      fontSize: 11,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   if (totalActive > 1)
                     Text(
                       '+${totalActive - 1} more active',
                       style: TextStyle(
-                          fontSize: 10, color: colorScheme.primary),
+                        fontSize: 10,
+                        color: colorScheme.primary,
+                      ),
                     ),
                 ],
               ),
@@ -628,9 +884,10 @@ class _DashboardContentState extends State<DashboardContent> {
             Text(
               '$progressPercent%',
               style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primary),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
+              ),
             ),
           ],
         ),
@@ -656,28 +913,33 @@ class _DashboardContentState extends State<DashboardContent> {
       final day = todayStart.add(Duration(days: i));
       final dayKey = DateTime(day.year, day.month, day.day);
       final dayEntries = entries.where((e) {
-        final d = DateTime(e.scheduledDate.year, e.scheduledDate.month,
-            e.scheduledDate.day);
+        final d = DateTime(
+          e.scheduledDate.year,
+          e.scheduledDate.month,
+          e.scheduledDate.day,
+        );
         return d == dayKey;
       }).toList();
       final count = dayEntries.length;
       final label = dayLabels[day.weekday - 1];
-      children.add(_DayPreview(
-        label: label,
-        count: count > 0 ? '$count' : '—',
-        hasPost: count > 0,
-        isToday: i == 0,
-        dotColor: count > 0
-            ? colorScheme.primary
-            : colorScheme.surfaceContainerHighest,
-        onTap: () => showDayDetailSheet(
-          context,
-          date: day,
-          entries: dayEntries,
-          plans: plans,
-          brands: brands,
+      children.add(
+        _DayPreview(
+          label: label,
+          count: count > 0 ? '$count' : '—',
+          hasPost: count > 0,
+          isToday: i == 0,
+          dotColor: count > 0
+              ? colorScheme.primary
+              : colorScheme.surfaceContainerHighest,
+          onTap: () => showDayDetailSheet(
+            context,
+            date: day,
+            entries: dayEntries,
+            plans: plans,
+            brands: brands,
+          ),
         ),
-      ));
+      );
     }
 
     return Row(children: children);
@@ -729,7 +991,9 @@ class _DashboardContentState extends State<DashboardContent> {
                   width: 12,
                   height: 12,
                   child: CircularProgressIndicator(
-                      strokeWidth: 1.5, color: cs.primary),
+                    strokeWidth: 1.5,
+                    color: cs.primary,
+                  ),
                 )
               else if (lastRefreshed != null)
                 Text(
@@ -751,12 +1015,11 @@ class _DashboardContentState extends State<DashboardContent> {
             )
           else
             ...alerts.asMap().entries.map((entry) {
-              final idx   = entry.key;
+              final idx = entry.key;
               final alert = entry.value;
               return Column(
                 children: [
-                  if (idx > 0)
-                    Divider(color: cs.outlineVariant, height: 16),
+                  if (idx > 0) Divider(color: cs.outlineVariant, height: 16),
                   _AISuggestion(
                     dotColor: alert.dotColor(cs),
                     text: alert.message,
@@ -771,9 +1034,9 @@ class _DashboardContentState extends State<DashboardContent> {
 
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
-    if (diff.inMinutes < 1)  return 'just now';
+    if (diff.inMinutes < 1) return 'just now';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24)   return '${diff.inHours}h ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
     return '${diff.inDays}d ago';
   }
 }
@@ -808,46 +1071,134 @@ class _TrendingChip extends StatelessWidget {
 }
 
 class _QuickToolCard extends StatelessWidget {
-  final String icon;
   final String label;
+  final String logoUrl;
   final VoidCallback onTap;
 
-  const _QuickToolCard(
-      {required this.icon, required this.label, required this.onTap});
+  const _QuickToolCard({
+    required this.label,
+    required this.logoUrl,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Material(
-      color: colorScheme.surfaceContainerHighest,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: colorScheme.outlineVariant),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(icon, style: const TextStyle(fontSize: 20)),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    final cardColor = isDark
+        ? colorScheme.surfaceContainerHighest
+        : colorScheme.inverseSurface;
+    final topStripColor = theme.scaffoldBackgroundColor;
+    final textColor = isDark ? colorScheme.onSurface : colorScheme.onInverseSurface;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final topStripHeight = constraints.maxHeight * 0.2;
+        final bodyHeight = constraints.maxHeight - topStripHeight;
+
+        return Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: onTap,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: topStripHeight,
+                  child: ColoredBox(color: topStripColor),
                 ),
-              ),
-            ],
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: bodyHeight,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 8,
+                  right: 8,
+                  top: 0,
+                  bottom: 12,
+                  child: IgnorePointer(
+                    child: Image.asset(
+                      logoUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Center(
+                          child: Text(
+                            'Image error',
+                            style: TextStyle(color: textColor, fontSize: 10),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 70,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(
+                        bottom: Radius.circular(20),
+                      ),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 14,
+                  child: Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.syne(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                      height: 1.1,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+}
+
+class _QuickActionVisual {
+  final String logoUrl;
+
+  const _QuickActionVisual({
+    required this.logoUrl,
+  });
 }
 
 class _BrandPill extends StatelessWidget {
@@ -869,14 +1220,14 @@ class _BrandPill extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isActive
               ? color.withValues(alpha: 0.1)
               : colorScheme.surfaceContainerHighest,
           border: Border.all(
-              color: isActive ? color : colorScheme.outlineVariant),
+            color: isActive ? color : colorScheme.outlineVariant,
+          ),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -885,8 +1236,7 @@ class _BrandPill extends StatelessWidget {
             Container(
               width: 8,
               height: 8,
-              decoration:
-                  BoxDecoration(color: color, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 8),
             Text(
@@ -894,8 +1244,7 @@ class _BrandPill extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: colorScheme.onSurface,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.normal,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
           ],
@@ -928,19 +1277,21 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
         border: Border.all(
-            color: isHighlight
-                ? colorScheme.primary
-                : colorScheme.outlineVariant),
+          color: isHighlight ? colorScheme.primary : colorScheme.outlineVariant,
+        ),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(),
-              style: TextStyle(
-                  fontSize: 10,
-                  color: colorScheme.onSurfaceVariant,
-                  letterSpacing: 1)),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              color: colorScheme.onSurfaceVariant,
+              letterSpacing: 1,
+            ),
+          ),
           const Spacer(),
           Text(
             value,
@@ -951,10 +1302,13 @@ class _StatCard extends StatelessWidget {
               color: valueColor ?? colorScheme.onSurface,
             ),
           ),
-          Text(sub,
-              style: TextStyle(
-                  fontSize: 10,
-                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8))),
+          Text(
+            sub,
+            style: TextStyle(
+              fontSize: 10,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+            ),
+          ),
         ],
       ),
     );
@@ -985,46 +1339,52 @@ class _DayPreview extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-        padding:
-            const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-        decoration: BoxDecoration(
-          color: isToday
-              ? colorScheme.primary.withValues(alpha: 0.06)
-              : colorScheme.surfaceContainerHighest,
-          border: Border.all(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          decoration: BoxDecoration(
             color: isToday
-                ? colorScheme.primary.withValues(alpha: 0.5)
-                : hasPost
-                    ? colorScheme.primary.withValues(alpha: 0.3)
-                    : colorScheme.outlineVariant,
-          ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: [
-            Text(label,
-                style: TextStyle(
-                    fontSize: 9,
-                    color: isToday
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                    fontWeight: isToday
-                        ? FontWeight.w700
-                        : FontWeight.normal)),
-            const SizedBox(height: 6),
-            Container(
-              width: 20,
-              height: 20,
-              decoration:
-                  BoxDecoration(color: dotColor, shape: BoxShape.circle),
+                ? colorScheme.primary.withValues(alpha: 0.06)
+                : colorScheme.surfaceContainerHighest,
+            border: Border.all(
+              color: isToday
+                  ? colorScheme.primary.withValues(alpha: 0.5)
+                  : hasPost
+                  ? colorScheme.primary.withValues(alpha: 0.3)
+                  : colorScheme.outlineVariant,
             ),
-            const SizedBox(height: 4),
-            Text(count,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            children: [
+              Text(
+                label,
                 style: TextStyle(
-                    fontSize: 10, color: colorScheme.onSurfaceVariant)),
-          ],
+                  fontSize: 9,
+                  color: isToday
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
+                  fontWeight: isToday ? FontWeight.w700 : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: dotColor,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                count,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -1046,20 +1406,170 @@ class _AISuggestion extends StatelessWidget {
           margin: const EdgeInsets.only(top: 5),
           width: 6,
           height: 6,
-          decoration:
-              BoxDecoration(color: dotColor, shape: BoxShape.circle),
+          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
             style: TextStyle(
-                fontSize: 12,
-                color: colorScheme.onSurfaceVariant,
-                height: 1.4),
+              fontSize: 12,
+              color: colorScheme.onSurfaceVariant,
+              height: 1.4,
+            ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _TrendSectionColors {
+  final Color background;
+  final Color title;
+  final Color subtitle;
+
+  const _TrendSectionColors({
+    required this.background,
+    required this.title,
+    required this.subtitle,
+  });
+}
+
+class _TrendsPanelSection extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Color background;
+  final Color titleColor;
+  final Color subtitleColor;
+  final String logoUrl;
+  final VoidCallback onTap;
+  final VoidCallback? onCtaTap;
+  final bool showCta;
+
+  const _TrendsPanelSection({
+    required this.title,
+    required this.subtitle,
+    required this.background,
+    required this.titleColor,
+    required this.subtitleColor,
+    required this.logoUrl,
+    required this.onTap,
+    this.onCtaTap,
+    this.showCta = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxHeight < 118;
+        final contentPadding = EdgeInsets.fromLTRB(
+          16,
+          isCompact ? 10 : 14,
+          16,
+          isCompact ? 8 : 12,
+        );
+        final logoSize = (constraints.maxHeight * (showCta ? 0.42 : 0.72))
+            .clamp(isCompact ? 84.0 : 96.0, 132.0);
+        final titleSize = isCompact ? 16.0 : 18.0;
+        final subtitleSize = isCompact ? 11.0 : 12.0;
+
+        return Material(
+          color: background,
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              padding: contentPadding,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.syne(
+                                  fontSize: titleSize,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.05,
+                                  color: titleColor,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                subtitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: subtitleSize,
+                                  height: 1.18,
+                                  color: subtitleColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          width: logoSize,
+                          height: logoSize,
+                          child: Image.asset(
+                            logoUrl,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.image_not_supported_outlined,
+                                  color: subtitleColor,
+                                  size: isCompact ? 26 : 30,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (showCta) ...[
+                    const SizedBox(height: 8),
+                    FilledButton(
+                      onPressed: onCtaTap ?? onTap,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        "Let's Explore!",
+                        style: GoogleFonts.syne(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

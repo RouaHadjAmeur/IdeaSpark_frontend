@@ -170,6 +170,12 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
       );
       return;
     }
+    if (_step == 1 && _platforms.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('At least one platform is required')),
+      );
+      return;
+    }
     if (_step < _totalSteps - 1) {
       setState(() => _step++);
       _pageCtrl.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeInOut);
@@ -188,6 +194,20 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
   }
 
   Future<void> _submit() async {
+    // Validate required fields
+    if (_nameCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Brand name is required')),
+      );
+      return;
+    }
+    if (_platforms.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('At least one platform is required')),
+      );
+      return;
+    }
+
     final totalMix = _educationalPct + _promotionalPct + _storytellingPct + _authorityPct;
     int norm(int v) => totalMix > 0 ? ((v / totalMix) * 100).round() : 25;
 

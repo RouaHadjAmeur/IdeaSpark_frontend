@@ -71,6 +71,9 @@ class VideoIdeaGeneratorViewModel extends ChangeNotifier {
   Future<void> regenerateIdeas({bool useRemote = false}) async {
     if (_lastRequest != null) {
       await generateIdeas(_lastRequest!, useRemote: useRemote);
+    } else {
+      _errorMessage = 'Aucune requête précédente trouvée';
+      notifyListeners();
     }
   }
 
