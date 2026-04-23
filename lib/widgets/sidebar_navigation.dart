@@ -63,6 +63,12 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                   onTap: () => context.push('/insights'),
                 ),
                 _SidebarItem(
+                  icon: Icons.dashboard_customize_rounded,
+                  label: 'Execution',
+                  isActive: location.startsWith('/execution'),
+                  onTap: () => context.push('/execution'),
+                ),
+                _SidebarItem(
                   icon: Icons.calendar_month_rounded,
                   label: context.tr('nav_calendar'),
                   badge: '3',
