@@ -31,7 +31,6 @@ class BottomNavV2 extends StatelessWidget {
       {'icon': Icons.calendar_month_rounded, 'label': context.tr('nav_calendar'), 'index': 2},
       {'icon': Icons.rocket_launch_rounded, 'label': 'Projects', 'index': 3},
       {'icon': Icons.contacts_rounded, 'label': context.tr('nav_contacts'), 'index': 4},
-      {'icon': Icons.person_rounded, 'label': context.tr('nav_profile'), 'index': 5},
     ];
 
     final activeColor = colorScheme.primary;
@@ -86,14 +85,6 @@ class BottomNavV2 extends StatelessWidget {
                   label: context.tr('nav_contacts'),
                   isSelected: currentIndex == 4,
                   onTap: () => onTap(4),
-                  colorScheme: colorScheme,
-                  activeColor: activeColor,
-                ),
-                _NavItem(
-                  icon: Icons.person_rounded,
-                  label: context.tr('nav_profile'),
-                  isSelected: currentIndex == 5,
-                  onTap: () => onTap(5),
                   colorScheme: colorScheme,
                   activeColor: activeColor,
                 ),
