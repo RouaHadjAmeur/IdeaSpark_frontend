@@ -4,6 +4,7 @@ import '../core/api_config.dart';
 import '../services/auth_service.dart';
 import '../models/post_analysis.dart';
 import '../models/optimal_timing.dart';
+import 'package:flutter/foundation.dart';
 
 class CreativeAIService {
   /// Analyser un post et obtenir un score de performance
@@ -20,7 +21,7 @@ class CreativeAIService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/post-analyzer/score');
 
-      print('📊 [PostAnalyzer] Analyzing post...');
+      debugPrint('📊 [PostAnalyzer] Analyzing post...');
 
       final response = await http.post(
         url,
@@ -38,18 +39,18 @@ class CreativeAIService {
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('📊 [PostAnalyzer] Status: ${response.statusCode}');
+      debugPrint('📊 [PostAnalyzer] Status: ${response.statusCode}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final analysis = PostAnalysis.fromJson(data);
-        print('✅ [PostAnalyzer] Score: ${analysis.overallScore}/100');
+        debugPrint('✅ [PostAnalyzer] Score: ${analysis.overallScore}/100');
         return analysis;
       } else {
         throw Exception('Failed to analyze post: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [PostAnalyzer] Error: $e');
+      debugPrint('❌ [PostAnalyzer] Error: $e');
       rethrow;
     }
   }
@@ -67,7 +68,7 @@ class CreativeAIService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/viral-hooks/generate');
 
-      print('🎣 [ViralHooks] Generating hooks for: $topic');
+      debugPrint('🎣 [ViralHooks] Generating hooks for: $topic');
 
       final response = await http.post(
         url,
@@ -83,18 +84,18 @@ class CreativeAIService {
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('🎣 [ViralHooks] Status: ${response.statusCode}');
+      debugPrint('🎣 [ViralHooks] Status: ${response.statusCode}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final hooks = List<String>.from(data['hooks'] ?? []);
-        print('✅ [ViralHooks] Generated ${hooks.length} hooks');
+        debugPrint('✅ [ViralHooks] Generated ${hooks.length} hooks');
         return hooks;
       } else {
         throw Exception('Failed to generate hooks: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [ViralHooks] Error: $e');
+      debugPrint('❌ [ViralHooks] Error: $e');
       rethrow;
     }
   }
@@ -110,7 +111,7 @@ class CreativeAIService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/optimal-timing/predict');
 
-      print('⏰ [OptimalTiming] Predicting for: $platform - $contentType');
+      debugPrint('⏰ [OptimalTiming] Predicting for: $platform - $contentType');
 
       final response = await http.post(
         url,
@@ -124,18 +125,18 @@ class CreativeAIService {
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('⏰ [OptimalTiming] Status: ${response.statusCode}');
+      debugPrint('⏰ [OptimalTiming] Status: ${response.statusCode}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final timing = OptimalTiming.fromJson(data);
-        print('✅ [OptimalTiming] Best times: ${timing.bestTimes.length}');
+        debugPrint('✅ [OptimalTiming] Best times: ${timing.bestTimes.length}');
         return timing;
       } else {
         throw Exception('Failed to get optimal timing: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [OptimalTiming] Error: $e');
+      debugPrint('❌ [OptimalTiming] Error: $e');
       rethrow;
     }
   }

@@ -160,7 +160,7 @@ class GoogleCalendarService {
   /// );
   /// 
   /// if (result.isSuccess) {
-  ///   print('Entry synchronized successfully');
+  ///   debugPrint('Entry synchronized successfully');
   /// }
   /// ```
   Future<GoogleCalendarResult<void>> syncEntry({
@@ -226,7 +226,7 @@ class GoogleCalendarService {
   /// 
   /// if (result.isSuccess) {
   ///   final syncResult = result.data!;
-  ///   print('Synced ${syncResult.synced}/${syncResult.total} entries');
+  ///   debugPrint('Synced ${syncResult.synced}/${syncResult.total} entries');
   /// }
   /// ```
   Future<GoogleCalendarResult<SyncResult>> syncPlan({

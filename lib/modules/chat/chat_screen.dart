@@ -36,7 +36,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final VoiceRecorderService _recorderService = VoiceRecorderService();
 
   Future<void> _pickFile(BuildContext context) async {
-    print('📂 ChatScreen: Opening file picker...');
+    debugPrint('📂 ChatScreen: Opening file picker...');
     try {
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: false,
@@ -45,7 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (result != null && result.files.single.path != null) {
         final path = result.files.single.path!;
-        print('📂 ChatScreen: File picked: $path');
+        debugPrint('📂 ChatScreen: File picked: $path');
         
         if (!mounted) return;
         final file = File(path);
@@ -53,10 +53,10 @@ class _ChatScreenState extends State<ChatScreen> {
         // Appel au ViewModel
         await context.read<ChatViewModel>().sendFile(file);
       } else {
-        print('📂 ChatScreen: No file selected or path is null');
+        debugPrint('📂 ChatScreen: No file selected or path is null');
       }
     } catch (e) {
-      print('❌ ChatScreen: Error picking file: $e');
+      debugPrint('❌ ChatScreen: Error picking file: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Erreur lors de la sélection du fichier: $e')),

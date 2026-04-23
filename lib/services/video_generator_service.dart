@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../services/auth_service.dart';
 import '../models/video.dart';
+import 'package:flutter/foundation.dart';
 
 class VideoGeneratorService {
   /// Générer une vidéo via Pexels Videos API
@@ -45,10 +46,10 @@ class VideoGeneratorService {
         }
       }
 
-      print('🎬 [VideoGenerator] Generating video...');
-      print('🎬 [VideoGenerator] Query: $query');
-      print('🎬 [VideoGenerator] Duration: $duration');
-      print('🎬 [VideoGenerator] Orientation: $orientation');
+      debugPrint('🎬 [VideoGenerator] Generating video...');
+      debugPrint('🎬 [VideoGenerator] Query: $query');
+      debugPrint('🎬 [VideoGenerator] Duration: $duration');
+      debugPrint('🎬 [VideoGenerator] Orientation: $orientation');
 
       final response = await http.post(
         url,
@@ -64,22 +65,22 @@ class VideoGeneratorService {
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('🎬 [VideoGenerator] Status: ${response.statusCode}');
+      debugPrint('🎬 [VideoGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final video = Video.fromJson(data);
-        print('✅ [VideoGenerator] Video generated: ${video.id}');
-        print('✅ [VideoGenerator] Duration: ${video.durationFormatted}');
-        print('✅ [VideoGenerator] Resolution: ${video.resolution}');
+        debugPrint('✅ [VideoGenerator] Video generated: ${video.id}');
+        debugPrint('✅ [VideoGenerator] Duration: ${video.durationFormatted}');
+        debugPrint('✅ [VideoGenerator] Resolution: ${video.resolution}');
         return video;
       } else {
-        print('❌ [VideoGenerator] Error: ${response.statusCode}');
-        print('❌ [VideoGenerator] Body: ${response.body}');
+        debugPrint('❌ [VideoGenerator] Error: ${response.statusCode}');
+        debugPrint('❌ [VideoGenerator] Body: ${response.body}');
         throw Exception('Failed to generate video: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoGenerator] Exception: $e');
+      debugPrint('❌ [VideoGenerator] Exception: $e');
       rethrow;
     }
   }
@@ -92,7 +93,7 @@ class VideoGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-generator/history');
 
-      print('📚 [VideoGenerator] Fetching history...');
+      debugPrint('📚 [VideoGenerator] Fetching history...');
 
       final response = await http.get(
         url,
@@ -101,42 +102,42 @@ class VideoGeneratorService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('📚 [VideoGenerator] Status: ${response.statusCode}');
-      print('📚 [VideoGenerator] Body: ${response.body}');
+      debugPrint('📚 [VideoGenerator] Status: ${response.statusCode}');
+      debugPrint('📚 [VideoGenerator] Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         
-        print('📊 [VideoGenerator] Parsed data type: ${data.runtimeType}');
+        debugPrint('📊 [VideoGenerator] Parsed data type: ${data.runtimeType}');
         
         // Gérer différents formats de réponse
         List<dynamic> list;
         if (data is List) {
           // Si c'est directement un array
-          print('✅ [VideoGenerator] Response is direct List');
+          debugPrint('✅ [VideoGenerator] Response is direct List');
           list = data;
         } else if (data is Map && data.containsKey('videos')) {
           // Si c'est un objet avec clé 'videos'
-          print('✅ [VideoGenerator] Response has "videos" key');
+          debugPrint('✅ [VideoGenerator] Response has "videos" key');
           list = data['videos'] as List;
         } else if (data is Map && data.containsKey('data')) {
           // Si c'est un objet avec clé 'data'
-          print('✅ [VideoGenerator] Response has "data" key');
+          debugPrint('✅ [VideoGenerator] Response has "data" key');
           list = data['data'] as List;
         } else {
           throw Exception('Format de réponse non reconnu: $data');
         }
         
         final videos = list.map((json) => Video.fromJson(json as Map<String, dynamic>)).toList();
-        print('✅ [VideoGenerator] Found ${videos.length} videos');
+        debugPrint('✅ [VideoGenerator] Found ${videos.length} videos');
         return videos;
       } else {
-        print('❌ [VideoGenerator] Error: ${response.statusCode}');
-        print('❌ [VideoGenerator] Body: ${response.body}');
+        debugPrint('❌ [VideoGenerator] Error: ${response.statusCode}');
+        debugPrint('❌ [VideoGenerator] Body: ${response.body}');
         throw Exception('Failed to fetch history: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('❌ [VideoGenerator] History error: $e');
+      debugPrint('❌ [VideoGenerator] History error: $e');
       rethrow;
     }
   }
@@ -149,7 +150,7 @@ class VideoGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/content-blocks/$blockId/video');
 
-      print('💾 [VideoGenerator] Saving video to post $blockId...');
+      debugPrint('💾 [VideoGenerator] Saving video to post $blockId...');
 
       final response = await http.patch(
         url,
@@ -164,15 +165,15 @@ class VideoGeneratorService {
         }),
       ).timeout(const Duration(seconds: 10));
 
-      print('💾 [VideoGenerator] Status: ${response.statusCode}');
+      debugPrint('💾 [VideoGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        print('✅ [VideoGenerator] Video saved to post');
+        debugPrint('✅ [VideoGenerator] Video saved to post');
       } else {
         throw Exception('Failed to save video: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoGenerator] Save error: $e');
+      debugPrint('❌ [VideoGenerator] Save error: $e');
       rethrow;
     }
   }

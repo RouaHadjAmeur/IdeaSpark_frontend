@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ideaspark/models/video_generator_models.dart';
-import 'package:ideaspark/services/video_generator_service.dart';
+import 'package:ideaspark/services/video_idea_generator_service.dart';
 import 'package:ideaspark/view_models/video_idea_generator_view_model.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';

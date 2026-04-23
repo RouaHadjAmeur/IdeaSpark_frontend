@@ -110,12 +110,12 @@ class CameraService {
     try {
       final faces = await _faceDetector!.processImage(inputImage);
       if (kDebugMode) {
-        print('📸 [CameraService] Detection: ${faces.length} faces found');
+        debugPrint('📸 [CameraService] Detection: ${faces.length} faces found');
       }
       return faces;
     } catch (e) {
       if (kDebugMode) {
-        print('❌ [CameraService] ML Kit Error: $e');
+        debugPrint('❌ [CameraService] ML Kit Error: $e');
       }
       return [];
     }

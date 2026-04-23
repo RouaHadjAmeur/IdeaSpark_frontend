@@ -7,6 +7,7 @@ import '../core/api_config.dart';
 import '../models/challenge.dart';
 import '../models/submission.dart';
 import 'auth_service.dart';
+import 'package:flutter/foundation.dart';
 
 class ChallengeService {
   static final ChallengeService _instance = ChallengeService._();
@@ -82,11 +83,11 @@ class ChallengeService {
   Future<List<Submission>> getChallengeSubmissions(String challengeId) async {
     final token = await _getToken();
     final url = ApiConfig.getChallengeSubmissionsUrl(challengeId);
-    // ignore: avoid_print
-    print('[ChallengeService] GET $url');
+    
+    debugPrint('[ChallengeService] GET $url');
     final response = await http.get(Uri.parse(url), headers: _headers(token));
-    // ignore: avoid_print
-    print('[ChallengeService] status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 300))}');
+    
+    debugPrint('[ChallengeService] status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 300))}');
     if (response.statusCode == 200) {
       final List<dynamic> list = jsonDecode(response.body);
       return list.map((e) => Submission.fromJson(e)).toList();

@@ -45,7 +45,7 @@ class _CallScreenState extends State<CallScreen> {
         if (status == CallStatus.active) {
           _startTimer();
         } else if (status == CallStatus.idle) {
-          print('📞 CallScreen: Call ended/rejected, closing screen');
+          debugPrint('📞 CallScreen: Call ended/rejected, closing screen');
           // Use a flag to avoid double pop if possible, or just check mounted
           if (ModalRoute.of(context)?.isCurrent ?? false) {
             Navigator.of(context).pop();
@@ -97,9 +97,9 @@ class _CallScreenState extends State<CallScreen> {
     try {
       await _localRenderer.initialize();
       await _remoteRenderer.initialize();
-      print('✅ CallScreen: Renderers initialized');
+      debugPrint('✅ CallScreen: Renderers initialized');
     } catch (e) {
-      print('❌ CallScreen: Error initializing renderers: $e');
+      debugPrint('❌ CallScreen: Error initializing renderers: $e');
     }
   }
 
@@ -263,7 +263,7 @@ class _CallScreenState extends State<CallScreen> {
             icon: Icons.call_end,
             color: Colors.red,
             onPressed: () {
-              print('📞 CallScreen: Rejecting call...');
+              debugPrint('📞 CallScreen: Rejecting call...');
               _callService.rejectCall();
               // Status listener will handle the pop, but we can do it here too
               if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
@@ -275,25 +275,25 @@ class _CallScreenState extends State<CallScreen> {
             icon: Icons.call,
             color: Colors.green,
             onPressed: () async {
-              print('📞 CallScreen: Accepting call button pressed (Type: ${ _callService.type})...');
+              debugPrint('📞 CallScreen: Accepting call button pressed (Type: ${ _callService.type})...');
               try {
                 // S'assurer que les renderers sont prêts UNIQUEMENT si c'est un appel vidéo
                 if (widget.isVideoButton || _callService.type == CallType.video) {
-                  print('📞 CallScreen: Video call detected, initializing renderers...');
+                  debugPrint('📞 CallScreen: Video call detected, initializing renderers...');
                   await _initRenderers();
                 } else {
-                  print('📞 CallScreen: Audio call detected, skipping video renderers init.');
+                  debugPrint('📞 CallScreen: Audio call detected, skipping video renderers init.');
                 }
                 
-                print('📞 CallScreen: Calling CallService.acceptCall()...');
+                debugPrint('📞 CallScreen: Calling CallService.acceptCall()...');
                 await _callService.acceptCall(
                   remoteUserId: widget.remoteUserId,
                   remoteUserName: widget.remoteUserName,
                 );
-                print('✅ CallScreen: CallService.acceptCall() completed successfully.');
+                debugPrint('✅ CallScreen: CallService.acceptCall() completed successfully.');
               } catch (e, stack) {
-                print('❌ CallScreen: Exception in accept button: $e');
-                print(stack);
+                debugPrint('❌ CallScreen: Exception in accept button: $e');
+                debugPrint(stack.toString());
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Erreur lors de l\'acceptation : $e')),
@@ -330,7 +330,7 @@ class _CallScreenState extends State<CallScreen> {
           icon: Icons.call_end,
           color: Colors.red,
           onPressed: () {
-            print('📞 CallScreen: Ending call...');
+            debugPrint('📞 CallScreen: Ending call...');
             _callService.endCall();
             if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
               Navigator.of(context).pop();

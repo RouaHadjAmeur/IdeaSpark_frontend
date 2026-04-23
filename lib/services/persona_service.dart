@@ -4,6 +4,7 @@ import '../models/persona_model.dart';
 import '../core/api_config.dart';
 import 'auth_service.dart';
 import 'persona_completion_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// Service for managing user persona data
 class PersonaService {
@@ -23,9 +24,9 @@ class PersonaService {
       final body = jsonEncode(persona.toJson());
       final token = _authService.accessToken;
 
-      print('🚀 Saving persona to: $url');
-      print('📦 Payload: $body');
-      print('🔑 Auth token: ${token != null ? "Present" : "Missing"}');
+      debugPrint('🚀 Saving persona to: $url');
+      debugPrint('📦 Payload: $body');
+      debugPrint('🔑 Auth token: ${token != null ? "Present" : "Missing"}');
 
       final headers = {
         'Content-Type': 'application/json',
@@ -42,8 +43,8 @@ class PersonaService {
         body: body,
       );
 
-      print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body: ${response.body}');
+      debugPrint('📥 Response status: ${response.statusCode}');
+      debugPrint('📥 Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -52,15 +53,15 @@ class PersonaService {
         // Mark persona as completed in local storage
         await PersonaCompletionService.markPersonaCompleted();
 
-        print('✅ Persona saved successfully');
+        debugPrint('✅ Persona saved successfully');
         return savedPersona;
       } else {
-        print('❌ Failed to save persona: ${response.statusCode}');
-        print('❌ Response: ${response.body}');
+        debugPrint('❌ Failed to save persona: ${response.statusCode}');
+        debugPrint('❌ Response: ${response.body}');
         throw Exception('Failed to save persona: ${response.statusCode}\nResponse: ${response.body}');
       }
     } catch (e) {
-      print('❌ Error saving persona: $e');
+      debugPrint('❌ Error saving persona: $e');
       throw Exception('Error saving persona: $e');
     }
   }

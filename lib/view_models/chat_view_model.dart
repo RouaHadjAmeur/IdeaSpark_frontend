@@ -109,7 +109,7 @@ class ChatViewModel extends ChangeNotifier {
 
   void sendMessage(String content) {
     if (content.trim().isEmpty) return;
-    print('📝 ChatViewModel: sendMessage called with: $content');
+    debugPrint('📝 ChatViewModel: sendMessage called with: $content');
     
     _chatService.sendMessage(content, receiverId);
     
@@ -127,7 +127,7 @@ class ChatViewModel extends ChangeNotifier {
   }
 
   Future<void> sendFile(File file) async {
-    print('📂 ChatViewModel: Starting upload for file: ${file.path}');
+    debugPrint('📂 ChatViewModel: Starting upload for file: ${file.path}');
     _isUploading = true;
     _error = null;
     notifyListeners();
@@ -135,10 +135,10 @@ class ChatViewModel extends ChangeNotifier {
     try {
       final fileName = p.basename(file.path);
       final messageType = _uploadService.getFileType(fileName);
-      print('📂 ChatViewModel: Detected type: $messageType');
+      debugPrint('📂 ChatViewModel: Detected type: $messageType');
       
       final attachmentUrl = await _uploadService.uploadFile(file, fileName);
-      print('📂 ChatViewModel: Upload successful, URL: $attachmentUrl');
+      debugPrint('📂 ChatViewModel: Upload successful, URL: $attachmentUrl');
       
       final content = messageType == 'voice' ? 'Message vocal' : fileName;
 
@@ -162,10 +162,10 @@ class ChatViewModel extends ChangeNotifier {
 
       _messages.insert(0, newMessage);
       _isUploading = false;
-      print('📂 ChatViewModel: Message added to list');
+      debugPrint('📂 ChatViewModel: Message added to list');
       notifyListeners();
     } catch (e) {
-      print('❌ ChatViewModel Error sending file: $e');
+      debugPrint('❌ ChatViewModel Error sending file: $e');
       _error = 'Erreur d\'envoi: ${e.toString()}';
       _isUploading = false;
       notifyListeners();

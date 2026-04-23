@@ -41,7 +41,7 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
         _isVideoInitialized = true;
       });
     } catch (e) {
-      print('❌ Error initializing video: $e');
+      debugPrint('❌ Error initializing video: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

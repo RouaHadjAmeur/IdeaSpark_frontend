@@ -5,6 +5,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../core/api_config.dart';
 import '../models/message.dart';
 import 'auth_service.dart';
+import 'package:flutter/foundation.dart';
 
 class ChatService {
   ChatService._();
@@ -28,11 +29,11 @@ class ChatService {
 
     final userId = _authService.currentUser?.id;
     if (userId == null || userId.isEmpty) {
-      print('❌ ChatService: Cannot connect, userId is null or empty');
+      debugPrint('❌ ChatService: Cannot connect, userId is null or empty');
       return;
     }
 
-    print('🔌 ChatService: Connecting for userId: $userId');
+    debugPrint('🔌 ChatService: Connecting for userId: $userId');
 
     // The backend uses namespace '/chat'
     final socketUrl = '${ApiConfig.baseUrl}/chat';
@@ -49,19 +50,19 @@ class ChatService {
     );
 
     _socket!.onConnect((_) {
-      print('✅ Connected to Chat WebSocket');
+      debugPrint('✅ Connected to Chat WebSocket');
     });
 
     _socket!.onConnectError((data) {
-      print('❌ Chat WebSocket Connect Error: $data');
+      debugPrint('❌ Chat WebSocket Connect Error: $data');
     });
 
     _socket!.onError((data) {
-      print('❌ Chat WebSocket Error: $data');
+      debugPrint('❌ Chat WebSocket Error: $data');
     });
 
     _socket!.onDisconnect((_) {
-      print('ℹ️ Disconnected from Chat WebSocket');
+      debugPrint('ℹ️ Disconnected from Chat WebSocket');
     });
 
     _socket!.on('newMessage', (data) {
@@ -84,15 +85,15 @@ class ChatService {
   }
 
   void sendMessage(String content, String receiverId, {String type = 'text', String? attachmentUrl}) {
-    print('📤 Attempting to send message: $content to $receiverId');
+    debugPrint('📤 Attempting to send message: $content to $receiverId');
     
     if (_socket == null || !_socket!.connected) {
-      print('⚠️ Socket not connected, connecting now...');
+      debugPrint('⚠️ Socket not connected, connecting now...');
       connect();
       
       // Wait for connection then send
       _socket!.once('connect', (_) {
-        print('✅ Connected late, sending message now');
+        debugPrint('✅ Connected late, sending message now');
         _emitMessage(content, receiverId, type, attachmentUrl);
       });
       return;
@@ -109,7 +110,7 @@ class ChatService {
       if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
     };
 
-    print('🚀 Emitting sendMessage event with payload: $payload');
+    debugPrint('🚀 Emitting sendMessage event with payload: $payload');
     _socket!.emit('sendMessage', payload);
   }
 

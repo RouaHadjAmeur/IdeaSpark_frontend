@@ -1808,7 +1808,7 @@ Créé avec IdeaSpark ✨
                               );
                             }
                           } catch (e) {
-                            print('❌ Erreur sauvegarde: $e');
+                            debugPrint('❌ Erreur sauvegarde: $e');
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

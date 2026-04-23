@@ -45,7 +45,7 @@ class SloganViewModel extends ChangeNotifier {
           final saved = await SloganService.saveSlogan(_slogans[i]);
           _slogans[i] = saved;
         } catch (e) {
-          print('⚠️ Erreur sauvegarde auto: $e');
+          debugPrint('⚠️ Erreur sauvegarde auto: $e');
         }
       }
 
@@ -106,7 +106,7 @@ class SloganViewModel extends ChangeNotifier {
           final saved = await SloganService.saveSlogan(_slogans[i]);
           _slogans[i] = saved;
         } catch (e) {
-          print('⚠️ Erreur sauvegarde auto: $e');
+          debugPrint('⚠️ Erreur sauvegarde auto: $e');
         }
       }
 
@@ -137,7 +137,7 @@ class SloganViewModel extends ChangeNotifier {
       _slogans = await SloganService.getHistory();
       _error = null;
     } catch (e) {
-      print('⚠️ Erreur lors du chargement de l\'historique: $e');
+      debugPrint('⚠️ Erreur lors du chargement de l\'historique: $e');
       _error = 'Impossible de charger l\'historique.';
     } finally {
       _isLoading = false;
@@ -158,9 +158,9 @@ class SloganViewModel extends ChangeNotifier {
         }
       }
       
-      print('✅ États favoris restaurés pour ${_slogans.length} slogans');
+      debugPrint('✅ États favoris restaurés pour ${_slogans.length} slogans');
     } catch (e) {
-      print('⚠️ Erreur lors du chargement des états favoris: $e');
+      debugPrint('⚠️ Erreur lors du chargement des états favoris: $e');
     }
   }
 
@@ -194,7 +194,7 @@ class SloganViewModel extends ChangeNotifier {
           await SloganService.toggleFavorite(oldSlogan.id);
         }
       } catch (e) {
-        print('❌ Erreur toggleFavorite: $e');
+        debugPrint('❌ Erreur toggleFavorite: $e');
         // Rollback on error if needed
       }
       notifyListeners();
@@ -206,7 +206,7 @@ class SloganViewModel extends ChangeNotifier {
     try {
       await SloganService.saveSlogan(slogan);
     } catch (e) {
-      print('❌ Erreur saveSlogan: $e');
+      debugPrint('❌ Erreur saveSlogan: $e');
     }
   }
 

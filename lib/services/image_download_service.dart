@@ -13,7 +13,7 @@ class ImageDownloadService {
   /// Download image from URL and save to temporary directory
   static Future<File?> downloadImage(String imageUrl) async {
     try {
-      print('📥 [Download] Starting download: $imageUrl');
+      debugPrint('📥 [Download] Starting download: $imageUrl');
       
       final response = await http.get(Uri.parse(imageUrl));
       
@@ -28,10 +28,10 @@ class ImageDownloadService {
       
       await file.writeAsBytes(bytes);
       
-      print('✅ [Download] Image saved to: ${file.path}');
+      debugPrint('✅ [Download] Image saved to: ${file.path}');
       return file;
     } catch (e) {
-      print('❌ [Download] Error: $e');
+      debugPrint('❌ [Download] Error: $e');
       return null;
     }
   }
@@ -39,17 +39,17 @@ class ImageDownloadService {
   /// Save image to gallery (requires permission)
   static Future<bool> saveToGallery(String imageUrl) async {
     try {
-      print('💾 [Gallery] Requesting permission...');
+      debugPrint('💾 [Gallery] Requesting permission...');
       
       // Request storage permission
       final status = await Permission.photos.request();
       
       if (!status.isGranted) {
-        print('❌ [Gallery] Permission denied');
+        debugPrint('❌ [Gallery] Permission denied');
         return false;
       }
       
-      print('📥 [Gallery] Downloading image...');
+      debugPrint('📥 [Gallery] Downloading image...');
       final response = await http.get(Uri.parse(imageUrl));
       
       if (response.statusCode != 200) {
@@ -64,14 +64,14 @@ class ImageDownloadService {
       final tempFile = File('${tempDir.path}/$fileName');
       await tempFile.writeAsBytes(bytes);
       
-      print('💾 [Gallery] Saving to gallery...');
+      debugPrint('💾 [Gallery] Saving to gallery...');
       // Use Gal to save to gallery
       await Gal.putImage(tempFile.path);
       
-      print('✅ [Gallery] Saved successfully');
+      debugPrint('✅ [Gallery] Saved successfully');
       return true;
     } catch (e) {
-      print('❌ [Gallery] Error: $e');
+      debugPrint('❌ [Gallery] Error: $e');
       return false;
     }
   }
@@ -79,7 +79,7 @@ class ImageDownloadService {
   /// Share image using native share dialog
   static Future<void> shareImage(String imageUrl, {String? caption}) async {
     try {
-      print('📤 [Share] Downloading image...');
+      debugPrint('📤 [Share] Downloading image...');
       
       final file = await downloadImage(imageUrl);
       
@@ -87,7 +87,7 @@ class ImageDownloadService {
         throw Exception('Failed to download image');
       }
       
-      print('📤 [Share] Opening share dialog...');
+      debugPrint('📤 [Share] Opening share dialog...');
       
       if (caption != null && caption.isNotEmpty) {
         await Share.shareXFiles(
@@ -98,9 +98,9 @@ class ImageDownloadService {
         await Share.shareXFiles([XFile(file.path)]);
       }
       
-      print('✅ [Share] Share dialog opened');
+      debugPrint('✅ [Share] Share dialog opened');
     } catch (e) {
-      print('❌ [Share] Error: $e');
+      debugPrint('❌ [Share] Error: $e');
       rethrow;
     }
   }
@@ -108,7 +108,7 @@ class ImageDownloadService {
   /// Copy caption to clipboard
   static Future<void> copyToClipboard(String text) async {
     await Clipboard.setData(ClipboardData(text: text));
-    print('📋 [Clipboard] Caption copied');
+    debugPrint('📋 [Clipboard] Caption copied');
   }
 
   /// Open Instagram app
@@ -119,17 +119,17 @@ class ImageDownloadService {
       
       if (await canLaunchUrl(instagramUrl)) {
         await launchUrl(instagramUrl, mode: LaunchMode.externalApplication);
-        print('✅ [Instagram] App opened');
+        debugPrint('✅ [Instagram] App opened');
         return true;
       } else {
         // Fallback to web
         final webUrl = Uri.parse('https://www.instagram.com/');
         await launchUrl(webUrl, mode: LaunchMode.externalApplication);
-        print('✅ [Instagram] Web opened');
+        debugPrint('✅ [Instagram] Web opened');
         return true;
       }
     } catch (e) {
-      print('❌ [Instagram] Error: $e');
+      debugPrint('❌ [Instagram] Error: $e');
       return false;
     }
   }
@@ -142,17 +142,17 @@ class ImageDownloadService {
       
       if (await canLaunchUrl(tiktokUrl)) {
         await launchUrl(tiktokUrl, mode: LaunchMode.externalApplication);
-        print('✅ [TikTok] App opened');
+        debugPrint('✅ [TikTok] App opened');
         return true;
       } else {
         // Fallback to web
         final webUrl = Uri.parse('https://www.tiktok.com/');
         await launchUrl(webUrl, mode: LaunchMode.externalApplication);
-        print('✅ [TikTok] Web opened');
+        debugPrint('✅ [TikTok] Web opened');
         return true;
       }
     } catch (e) {
-      print('❌ [TikTok] Error: $e');
+      debugPrint('❌ [TikTok] Error: $e');
       return false;
     }
   }
@@ -165,17 +165,17 @@ class ImageDownloadService {
       
       if (await canLaunchUrl(facebookUrl)) {
         await launchUrl(facebookUrl, mode: LaunchMode.externalApplication);
-        print('✅ [Facebook] App opened');
+        debugPrint('✅ [Facebook] App opened');
         return true;
       } else {
         // Fallback to web
         final webUrl = Uri.parse('https://www.facebook.com/');
         await launchUrl(webUrl, mode: LaunchMode.externalApplication);
-        print('✅ [Facebook] Web opened');
+        debugPrint('✅ [Facebook] Web opened');
         return true;
       }
     } catch (e) {
-      print('❌ [Facebook] Error: $e');
+      debugPrint('❌ [Facebook] Error: $e');
       return false;
     }
   }
@@ -189,7 +189,7 @@ class ImageDownloadService {
   }) async {
     try {
       // 1. Save image to gallery
-      print('📱 [Social] Step 1: Saving to gallery...');
+      debugPrint('📱 [Social] Step 1: Saving to gallery...');
       final saved = await saveToGallery(imageUrl);
       
       if (!saved) {
@@ -197,7 +197,7 @@ class ImageDownloadService {
       }
       
       // 2. Copy caption to clipboard
-      print('📱 [Social] Step 2: Copying caption...');
+      debugPrint('📱 [Social] Step 2: Copying caption...');
       await copyToClipboard(caption);
       
       // 3. Show success message
@@ -222,7 +222,7 @@ class ImageDownloadService {
       await Future.delayed(Duration(milliseconds: 1500));
       
       // 5. Open social media app
-      print('📱 [Social] Step 3: Opening ${platform.name}...');
+      debugPrint('📱 [Social] Step 3: Opening ${platform.name}...');
       bool opened = false;
       
       switch (platform) {
@@ -241,10 +241,10 @@ class ImageDownloadService {
         throw Exception('Failed to open ${platform.name}');
       }
       
-      print('✅ [Social] Workflow completed successfully');
+      debugPrint('✅ [Social] Workflow completed successfully');
       return true;
     } catch (e) {
-      print('❌ [Social] Error: $e');
+      debugPrint('❌ [Social] Error: $e');
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

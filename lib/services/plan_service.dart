@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../models/plan.dart';
 import 'auth_service.dart';
+import 'package:flutter/foundation.dart';
 
 class PlanService {
   PlanService._();
@@ -23,15 +24,15 @@ class PlanService {
   static Future<Plan> createPlan(Map<String, dynamic> data, String brandId) async {
     final token = await _getToken();
     final url = '${ApiConfig.createPlanUrl}?brandId=$brandId';
-    // ignore: avoid_print
-    print('[PlanService] POST $url body=${jsonEncode(data)}');
+    
+    debugPrint('[PlanService] POST $url body=${jsonEncode(data)}');
     final response = await http.post(
       Uri.parse(url),
       headers: _headers(token),
       body: jsonEncode(data),
     );
-    // ignore: avoid_print
-    print('[PlanService] createPlan status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 400))}');
+    
+    debugPrint('[PlanService] createPlan status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 400))}');
     if (response.statusCode == 201) {
       return Plan.fromJson(jsonDecode(response.body));
     }
@@ -129,8 +130,8 @@ class PlanService {
   static Future<Plan> generatePlanStructure(String id) async {
     final token = await _getToken();
     final url = ApiConfig.generatePlanUrl(id);
-    // ignore: avoid_print
-    print('[PlanService] POST $url (Gemini generation)');
+    
+    debugPrint('[PlanService] POST $url (Gemini generation)');
     final response = await http.post(
       Uri.parse(url),
       headers: _headers(token),
@@ -138,8 +139,8 @@ class PlanService {
       const Duration(seconds: 120),
       onTimeout: () => throw Exception('Plan generation timed out (>120s). Please try again.'),
     );
-    // ignore: avoid_print
-    print('[PlanService] generatePlanStructure status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 400))}');
+    
+    debugPrint('[PlanService] generatePlanStructure status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 400))}');
     if (response.statusCode == 200 || response.statusCode == 201) {
       return Plan.fromJson(jsonDecode(response.body));
     }

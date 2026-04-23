@@ -47,7 +47,7 @@ class _VoiceMessagePlayerState extends State<VoiceMessagePlayer> {
         }
       });
     } catch (e) {
-      print('❌ Error loading audio: $e');
+      debugPrint('❌ Error loading audio: $e');
     }
   }
 

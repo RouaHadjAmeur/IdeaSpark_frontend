@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../core/api_config.dart';
 import '../services/auth_service.dart';
+import 'package:flutter/foundation.dart';
 
 class TrendingHashtag {
   final String name;
@@ -44,7 +45,7 @@ class TrendingHashtagsService {
         '${ApiConfig.baseUrl}/trending-hashtags?category=$category&platform=$platform&country=$country',
       );
 
-      print('📊 [TrendingHashtags] Fetching: $url');
+      debugPrint('📊 [TrendingHashtags] Fetching: $url');
 
       final response = await http.get(
         url,
@@ -54,18 +55,18 @@ class TrendingHashtagsService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('📊 [TrendingHashtags] Status: ${response.statusCode}');
+      debugPrint('📊 [TrendingHashtags] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         final hashtags = data.map((json) => TrendingHashtag.fromJson(json)).toList();
-        print('✅ [TrendingHashtags] Received ${hashtags.length} hashtags');
+        debugPrint('✅ [TrendingHashtags] Received ${hashtags.length} hashtags');
         return hashtags;
       } else {
         throw Exception('Failed to fetch trending hashtags: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [TrendingHashtags] Error: $e');
+      debugPrint('❌ [TrendingHashtags] Error: $e');
       rethrow;
     }
   }
@@ -88,7 +89,7 @@ class TrendingHashtagsService {
         '${ApiConfig.baseUrl}/trending-hashtags/generate?brandName=$encodedBrand&postTitle=$encodedTitle&category=$category&platform=$platform',
       );
 
-      print('📊 [TrendingHashtags] Generating hashtags: $url');
+      debugPrint('📊 [TrendingHashtags] Generating hashtags: $url');
 
       final response = await http.get(
         url,
@@ -98,18 +99,18 @@ class TrendingHashtagsService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('📊 [TrendingHashtags] Status: ${response.statusCode}');
+      debugPrint('📊 [TrendingHashtags] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List<String> hashtags = List<String>.from(data['hashtags'] ?? []);
-        print('✅ [TrendingHashtags] Generated ${hashtags.length} hashtags');
+        debugPrint('✅ [TrendingHashtags] Generated ${hashtags.length} hashtags');
         return hashtags;
       } else {
         throw Exception('Failed to generate hashtags: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [TrendingHashtags] Error: $e');
+      debugPrint('❌ [TrendingHashtags] Error: $e');
       rethrow;
     }
   }

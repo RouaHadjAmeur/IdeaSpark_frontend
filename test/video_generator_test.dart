@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ideaspark/models/video_generator_models.dart';
-import 'package:ideaspark/services/video_generator_service.dart';
+import 'package:ideaspark/services/video_idea_generator_service.dart';
 
 void main() {
   group('VideoIdeaGeneratorService Tests', () {

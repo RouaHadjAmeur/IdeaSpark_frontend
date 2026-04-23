@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../services/auth_service.dart';
 import '../models/video_generator_models.dart';
+import 'package:flutter/foundation.dart';
 
 class VideoIdeaGeneratorService {
   /// Générer des idées de vidéo
@@ -13,7 +14,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/generate');
 
-      print('💡 [VideoIdeaGenerator] Generating ideas...');
+      debugPrint('💡 [VideoIdeaGenerator] Generating ideas...');
 
       final response = await http.post(
         url,
@@ -35,20 +36,20 @@ class VideoIdeaGeneratorService {
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('💡 [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('💡 [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final ideas = (data['ideas'] as List?)
             ?.map((json) => VideoIdea.fromJson(json))
             .toList() ?? [];
-        print('✅ [VideoIdeaGenerator] Generated ${ideas.length} ideas');
+        debugPrint('✅ [VideoIdeaGenerator] Generated ${ideas.length} ideas');
         return ideas;
       } else {
         throw Exception('Failed to generate ideas: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] Error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] Error: $e');
       rethrow;
     }
   }
@@ -61,7 +62,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/save');
 
-      print('💾 [VideoIdeaGenerator] Saving idea...');
+      debugPrint('💾 [VideoIdeaGenerator] Saving idea...');
 
       final response = await http.post(
         url,
@@ -72,18 +73,18 @@ class VideoIdeaGeneratorService {
         body: jsonEncode(idea.toJson()),
       ).timeout(const Duration(seconds: 10));
 
-      print('💾 [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('💾 [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final savedIdea = VideoIdea.fromJson(data);
-        print('✅ [VideoIdeaGenerator] Idea saved with ID: ${savedIdea.id}');
+        debugPrint('✅ [VideoIdeaGenerator] Idea saved with ID: ${savedIdea.id}');
         return savedIdea;
       } else {
         throw Exception('Failed to save idea: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] Save error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] Save error: $e');
       rethrow;
     }
   }
@@ -96,7 +97,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/$ideaId/refine');
 
-      print('✨ [VideoIdeaGenerator] Refining idea...');
+      debugPrint('✨ [VideoIdeaGenerator] Refining idea...');
 
       final response = await http.post(
         url,
@@ -109,18 +110,18 @@ class VideoIdeaGeneratorService {
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('✨ [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('✨ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final refinedIdea = VideoIdea.fromJson(data);
-        print('✅ [VideoIdeaGenerator] Idea refined');
+        debugPrint('✅ [VideoIdeaGenerator] Idea refined');
         return refinedIdea;
       } else {
         throw Exception('Failed to refine idea: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] Refine error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] Refine error: $e');
       rethrow;
     }
   }
@@ -133,7 +134,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/$ideaId/approve');
 
-      print('👍 [VideoIdeaGenerator] Approving version...');
+      debugPrint('👍 [VideoIdeaGenerator] Approving version...');
 
       final response = await http.post(
         url,
@@ -146,18 +147,18 @@ class VideoIdeaGeneratorService {
         }),
       ).timeout(const Duration(seconds: 10));
 
-      print('👍 [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('👍 [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final approvedIdea = VideoIdea.fromJson(data);
-        print('✅ [VideoIdeaGenerator] Version approved');
+        debugPrint('✅ [VideoIdeaGenerator] Version approved');
         return approvedIdea;
       } else {
         throw Exception('Failed to approve version: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] Approve error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] Approve error: $e');
       rethrow;
     }
   }
@@ -170,7 +171,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/history');
 
-      print('📚 [VideoIdeaGenerator] Fetching history...');
+      debugPrint('📚 [VideoIdeaGenerator] Fetching history...');
 
       final response = await http.get(
         url,
@@ -179,20 +180,20 @@ class VideoIdeaGeneratorService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('📚 [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('📚 [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final ideas = (data['ideas'] as List?)
             ?.map((json) => VideoIdea.fromJson(json))
             .toList() ?? [];
-        print('✅ [VideoIdeaGenerator] Found ${ideas.length} ideas');
+        debugPrint('✅ [VideoIdeaGenerator] Found ${ideas.length} ideas');
         return ideas;
       } else {
         throw Exception('Failed to fetch history: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] History error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] History error: $e');
       rethrow;
     }
   }
@@ -205,7 +206,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/favorites');
 
-      print('⭐ [VideoIdeaGenerator] Fetching favorites...');
+      debugPrint('⭐ [VideoIdeaGenerator] Fetching favorites...');
 
       final response = await http.get(
         url,
@@ -214,20 +215,20 @@ class VideoIdeaGeneratorService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('⭐ [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('⭐ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final favorites = (data['favorites'] as List?)
             ?.map((json) => VideoIdea.fromJson(json))
             .toList() ?? [];
-        print('✅ [VideoIdeaGenerator] Found ${favorites.length} favorites');
+        debugPrint('✅ [VideoIdeaGenerator] Found ${favorites.length} favorites');
         return favorites;
       } else {
         throw Exception('Failed to fetch favorites: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] Favorites error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] Favorites error: $e');
       rethrow;
     }
   }
@@ -240,7 +241,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/$ideaId/toggle-favorite');
 
-      print('⭐ [VideoIdeaGenerator] Toggling favorite...');
+      debugPrint('⭐ [VideoIdeaGenerator] Toggling favorite...');
 
       final response = await http.post(
         url,
@@ -249,18 +250,18 @@ class VideoIdeaGeneratorService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('⭐ [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('⭐ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final updatedIdea = VideoIdea.fromJson(data);
-        print('✅ [VideoIdeaGenerator] Favorite toggled');
+        debugPrint('✅ [VideoIdeaGenerator] Favorite toggled');
         return updatedIdea;
       } else {
         throw Exception('Failed to toggle favorite: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] Toggle error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] Toggle error: $e');
       rethrow;
     }
   }
@@ -273,7 +274,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/$ideaId');
 
-      print('🗑️ [VideoIdeaGenerator] Deleting idea...');
+      debugPrint('🗑️ [VideoIdeaGenerator] Deleting idea...');
 
       final response = await http.delete(
         url,
@@ -282,15 +283,15 @@ class VideoIdeaGeneratorService {
         },
       ).timeout(const Duration(seconds: 10));
 
-      print('🗑️ [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('🗑️ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        print('✅ [VideoIdeaGenerator] Idea deleted');
+        debugPrint('✅ [VideoIdeaGenerator] Idea deleted');
       } else {
         throw Exception('Failed to delete idea: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] Delete error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] Delete error: $e');
       rethrow;
     }
   }
@@ -306,7 +307,7 @@ class VideoIdeaGeneratorService {
 
       final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/analyze-image');
 
-      print('🖼️ [VideoIdeaGenerator] Analyzing image...');
+      debugPrint('🖼️ [VideoIdeaGenerator] Analyzing image...');
 
       final response = await http.post(
         url,
@@ -320,20 +321,20 @@ class VideoIdeaGeneratorService {
         }),
       ).timeout(const Duration(seconds: 30));
 
-      print('🖼️ [VideoIdeaGenerator] Status: ${response.statusCode}');
+      debugPrint('🖼️ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final ideas = (data['ideas'] as List?)
             ?.map((json) => VideoIdea.fromJson(json))
             .toList() ?? [];
-        print('✅ [VideoIdeaGenerator] Generated ${ideas.length} ideas from image');
+        debugPrint('✅ [VideoIdeaGenerator] Generated ${ideas.length} ideas from image');
         return ideas;
       } else {
         throw Exception('Failed to analyze image: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ [VideoIdeaGenerator] Analyze error: $e');
+      debugPrint('❌ [VideoIdeaGenerator] Analyze error: $e');
       rethrow;
     }
   }

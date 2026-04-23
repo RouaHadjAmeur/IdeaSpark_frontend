@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import 'auth_service.dart';
+import 'package:flutter/foundation.dart';
 
 enum ImageStyle {
   minimalist,
@@ -77,10 +78,10 @@ class ImageGeneratorService {
       'category': category,
     };
     
-    print('🔍 [Flutter] Calling backend...');
-    print('📍 [Flutter] URL: $endpoint');
-    print('📦 [Flutter] Body: ${jsonEncode(requestBody)}');
-    print('🔑 [Flutter] Token: ${token != null ? "Present (${token.substring(0, 20)}...)" : "Missing"}');
+    debugPrint('🔍 [Flutter] Calling backend...');
+    debugPrint('📍 [Flutter] URL: $endpoint');
+    debugPrint('📦 [Flutter] Body: ${jsonEncode(requestBody)}');
+    debugPrint('🔑 [Flutter] Token: ${token != null ? "Present (${token.substring(0, 20)}...)" : "Missing"}');
     
     try {
       final response = await http.post(
@@ -94,8 +95,8 @@ class ImageGeneratorService {
         },
       );
 
-      print('✅ [Flutter] Response status: ${response.statusCode}');
-      print('📄 [Flutter] Response body: ${response.body}');
+      debugPrint('✅ [Flutter] Response status: ${response.statusCode}');
+      debugPrint('📄 [Flutter] Response body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -110,7 +111,7 @@ class ImageGeneratorService {
 
       throw Exception('Backend error: ${response.statusCode} - ${response.body}');
     } catch (e) {
-      print('❌ [Flutter] ERROR: $e');
+      debugPrint('❌ [Flutter] ERROR: $e');
       
       // Ne PAS utiliser de fallback - on veut voir l'erreur!
       rethrow;
@@ -122,46 +123,46 @@ class ImageGeneratorService {
     final token = await _getToken();
     
     final endpoint = '${ApiConfig.baseUrl}/ai-images/history';
-    print('🔍 [Flutter] Getting image history from: $endpoint');
+    debugPrint('🔍 [Flutter] Getting image history from: $endpoint');
     
     final response = await http.get(
       Uri.parse(endpoint),
       headers: _headers(token),
     );
 
-    print('✅ [Flutter] History response status: ${response.statusCode}');
-    print('📄 [Flutter] History response body: ${response.body}');
+    debugPrint('✅ [Flutter] History response status: ${response.statusCode}');
+    debugPrint('📄 [Flutter] History response body: ${response.body}');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       
-      print('📊 [Flutter] Parsed data type: ${data.runtimeType}');
-      print('📊 [Flutter] Parsed data: $data');
+      debugPrint('📊 [Flutter] Parsed data type: ${data.runtimeType}');
+      debugPrint('📊 [Flutter] Parsed data: $data');
       
       // Gérer différents formats de réponse
       List<dynamic> list;
       if (data is List) {
         // Si c'est directement un array
-        print('✅ [Flutter] Response is direct List');
+        debugPrint('✅ [Flutter] Response is direct List');
         list = data;
       } else if (data is Map && data.containsKey('images')) {
         // Si c'est un objet avec clé 'images'
-        print('✅ [Flutter] Response has "images" key');
+        debugPrint('✅ [Flutter] Response has "images" key');
         list = data['images'] as List;
       } else if (data is Map && data.containsKey('data')) {
         // Si c'est un objet avec clé 'data'
-        print('✅ [Flutter] Response has "data" key');
+        debugPrint('✅ [Flutter] Response has "data" key');
         list = data['data'] as List;
       } else {
         throw Exception('Format de réponse non reconnu: $data');
       }
       
-      print('📊 [Flutter] Found ${list.length} images');
+      debugPrint('📊 [Flutter] Found ${list.length} images');
       return list.map((e) => GeneratedImage.fromJson(e as Map<String, dynamic>)).toList();
     }
 
-    print('❌ [Flutter] History error: ${response.statusCode}');
-    print('❌ [Flutter] Response body: ${response.body}');
+    debugPrint('❌ [Flutter] History error: ${response.statusCode}');
+    debugPrint('❌ [Flutter] Response body: ${response.body}');
     throw Exception('Failed to load history: ${response.statusCode} - ${response.body}');
   }
 
@@ -186,9 +187,9 @@ class ImageGeneratorService {
   }) async {
     final token = await _getToken();
     
-    print('💾 [Flutter] Saving image to post...');
-    print('📍 [Flutter] ContentBlock ID: $contentBlockId');
-    print('🖼️ [Flutter] Image URL: $imageUrl');
+    debugPrint('💾 [Flutter] Saving image to post...');
+    debugPrint('📍 [Flutter] ContentBlock ID: $contentBlockId');
+    debugPrint('🖼️ [Flutter] Image URL: $imageUrl');
     
     try {
       final response = await http.patch(
@@ -197,13 +198,13 @@ class ImageGeneratorService {
         body: jsonEncode({'imageUrl': imageUrl}),
       ).timeout(const Duration(seconds: 10));
 
-      print('✅ [Flutter] Save response: ${response.statusCode}');
+      debugPrint('✅ [Flutter] Save response: ${response.statusCode}');
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('Failed to save image: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      print('❌ [Flutter] Save error: $e');
+      debugPrint('❌ [Flutter] Save error: $e');
       rethrow;
     }
   }

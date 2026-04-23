@@ -5,6 +5,7 @@ import 'auth_service.dart';
 import '../core/mock_slogan_data.dart';
 import '../models/slogan_model.dart';
 import '../models/prompt_refiner_model.dart';
+import 'package:flutter/foundation.dart';
 
 class SloganService {
   SloganService._();
@@ -17,8 +18,8 @@ class SloganService {
     final authToken = authService.accessToken;
 
     final url = Uri.parse(ApiConfig.refinePromptUrl);
-    print('🚀 refinePrompt URL: $url');
-    print('🔑 Token: ${authToken != null ? "Présent" : "Absent"}');
+    debugPrint('🚀 refinePrompt URL: $url');
+    debugPrint('🔑 Token: ${authToken != null ? "Présent" : "Absent"}');
 
     final response = await http.post(
       url,
@@ -31,8 +32,8 @@ class SloganService {
       }),
     );
 
-    print('📡 Réponse refinePrompt: ${response.statusCode}');
-    print('📄 Body: ${response.body}');
+    debugPrint('📡 Réponse refinePrompt: ${response.statusCode}');
+    debugPrint('📄 Body: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonDecode(response.body);
@@ -69,9 +70,9 @@ class SloganService {
         },
         body: jsonEncode(body),
       );
-      print('✅ Trace saved for Prompt Refiner');
+      debugPrint('✅ Trace saved for Prompt Refiner');
     } catch (e) {
-      print('❌ Error saving Prompt Refiner trace: $e');
+      debugPrint('❌ Error saving Prompt Refiner trace: $e');
     }
   }
 
@@ -110,9 +111,9 @@ class SloganService {
         requestBody['targetAudience'] = targetAudience;
       }
 
-      print('🚀 Envoi de la requête à: $url');
-      print('📝 Données envoyées: $requestBody');
-      print('🔑 Token: ${authToken != null ? "Présent (${authToken.substring(0, 20)}...)" : "Absent"}');
+      debugPrint('🚀 Envoi de la requête à: $url');
+      debugPrint('📝 Données envoyées: $requestBody');
+      debugPrint('🔑 Token: ${authToken != null ? "Présent (${authToken.substring(0, 20)}...)" : "Absent"}');
 
       final response = await http.post(
         url,
@@ -123,16 +124,16 @@ class SloganService {
         body: jsonEncode(requestBody),
       );
 
-      print('📡 Réponse du serveur: ${response.statusCode}');
-      print('📄 Body: ${response.body}');
+      debugPrint('📡 Réponse du serveur: ${response.statusCode}');
+      debugPrint('📄 Body: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final List<dynamic> slogansJson = data['slogans'] ?? [];
-        print('✅ ${slogansJson.length} slogans reçus du backend');
+        debugPrint('✅ ${slogansJson.length} slogans reçus du backend');
         return slogansJson.map((json) => SloganModel.fromJson(json)).toList();
       } else {
-        print('❌ Erreur HTTP: ${response.statusCode}');
+        debugPrint('❌ Erreur HTTP: ${response.statusCode}');
 
         // Fournir un message d'erreur plus explicite quand le backend relaie
         // une erreur de la Google Generative Language API indiquant qu'un
@@ -143,7 +144,7 @@ class SloganService {
           final match = RegExp(r"models/([\w-]+)").firstMatch(body);
           if (match != null && body.contains('not found')) {
             final modelName = match.group(1);
-            print('⚠️ Backend attempted to use unsupported model "$modelName". Falling back to mock data for frontend development. Raw server body: $body');
+            debugPrint('⚠️ Backend attempted to use unsupported model "$modelName". Falling back to mock data for frontend development. Raw server body: $body');
             // Retourner des données mock plutôt que faire échouer l'app
             return MockSloganData.generateMockSlogans();
           }
@@ -154,14 +155,14 @@ class SloganService {
         throw Exception('Failed to generate slogans: ${response.statusCode} - $body');
       }
     } catch (e) {
-      print('⚠️ Erreur lors de la génération des slogans: $e');
+      debugPrint('⚠️ Erreur lors de la génération des slogans: $e');
       // Pour certains problèmes réseau (ex: backend down, CORS, "Failed to fetch")
       // fournir automatiquement des données mock afin que l'interface reste
       // testable en développement. Les erreurs d'authentification doivent
       // cependant être remontées pour permettre une action de l'utilisateur.
       final msg = e.toString();
       if (msg.contains('Failed to fetch') || msg.contains('SocketException') || msg.contains('Connection refused') || msg.contains('XMLHttpRequest')) {
-        print('ℹ️ Network/backend unreachable — returning mock slogans for now. Error: $msg');
+        debugPrint('ℹ️ Network/backend unreachable — returning mock slogans for now. Error: $msg');
         return MockSloganData.generateMockSlogans();
       }
 
@@ -224,8 +225,8 @@ class SloganService {
         'copywritingPrompt': professionalPrompt,
       };
 
-      print('🚀 Envoi de la requête copywriting à: $url');
-      print('📝 Données envoyées: $requestBody');
+      debugPrint('🚀 Envoi de la requête copywriting à: $url');
+      debugPrint('📝 Données envoyées: $requestBody');
 
       final response = await http.post(
         url,
@@ -236,7 +237,7 @@ class SloganService {
         body: jsonEncode(requestBody),
       );
 
-      print('📡 Réponse du serveur: ${response.statusCode}');
+      debugPrint('📡 Réponse du serveur: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
@@ -247,7 +248,7 @@ class SloganService {
         throw Exception('Failed to generate slogans: ${response.statusCode} - $body');
       }
     } catch (e) {
-      print('⚠️ Erreur lors de la génération des slogans (copywriting): $e');
+      debugPrint('⚠️ Erreur lors de la génération des slogans (copywriting): $e');
       final msg = e.toString();
       if (msg.contains('Failed to fetch') || msg.contains('SocketException') || msg.contains('Connection refused') || msg.contains('XMLHttpRequest')) {
         return MockSloganData.generateMockSlogans();

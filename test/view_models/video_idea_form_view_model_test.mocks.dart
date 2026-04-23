@@ -6,7 +6,7 @@
 import 'dart:async' as _i4;
 
 import 'package:ideaspark/models/video_generator_models.dart' as _i2;
-import 'package:ideaspark/services/video_generator_service.dart' as _i3;
+import 'package:ideaspark/services/video_idea_generator_service.dart' as _i3;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -56,14 +56,21 @@ class MockVideoIdeaGeneratorService extends _i1.Mock
           as _i4.Future<List<_i2.VideoIdea>>);
 
   @override
-  _i4.Future<Map<String, dynamic>> analyzeImage(String? imagePath) =>
+  _i4.Future<List<_i2.VideoIdea>> analyzeImage({
+    required String? imageUrl,
+    required String? brandName,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#analyzeImage, [imagePath]),
-            returnValue: _i4.Future<Map<String, dynamic>>.value(
-              <String, dynamic>{},
+            Invocation.method(
+              #analyzeImage,
+              [],
+              {#imageUrl: imageUrl, #brandName: brandName},
+            ),
+            returnValue: _i4.Future<List<_i2.VideoIdea>>.value(
+              <_i2.VideoIdea>[],
             ),
           )
-          as _i4.Future<Map<String, dynamic>>);
+          as _i4.Future<List<_i2.VideoIdea>>);
 
   @override
   _i4.Future<_i2.VideoIdea> refineIdea(String? ideaId, String? instruction) =>

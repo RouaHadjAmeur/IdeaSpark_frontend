@@ -83,7 +83,7 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
     final callService = CallService();
     // Start listening globally for incoming calls
     callService.onIncomingCall.listen((data) {
-      print('📱 Global Call Listener: Received call request for ${data['callerName']}');
+      debugPrint('📱 Global Call Listener: Received call request for ${data['callerName']}');
       final context = rootNavigatorKey.currentContext;
       if (context != null) {
         Navigator.of(context).push(
@@ -97,7 +97,7 @@ class _IdeaSparkAppState extends State<IdeaSparkApp> {
           ),
         );
       } else {
-        print('❌ Global Call Listener: Navigator context is null, cannot show call screen');
+        debugPrint('❌ Global Call Listener: Navigator context is null, cannot show call screen');
       }
     });
   }

@@ -10,7 +10,7 @@ class VideoDownloadService {
   /// Télécharger la vidéo
   static Future<bool> downloadVideo(Video video) async {
     try {
-      print('📥 [VideoDownload] Downloading video: ${video.id}');
+      debugPrint('📥 [VideoDownload] Downloading video: ${video.id}');
 
       final response = await http.get(Uri.parse(video.videoUrl))
           .timeout(const Duration(seconds: 60));
@@ -24,11 +24,11 @@ class VideoDownloadService {
       final file = File('${tempDir.path}/$fileName');
 
       await file.writeAsBytes(response.bodyBytes);
-      print('✅ [VideoDownload] Video downloaded: ${file.path}');
+      debugPrint('✅ [VideoDownload] Video downloaded: ${file.path}');
 
       return true;
     } catch (e) {
-      print('❌ [VideoDownload] Error: $e');
+      debugPrint('❌ [VideoDownload] Error: $e');
       return false;
     }
   }
@@ -36,7 +36,7 @@ class VideoDownloadService {
   /// Sauvegarder dans la galerie
   static Future<bool> saveToGallery(Video video) async {
     try {
-      print('💾 [VideoDownload] Saving to gallery: ${video.id}');
+      debugPrint('💾 [VideoDownload] Saving to gallery: ${video.id}');
 
       final response = await http.get(Uri.parse(video.videoUrl))
           .timeout(const Duration(seconds: 60));
@@ -53,11 +53,11 @@ class VideoDownloadService {
 
       // Sauvegarder dans la galerie
       await Gal.putVideo(file.path, album: 'IdeaSpark Videos');
-      print('✅ [VideoDownload] Video saved to gallery');
+      debugPrint('✅ [VideoDownload] Video saved to gallery');
 
       return true;
     } catch (e) {
-      print('❌ [VideoDownload] Error: $e');
+      debugPrint('❌ [VideoDownload] Error: $e');
       return false;
     }
   }
@@ -65,7 +65,7 @@ class VideoDownloadService {
   /// Partager la vidéo
   static Future<void> shareVideo(Video video) async {
     try {
-      print('📤 [VideoDownload] Sharing video: ${video.id}');
+      debugPrint('📤 [VideoDownload] Sharing video: ${video.id}');
 
       final response = await http.get(Uri.parse(video.videoUrl))
           .timeout(const Duration(seconds: 60));
@@ -85,61 +85,61 @@ class VideoDownloadService {
         text: '🎬 Vidéo générée avec IdeaSpark',
       );
 
-      print('✅ [VideoDownload] Video shared');
+      debugPrint('✅ [VideoDownload] Video shared');
     } catch (e) {
-      print('❌ [VideoDownload] Error: $e');
+      debugPrint('❌ [VideoDownload] Error: $e');
     }
   }
 
   /// Copier le lien dans le presse-papiers
   static Future<void> copyToClipboard(Video video) async {
     try {
-      print('📋 [VideoDownload] Copying link to clipboard');
+      debugPrint('📋 [VideoDownload] Copying link to clipboard');
       await Share.share(video.videoUrl);
-      print('✅ [VideoDownload] Link copied');
+      debugPrint('✅ [VideoDownload] Link copied');
     } catch (e) {
-      print('❌ [VideoDownload] Error: $e');
+      debugPrint('❌ [VideoDownload] Error: $e');
     }
   }
 
   /// Ouvrir TikTok
   static Future<void> openTikTok() async {
     try {
-      print('🎵 [VideoDownload] Opening TikTok');
+      debugPrint('🎵 [VideoDownload] Opening TikTok');
       // Sur Android/iOS, ouvrir l'app TikTok
       // L'utilisateur devra copier-coller la vidéo manuellement
     } catch (e) {
-      print('❌ [VideoDownload] Error: $e');
+      debugPrint('❌ [VideoDownload] Error: $e');
     }
   }
 
   /// Ouvrir Instagram
   static Future<void> openInstagram() async {
     try {
-      print('📷 [VideoDownload] Opening Instagram');
+      debugPrint('📷 [VideoDownload] Opening Instagram');
       // Sur Android/iOS, ouvrir l'app Instagram
     } catch (e) {
-      print('❌ [VideoDownload] Error: $e');
+      debugPrint('❌ [VideoDownload] Error: $e');
     }
   }
 
   /// Ouvrir Facebook
   static Future<void> openFacebook() async {
     try {
-      print('📘 [VideoDownload] Opening Facebook');
+      debugPrint('📘 [VideoDownload] Opening Facebook');
       // Sur Android/iOS, ouvrir l'app Facebook
     } catch (e) {
-      print('❌ [VideoDownload] Error: $e');
+      debugPrint('❌ [VideoDownload] Error: $e');
     }
   }
 
   /// Ouvrir YouTube
   static Future<void> openYouTube() async {
     try {
-      print('▶️ [VideoDownload] Opening YouTube');
+      debugPrint('▶️ [VideoDownload] Opening YouTube');
       // Sur Android/iOS, ouvrir l'app YouTube
     } catch (e) {
-      print('❌ [VideoDownload] Error: $e');
+      debugPrint('❌ [VideoDownload] Error: $e');
     }
   }
 

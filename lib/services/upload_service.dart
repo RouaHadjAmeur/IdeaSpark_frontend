@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter/foundation.dart';
 
 class UploadService {
   UploadService._();
@@ -14,7 +15,7 @@ class UploadService {
     final path = 'messages/${timestamp}_$fileName';
 
     try {
-      print('🚀 UploadService: Uploading to path: $path');
+      debugPrint('🚀 UploadService: Uploading to path: $path');
       
       // Ensure the file exists before uploading
       if (!await file.exists()) {
@@ -27,11 +28,11 @@ class UploadService {
             fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
           );
 
-      print('🚀 UploadService: Upload complete, getting public URL');
+      debugPrint('🚀 UploadService: Upload complete, getting public URL');
       final String publicUrl = _supabase.storage.from('IdeaSpark').getPublicUrl(path);
       return publicUrl;
     } catch (e) {
-      print('❌ UploadService Error: $e');
+      debugPrint('❌ UploadService Error: $e');
       if (e.toString().contains('Bucket not found')) {
         throw Exception('Erreur configuration: Le bucket "chat-files" n\'existe pas sur Supabase.');
       }

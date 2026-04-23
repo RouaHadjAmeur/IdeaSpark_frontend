@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import 'auth_service.dart';
 import '../models/product_idea_model.dart';
+import 'package:flutter/foundation.dart';
 
 class ProductIdeaService {
   ProductIdeaService._();
@@ -29,9 +30,9 @@ class ProductIdeaService {
       body['max_tokens'] = maxTokens;
     }
 
-    print('🚀 generateProductIdea URL: $url');
-    print('🔑 Token: ${authToken != null ? "Présent" : "Absent"}');
-    print('📝 Body: ${jsonEncode(body)}');
+    debugPrint('🚀 generateProductIdea URL: $url');
+    debugPrint('🔑 Token: ${authToken != null ? "Présent" : "Absent"}');
+    debugPrint('📝 Body: ${jsonEncode(body)}');
 
     final response = await http.post(
       url,
@@ -42,8 +43,8 @@ class ProductIdeaService {
       body: jsonEncode(body),
     );
 
-    print('📡 Réponse generateProductIdea: ${response.statusCode}');
-    print('📄 Body: ${response.body}');
+    debugPrint('📡 Réponse generateProductIdea: ${response.statusCode}');
+    debugPrint('📄 Body: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final Map<String, dynamic> data =
@@ -86,9 +87,9 @@ class ProductIdeaService {
         },
         body: jsonEncode(body),
       );
-      print('✅ Trace saved for Product Idea');
+      debugPrint('✅ Trace saved for Product Idea');
     } catch (e) {
-      print('❌ Error saving Product Idea trace: $e');
+      debugPrint('❌ Error saving Product Idea trace: $e');
     }
   }
 
@@ -121,8 +122,8 @@ class ProductIdeaService {
       'modelLoaded': modelLoaded,
     };
 
-    print('Saving product idea to: $url');
-    print('Request body: ${jsonEncode(body)}');
+    debugPrint('Saving product idea to: $url');
+    debugPrint('Request body: ${jsonEncode(body)}');
 
     final response = await http.post(
       url,
@@ -133,7 +134,7 @@ class ProductIdeaService {
       body: jsonEncode(body),
     );
 
-    print('Save product idea response: ${response.statusCode}');
+    debugPrint('Save product idea response: ${response.statusCode}');
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       final Map<String, dynamic> data =
@@ -162,7 +163,7 @@ class ProductIdeaService {
       },
     );
 
-    print('Get product ideas history response: ${response.statusCode}');
+    debugPrint('Get product ideas history response: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List;
@@ -190,7 +191,7 @@ class ProductIdeaService {
       },
     );
 
-    print('Get product ideas favorites response: ${response.statusCode}');
+    debugPrint('Get product ideas favorites response: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body) as List;
@@ -218,7 +219,7 @@ class ProductIdeaService {
       },
     );
 
-    print('Toggle favorite response: ${response.statusCode}');
+    debugPrint('Toggle favorite response: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data =
@@ -247,7 +248,7 @@ class ProductIdeaService {
       },
     );
 
-    print('Delete product idea response: ${response.statusCode}');
+    debugPrint('Delete product idea response: ${response.statusCode}');
 
     if (response.statusCode != 200) {
       final bodyText = response.body;

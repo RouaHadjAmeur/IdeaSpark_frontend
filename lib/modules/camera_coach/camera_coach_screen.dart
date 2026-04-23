@@ -221,7 +221,7 @@ class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTicker
         );
       }
     } catch (e) {
-      print('Error taking photo: $e');
+      debugPrint('Error taking photo: $e');
     }
   }
 
@@ -237,14 +237,14 @@ class _CameraCoachScreenState extends State<CameraCoachScreen> with SingleTicker
           );
         }
       } catch (e) {
-        print('Error stopping video: $e');
+        debugPrint('Error stopping video: $e');
       }
     } else {
       try {
         await _cameraService.controller!.startVideoRecording();
         setState(() => _isRecording = true);
       } catch (e) {
-        print('Error starting video: $e');
+        debugPrint('Error starting video: $e');
       }
     }
   }

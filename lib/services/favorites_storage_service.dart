@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/slogan_model.dart';
+import 'package:flutter/foundation.dart';
 
 /// Service de stockage persistant pour les slogans favoris
 /// Utilise SharedPreferences pour sauvegarder les slogans favoris complets
@@ -13,9 +14,9 @@ class FavoritesStorageService {
       final prefs = await SharedPreferences.getInstance();
       final jsonList = favoriteSlogans.map((s) => s.toJson()).toList();
       await prefs.setString(_favoritesKey, jsonEncode(jsonList));
-      print('✅ ${favoriteSlogans.length} slogans favoris sauvegardés');
+      debugPrint('✅ ${favoriteSlogans.length} slogans favoris sauvegardés');
     } catch (e) {
-      print('❌ Erreur lors de la sauvegarde des favoris: $e');
+      debugPrint('❌ Erreur lors de la sauvegarde des favoris: $e');
     }
   }
 
@@ -26,16 +27,16 @@ class FavoritesStorageService {
       final jsonString = prefs.getString(_favoritesKey);
       
       if (jsonString == null || jsonString.isEmpty) {
-        print('📥 Aucun favori trouvé dans le stockage');
+        debugPrint('📥 Aucun favori trouvé dans le stockage');
         return [];
       }
       
       final List<dynamic> jsonList = jsonDecode(jsonString);
       final slogans = jsonList.map((json) => SloganModel.fromJson(json)).toList();
-      print('📥 ${slogans.length} slogans favoris chargés depuis le stockage');
+      debugPrint('📥 ${slogans.length} slogans favoris chargés depuis le stockage');
       return slogans;
     } catch (e) {
-      print('❌ Erreur lors du chargement des favoris: $e');
+      debugPrint('❌ Erreur lors du chargement des favoris: $e');
       return [];
     }
   }
@@ -49,10 +50,10 @@ class FavoritesStorageService {
       if (!favorites.any((s) => s.id == slogan.id)) {
         favorites.add(slogan.copyWith(isFavorite: true));
         await saveFavorites(favorites);
-        print('⭐ Favori ajouté: ${slogan.slogan}');
+        debugPrint('⭐ Favori ajouté: ${slogan.slogan}');
       }
     } catch (e) {
-      print('❌ Erreur lors de l\'ajout du favori: $e');
+      debugPrint('❌ Erreur lors de l\'ajout du favori: $e');
     }
   }
 
@@ -62,9 +63,9 @@ class FavoritesStorageService {
       final favorites = await getFavorites();
       favorites.removeWhere((s) => s.id == sloganId);
       await saveFavorites(favorites);
-      print('☆ Favori retiré: $sloganId');
+      debugPrint('☆ Favori retiré: $sloganId');
     } catch (e) {
-      print('❌ Erreur lors du retrait du favori: $e');
+      debugPrint('❌ Erreur lors du retrait du favori: $e');
     }
   }
 
@@ -74,7 +75,7 @@ class FavoritesStorageService {
       final favorites = await getFavorites();
       return favorites.any((s) => s.id == sloganId);
     } catch (e) {
-      print('❌ Erreur lors de la vérification du favori: $e');
+      debugPrint('❌ Erreur lors de la vérification du favori: $e');
       return false;
     }
   }
@@ -84,9 +85,9 @@ class FavoritesStorageService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_favoritesKey);
-      print('🗑️ Tous les favoris ont été effacés');
+      debugPrint('🗑️ Tous les favoris ont été effacés');
     } catch (e) {
-      print('❌ Erreur lors de l\'effacement des favoris: $e');
+      debugPrint('❌ Erreur lors de l\'effacement des favoris: $e');
     }
   }
 

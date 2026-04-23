@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:flutter/foundation.dart';
 
 class VoiceRecorderService {
   VoiceRecorderService._();
@@ -19,22 +20,22 @@ class VoiceRecorderService {
 
         const config = RecordConfig();
         await _audioRecorder.start(config, path: filePath);
-        print('🎙️ Recording started: $filePath');
+        debugPrint('🎙️ Recording started: $filePath');
       } else {
-        print('❌ Microphone permission denied');
+        debugPrint('❌ Microphone permission denied');
       }
     } catch (e) {
-      print('❌ Error starting recording: $e');
+      debugPrint('❌ Error starting recording: $e');
     }
   }
 
   Future<String?> stopRecording() async {
     try {
       final String? path = await _audioRecorder.stop();
-      print('🛑 Recording stopped: $path');
+      debugPrint('🛑 Recording stopped: $path');
       return path;
     } catch (e) {
-      print('❌ Error stopping recording: $e');
+      debugPrint('❌ Error stopping recording: $e');
       return null;
     }
   }
