@@ -30,6 +30,7 @@ import 'package:ideaspark/views/generators/slogans_form_screen.dart';
 import 'package:ideaspark/views/generators/slogans_results_screen.dart';
 import 'package:ideaspark/views/library/saved_ideas_library_screen.dart';
 import 'package:ideaspark/views/trends/trends_analysis_screen.dart';
+import 'package:ideaspark/views/trends/social_video_trends_screen.dart';
 import 'package:ideaspark/views/profile/edit_profile_screen.dart';
 import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
 import 'package:ideaspark/modules/camera_coach/camera_coach_screen.dart';
@@ -259,6 +260,13 @@ GoRouter createAppRouter() {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const TrendsAnalysisScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/social-video-trends',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const SocialVideoTrendsScreen()),
         ),
       ),
       GoRoute(

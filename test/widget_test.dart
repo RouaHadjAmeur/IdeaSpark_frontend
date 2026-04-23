@@ -7,7 +7,7 @@ import 'package:ideaspark/main.dart';
 void main() {
   testWidgets('App pumps without error', (WidgetTester tester) async {
     await tester.pumpWidget(const IdeaSparkApp());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 100));
     expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

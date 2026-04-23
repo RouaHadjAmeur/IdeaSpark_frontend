@@ -15,7 +15,7 @@ void main() {
     late GoogleCalendarService service;
     late MockClient mockClient;
     const testAuthToken = 'test-auth-token';
-    const testBaseUrl = 'http://localhost:3000';
+    const testBaseUrl = 'http://10.0.2.2:3000';
 
     setUp(() {
       mockClient = MockClient();

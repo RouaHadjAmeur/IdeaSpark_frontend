@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 /// Backend API base URL. Change for production or use env.
-/// For iOS Simulator use http://localhost:3000
 /// For Android Emulator use http://10.0.2.2:3000
+/// For iOS Simulator / Web use http://localhost:3000
 /// For physical device use your machine's LAN IP, e.g. http://192.168.1.10:3000
 class ApiConfig {
   ApiConfig._();
@@ -15,6 +15,7 @@ class ApiConfig {
     }
     return 'http://Macs-AIr-Roua.local:3000';
   }
+
   static String get authBase => '$baseUrl/auth';
   static String get usersBase => '$baseUrl/users';
   static String get trendsBase => '$baseUrl/trends';
@@ -147,12 +148,30 @@ class ApiConfig {
 
   // Social & Community
   static String get socialBase => '$baseUrl/social';
+  static String get youtubeTrendsBase => '$baseUrl/youtube-trends';
+  static String youtubeTrendsUrl({
+    String? format,
+    String? sort,
+    String? search,
+    int? limit,
+  }) {
+    final params = <String, String>{};
+    if (format != null && format.isNotEmpty) params['format'] = format;
+    if (sort != null && sort.isNotEmpty) params['sort'] = sort;
+    if (search != null && search.isNotEmpty) params['search'] = search;
+    if (limit != null && limit > 0) params['limit'] = '$limit';
+    final query = params.entries
+        .map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+        .join('&');
+    return query.isEmpty ? youtubeTrendsBase : '$youtubeTrendsBase?$query';
+  }
 
   static String get socialFeed => '$baseUrl/social/feed';
   static String get socialSuggestions => '$baseUrl/social/suggestions';
   static String get socialAccept => '$baseUrl/social/accept'; // /id at end
   static String get socialPendingRequests => '$baseUrl/social/pending-requests';
   static String get publicProfile => '$baseUrl/users/public-profile'; // /id at end
+
   static String get socialFollowingUrl => '$socialBase/following';
   static String get socialFollowersUrl => '$socialBase/followers';
   static String followUrl(String id) => '$socialBase/follow/$id';
@@ -201,4 +220,20 @@ class ApiConfig {
     'FALLBACK_TO_LOCAL',
     defaultValue: true,
   );
+
+  // YouTube Auth & Publishing Endpoints
+  static String get youtubeAuthBase => '$baseUrl/youtube-auth';
+  static String get youtubeStartUrl => '$youtubeAuthBase/start';
+  static String get youtubeMeUrl => '$youtubeAuthBase/me';
+  static String get youtubeDisconnectUrl => '$youtubeAuthBase/disconnect';
+  static String get youtubePublishUrl => '$youtubeAuthBase/publish';
+  static String get youtubePublishUploadUrl => '$youtubeAuthBase/publish-upload';
+
+  // Instagram Auth & Publishing Endpoints
+  static String get instagramAuthBase => '$baseUrl/instagram-auth';
+  static String get instagramStartUrl => '$instagramAuthBase/start';
+  static String get instagramMeUrl => '$instagramAuthBase/me';
+  static String get instagramDisconnectUrl => '$instagramAuthBase/disconnect';
+  static String get instagramPublishUrl => '$instagramAuthBase/publish';
+  static String get instagramPublishUploadUrl => '$instagramAuthBase/publish-upload';
 }

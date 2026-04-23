@@ -6,20 +6,34 @@ import '../services/auth_service.dart';
 import '../models/persona_model.dart';
 import '../services/persona_service.dart';
 import '../services/social_service.dart';
+import '../services/youtube_upload_service.dart';
+import '../services/instagram_upload_service.dart';
 
 /// ViewModel for Profile / Settings screen.
 class ProfileViewModel extends ChangeNotifier {
-  ProfileViewModel({AuthService? authService, PersonaService? personaService, SocialService? socialService})
+  ProfileViewModel({
+    AuthService? authService,
+    PersonaService? personaService,
+    SocialService? socialService,
+    YoutubeUploadService? youtubeUploadService,
+    InstagramUploadService? instagramUploadService,
+  })
       : _authService = authService ?? AuthService(),
         _personaService = personaService ?? PersonaService(),
-        _socialService = socialService ?? SocialService() {
+        _socialService = socialService ?? SocialService(),
+        _youtubeUploadService = youtubeUploadService ?? YoutubeUploadService(),
+        _instagramUploadService = instagramUploadService ?? InstagramUploadService() {
     _loadPersona();
     _loadSocialStats();
+    checkYouTubeConnection();
+    checkInstagramConnection();
   }
 
   final AuthService _authService;
   final PersonaService _personaService;
   final SocialService _socialService;
+  final YoutubeUploadService _youtubeUploadService;
+  final InstagramUploadService _instagramUploadService;
 
   // Persona state
   PersonaModel? _persona;
@@ -31,6 +45,20 @@ class ProfileViewModel extends ChangeNotifier {
   int _followersCount = 0;
   int _followingCount = 0;
 
+  // Linked account state (YouTube for now)
+  bool _isYoutubeChecking = true;
+  bool _isYoutubeConnecting = false;
+  bool _isYoutubeDisconnecting = false;
+  bool _isYoutubeConnected = false;
+  String? _youtubeErrorMessage;
+
+  bool _isInstagramChecking = true;
+  bool _isInstagramConnecting = false;
+  bool _isInstagramDisconnecting = false;
+  bool _isInstagramConnected = false;
+  bool _isInstagramPublishing = false;
+  String? _instagramErrorMessage;
+
   PersonaModel? get persona => _persona;
   bool get isPersonaLoading => _isPersonaLoading;
   bool get hasPersona => _persona != null;
@@ -38,6 +66,17 @@ class ProfileViewModel extends ChangeNotifier {
   String? get personaUpdateError => _personaUpdateError;
   int get followersCount => _followersCount;
   int get followingCount => _followingCount;
+  bool get isYoutubeChecking => _isYoutubeChecking;
+  bool get isYoutubeConnecting => _isYoutubeConnecting;
+  bool get isYoutubeDisconnecting => _isYoutubeDisconnecting;
+  bool get isYoutubeConnected => _isYoutubeConnected;
+  String? get youtubeErrorMessage => _youtubeErrorMessage;
+  bool get isInstagramChecking => _isInstagramChecking;
+  bool get isInstagramConnecting => _isInstagramConnecting;
+  bool get isInstagramDisconnecting => _isInstagramDisconnecting;
+  bool get isInstagramConnected => _isInstagramConnected;
+  bool get isInstagramPublishing => _isInstagramPublishing;
+  String? get instagramErrorMessage => _instagramErrorMessage;
 
   Future<void> _loadSocialStats() async {
     try {
@@ -225,6 +264,172 @@ class ProfileViewModel extends ChangeNotifier {
   void clearChangePasswordError() {
     if (_changePasswordErrorMessage != null) {
       _changePasswordErrorMessage = null;
+      notifyListeners();
+    }
+  }
+
+  void clearYoutubeError() {
+    if (_youtubeErrorMessage != null) {
+      _youtubeErrorMessage = null;
+      notifyListeners();
+    }
+  }
+
+  void clearInstagramError() {
+    if (_instagramErrorMessage != null) {
+      _instagramErrorMessage = null;
+      notifyListeners();
+    }
+  }
+
+  Future<void> checkYouTubeConnection() async {
+    _isYoutubeChecking = true;
+    _youtubeErrorMessage = null;
+    notifyListeners();
+
+    try {
+      _isYoutubeConnected = await _youtubeUploadService.isConnected();
+    } catch (e) {
+      _isYoutubeConnected = false;
+      _youtubeErrorMessage = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isYoutubeChecking = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> startYouTubeConnect() async {
+    _isYoutubeConnecting = true;
+    _youtubeErrorMessage = null;
+    notifyListeners();
+
+    try {
+      return await _youtubeUploadService.createConnectUrl();
+    } catch (e) {
+      _youtubeErrorMessage = e.toString().replaceFirst('Exception: ', '');
+      return null;
+    } finally {
+      _isYoutubeConnecting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> disconnectYouTube() async {
+    _isYoutubeDisconnecting = true;
+    _youtubeErrorMessage = null;
+    notifyListeners();
+
+    try {
+      await _youtubeUploadService.disconnect();
+      _isYoutubeConnected = false;
+      return true;
+    } catch (e) {
+      _youtubeErrorMessage = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isYoutubeDisconnecting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> checkInstagramConnection() async {
+    _isInstagramChecking = true;
+    _instagramErrorMessage = null;
+    notifyListeners();
+
+    try {
+      _isInstagramConnected = await _instagramUploadService.isConnected();
+    } catch (e) {
+      _isInstagramConnected = false;
+      _instagramErrorMessage = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isInstagramChecking = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> startInstagramConnect() async {
+    _isInstagramConnecting = true;
+    _instagramErrorMessage = null;
+    notifyListeners();
+
+    try {
+      return await _instagramUploadService.createConnectUrl();
+    } catch (e) {
+      _instagramErrorMessage = e.toString().replaceFirst('Exception: ', '');
+      return null;
+    } finally {
+      _isInstagramConnecting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> disconnectInstagram() async {
+    _isInstagramDisconnecting = true;
+    _instagramErrorMessage = null;
+    notifyListeners();
+
+    try {
+      await _instagramUploadService.disconnect();
+      _isInstagramConnected = false;
+      return true;
+    } catch (e) {
+      _instagramErrorMessage = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _isInstagramDisconnecting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> publishInstagramFromUrl({
+    required String mediaType,
+    required String mediaUrl,
+    String? caption,
+    bool? shareToFeed,
+  }) async {
+    _isInstagramPublishing = true;
+    _instagramErrorMessage = null;
+    notifyListeners();
+
+    try {
+      return await _instagramUploadService.publishFromUrl(
+        mediaType: mediaType,
+        mediaUrl: mediaUrl,
+        caption: caption,
+        shareToFeed: shareToFeed,
+      );
+    } catch (e) {
+      _instagramErrorMessage = e.toString().replaceFirst('Exception: ', '');
+      return null;
+    } finally {
+      _isInstagramPublishing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<String?> publishInstagramUpload({
+    required String filePath,
+    required String mediaType,
+    String? caption,
+    bool? shareToFeed,
+  }) async {
+    _isInstagramPublishing = true;
+    _instagramErrorMessage = null;
+    notifyListeners();
+
+    try {
+      return await _instagramUploadService.publishUpload(
+        filePath: filePath,
+        mediaType: mediaType,
+        caption: caption,
+        shareToFeed: shareToFeed,
+      );
+    } catch (e) {
+      _instagramErrorMessage = e.toString().replaceFirst('Exception: ', '');
+      return null;
+    } finally {
+      _isInstagramPublishing = false;
       notifyListeners();
     }
   }
