@@ -12,9 +12,9 @@ class ApiConfig {
     if (envUrl.isNotEmpty) return envUrl;
     // TEMPORARY: Using ngrok for testing
     // return 'https://YOUR_NGROK_URL.ngrok.io'; // ← Décommentez et mettez votre URL ngrok
-    // Use your PC's local IP for physical device testing
-    // Change this IP if your PC's IP changes
-    return 'http://10.175.98.19:3000';
+    // Use the correct network IP where backend is accessible
+    // Backend confirmed working on this IP with "Hello World" response
+    return 'http://10.22.118.19:3000';
   }
 
   static String get authBase => '$baseUrl/auth';

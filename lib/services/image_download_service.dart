@@ -76,6 +76,37 @@ class ImageDownloadService {
     }
   }
 
+  /// Save image data (Uint8List) to gallery (requires permission)
+  static Future<bool> saveImageDataToGallery(Uint8List imageData) async {
+    try {
+      print('💾 [Gallery] Requesting permission...');
+      
+      // Request storage permission
+      final status = await Permission.photos.request();
+      
+      if (!status.isGranted) {
+        print('❌ [Gallery] Permission denied');
+        return false;
+      }
+      
+      // Save to temporary file first
+      final tempDir = await getTemporaryDirectory();
+      final fileName = 'ideaspark_edited_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final tempFile = File('${tempDir.path}/$fileName');
+      await tempFile.writeAsBytes(imageData);
+      
+      print('💾 [Gallery] Saving to gallery...');
+      // Use Gal to save to gallery
+      await Gal.putImage(tempFile.path);
+      
+      print('✅ [Gallery] Saved successfully');
+      return true;
+    } catch (e) {
+      print('❌ [Gallery] Error: $e');
+      return false;
+    }
+  }
+
   /// Share image using native share dialog
   static Future<void> shareImage(String imageUrl, {String? caption}) async {
     try {
@@ -378,6 +409,97 @@ class ImageDownloadService {
                       caption: caption,
                       platform: SocialPlatform.facebook,
                     );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Show share options dialog for Uint8List image data
+  static Future<void> showShareDialogForImageData({
+    required BuildContext context,
+    required Uint8List imageData,
+    String? caption,
+  }) async {
+    final cs = Theme.of(context).colorScheme;
+    
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Partager l\'image',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurface,
+                ),
+              ),
+              SizedBox(height: 16),
+              
+              // Save to gallery
+              ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+                leading: Icon(Icons.photo_library, color: cs.primary, size: 24),
+                title: Text('Sauvegarder', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text('Télécharger sur votre téléphone', style: TextStyle(fontSize: 12)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final saved = await saveImageDataToGallery(imageData);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(saved 
+                          ? '✅ Image sauvegardée' 
+                          : '❌ Erreur'),
+                        backgroundColor: saved ? Colors.green : Colors.red,
+                      ),
+                    );
+                  }
+                },
+              ),
+              
+              Divider(height: 8),
+              
+              // Share via native dialog
+              ListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+                leading: Icon(Icons.share, color: cs.primary, size: 24),
+                title: Text('Partager', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text('Menu natif', style: TextStyle(fontSize: 12)),
+                onTap: () async {
+                  Navigator.pop(context);
+                  try {
+                    // Save to temporary file for sharing
+                    final tempDir = await getTemporaryDirectory();
+                    final fileName = 'ideaspark_share_${DateTime.now().millisecondsSinceEpoch}.jpg';
+                    final tempFile = File('${tempDir.path}/$fileName');
+                    await tempFile.writeAsBytes(imageData);
+                    
+                    if (caption != null && caption.isNotEmpty) {
+                      await Share.shareXFiles([XFile(tempFile.path)], text: caption);
+                    } else {
+                      await Share.shareXFiles([XFile(tempFile.path)]);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('❌ Erreur de partage: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 },
               ),

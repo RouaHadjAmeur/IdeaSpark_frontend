@@ -209,7 +209,7 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
         backgroundColor: Colors.black,
       ),
     );
-    final success = await VideoDownloadService.saveToGallery(generatedVideo!);
+    final success = await VideoDownloadService.saveToGallery(generatedVideo!.videoUrl);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -228,7 +228,7 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
         backgroundColor: Colors.blue,
       ),
     );
-    final success = await VideoDownloadService.saveToGallery(generatedVideo!);
+    final success = await VideoDownloadService.saveToGallery(generatedVideo!.videoUrl);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -247,7 +247,7 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
         backgroundColor: Colors.pink,
       ),
     );
-    final success = await VideoDownloadService.saveToGallery(generatedVideo!);
+    final success = await VideoDownloadService.saveToGallery(generatedVideo!.videoUrl);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -266,7 +266,7 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
         backgroundColor: Colors.black,
       ),
     );
-    await VideoDownloadService.shareVideo(generatedVideo!);
+    await VideoDownloadService.shareVideo(generatedVideo!.videoUrl);
   }
 
   Future<void> _shareToYouTube() async {
@@ -277,7 +277,7 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
         backgroundColor: Colors.red,
       ),
     );
-    final success = await VideoDownloadService.saveToGallery(generatedVideo!);
+    final success = await VideoDownloadService.saveToGallery(generatedVideo!.videoUrl);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -290,7 +290,7 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
 
   Future<void> _shareGeneric() async {
     Navigator.pop(context);
-    await VideoDownloadService.shareVideo(generatedVideo!);
+    await VideoDownloadService.shareVideo(generatedVideo!.videoUrl);
   }
 
   @override
@@ -683,7 +683,7 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
                                   Expanded(
                                     child: FilledButton.icon(
                                       onPressed: () async {
-                                        final success = await VideoDownloadService.saveToGallery(generatedVideo!);
+                                        final success = await VideoDownloadService.saveToGallery(generatedVideo!.videoUrl);
                                         if (mounted) {
                                           ScaffoldMessenger.of(context).showSnackBar(
                                             SnackBar(
@@ -706,7 +706,13 @@ class _VideoGeneratorScreenState extends State<VideoGeneratorScreen> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: FilledButton.icon(
-                                      onPressed: () => _showShareDialog(context, cs),
+                                      onPressed: () async {
+                                        // Utiliser le même système simple que les images
+                                        await VideoDownloadService.showShareDialog(
+                                          context: context,
+                                          videoUrl: generatedVideo!.videoUrl,
+                                        );
+                                      },
                                       icon: const Icon(Icons.share, size: 18),
                                       label: const Text('Partager'),
                                       style: FilledButton.styleFrom(
