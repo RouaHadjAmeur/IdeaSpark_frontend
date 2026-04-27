@@ -446,14 +446,14 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/edited-images-history',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const EditedImagesHistoryScreen()),
         ),
       ),
       GoRoute(
         path: '/edited-videos-history',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const EditedVideosHistoryScreen()),
         ),
@@ -479,7 +479,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/image-editor',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           final imageUrl = extra?['imageUrl'] as String? ?? '';
@@ -496,7 +496,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/video-editor',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           final videoPath = extra?['videoPath'] as String? ?? '';
@@ -513,7 +513,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/advanced-share',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           final contentUrl = extra?['contentUrl'] as String? ?? '';
