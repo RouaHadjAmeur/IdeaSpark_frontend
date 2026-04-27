@@ -64,12 +64,10 @@ import 'package:ideaspark/views/profile/subscription_screen.dart';
 import 'package:ideaspark/views/ai/image_generator_screen.dart';
 import 'package:ideaspark/views/ai/image_history_screen.dart';
 import 'package:ideaspark/views/ai/edited_images_history_screen.dart';
-import 'package:ideaspark/views/ai/edited_videos_history_screen.dart';
 import 'package:ideaspark/views/ai/creative_ai_test_screen.dart';
 import 'package:ideaspark/views/ai/video_generator_screen.dart';
 import 'package:ideaspark/views/ai/video_history_screen.dart';
 import 'package:ideaspark/views/ai/image_editor_screen.dart';
-import 'package:ideaspark/views/ai/video_editor_screen.dart';
 import 'package:ideaspark/views/ai/advanced_share_screen.dart';
 
 import '../models/video_generator_models.dart';
@@ -452,13 +450,6 @@ GoRouter createAppRouter() {
         ),
       ),
       GoRoute(
-        path: '/edited-videos-history',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => PageShell(
-          child: LocaleRebuilder(builder: (_) => const EditedVideosHistoryScreen()),
-        ),
-      ),
-      GoRoute(
         path: '/creative-ai-test',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CreativeAITestScreen(),
@@ -489,23 +480,6 @@ GoRouter createAppRouter() {
               builder: (_) => ImageEditorScreen(
                 imageUrl: imageUrl,
                 imageId: imageId,
-              ),
-            ),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/video-editor',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>?;
-          final videoPath = extra?['videoPath'] as String? ?? '';
-          final videoId = extra?['videoId'] as String?;
-          return PageShell(
-            child: LocaleRebuilder(
-              builder: (_) => VideoEditorScreen(
-                videoPath: videoPath,
-                videoId: videoId,
               ),
             ),
           );

@@ -140,20 +140,20 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
           backgroundColor: Colors.black,
         ),
       );
-      await VideoDownloadService.shareVideo(video);
+      await VideoDownloadService.shareVideo(video.videoUrl);
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Téléchargement pour $platform...'),
-        backgroundColor: platform == 'TikTok' ? Colors.black : 
-                       platform == 'Facebook' ? Colors.blue : 
+        backgroundColor: platform == 'TikTok' ? Colors.black :
+                       platform == 'Facebook' ? Colors.blue :
                        platform == 'Instagram' ? Colors.pink : Colors.red,
       ),
     );
 
-    final success = await VideoDownloadService.saveToGallery(video);
+    final success = await VideoDownloadService.saveToGallery(video.videoUrl);
     if (mounted && success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -504,7 +504,7 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
           _ActualVideoCard(
             video: generatedVideo,
             onSave: () async {
-              final success = await VideoDownloadService.saveToGallery(generatedVideo);
+              final success = await VideoDownloadService.saveToGallery(generatedVideo.videoUrl);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(

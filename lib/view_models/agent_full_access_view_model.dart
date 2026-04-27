@@ -84,7 +84,14 @@ class AgentFullAccessViewModel extends ChangeNotifier {
 
   Future<void> _runSloganAgent(String prompt) async {
     try {
-      _slogans = await SloganService.generateSlogansFromPrompt(prompt: prompt);
+      _slogans = await SloganService.generateSlogans(
+        brandName: prompt,
+        sector: 'général',
+        brandValues: '',
+        targetAudience: '',
+        tone: 'professionnel',
+        language: 'fr',
+      );
     } catch (e) {
       print('❌ Slogan Agent Error: $e');
     } finally {
@@ -96,16 +103,11 @@ class AgentFullAccessViewModel extends ChangeNotifier {
   Future<void> _runVideoAgent(String prompt) async {
     try {
       // 1. Generate Video Idea (Script)
-      _videoIdea = await VideoGeneratorService.generateVideoIdeaFromPrompt(prompt: prompt);
+      _generatedVideo = await VideoGeneratorService.generateVideo(
+        description: prompt,
+        category: 'lifestyle',
+      );
       notifyListeners();
-
-      // 2. Generate Real Video from the description/title
-      if (_videoIdea != null) {
-        _generatedVideo = await VideoGeneratorService.generateVideo(
-          description: _videoIdea!.caption,
-          category: 'lifestyle', // Default category
-        );
-      }
     } catch (e) {
       print('❌ Video Agent Error: $e');
     } finally {
