@@ -34,6 +34,7 @@ class ApiConfig {
   static String get getFavoritesUrl => '$videoGeneratorBase/favorites';
   static String get toggleFavoriteUrl => '$videoGeneratorBase/toggle-favorite'; // Needs /id
   static String get deleteVideoIdeaUrl => videoGeneratorBase; // Needs /id
+  static String get searchVideoUrl => '$videoGeneratorBase/search';
 
   // Persona Endpoints
   static String get personaBase => '$baseUrl/persona';
@@ -50,6 +51,7 @@ class ApiConfig {
   // Product Generator (IA Finetuning) Endpoints
   static String get iaFinetuningBase => '$baseUrl/ia-finetuning';
   static String get generateProductIdeaUrl => '$iaFinetuningBase/generate';
+  static String get decomposePromptUrl => '$iaFinetuningBase/decompose';
   static String get saveProductIdeaUrl => '$iaFinetuningBase/product-ideas/save';
   static String get getProductIdeasHistoryUrl => '$iaFinetuningBase/product-ideas/history';
   static String get getProductIdeasFavoritesUrl => '$iaFinetuningBase/product-ideas/favorites';

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/google_calendar_tokens.dart';
-import 'package:flutter/foundation.dart';
 
 /// Service for storing and retrieving Google Calendar tokens locally
 /// 
@@ -22,7 +21,7 @@ class GoogleCalendarStorageService {
       final jsonString = json.encode(tokens.toJson());
       return await prefs.setString(_tokensKey, jsonString);
     } catch (e) {
-      debugPrint('Error saving Google Calendar tokens: $e');
+      print('Error saving Google Calendar tokens: $e');
       return false;
     }
   }
@@ -48,7 +47,7 @@ class GoogleCalendarStorageService {
       final jsonData = json.decode(jsonString) as Map<String, dynamic>;
       return GoogleCalendarTokens.fromJson(jsonData);
     } catch (e) {
-      debugPrint('Error retrieving Google Calendar tokens: $e');
+      print('Error retrieving Google Calendar tokens: $e');
       return null;
     }
   }
@@ -83,7 +82,7 @@ class GoogleCalendarStorageService {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.remove(_tokensKey);
     } catch (e) {
-      debugPrint('Error clearing Google Calendar tokens: $e');
+      print('Error clearing Google Calendar tokens: $e');
       return false;
     }
   }
@@ -106,7 +105,7 @@ class GoogleCalendarStorageService {
 
       return await saveTokens(updatedTokens);
     } catch (e) {
-      debugPrint('Error updating access token: $e');
+      print('Error updating access token: $e');
       return false;
     }
   }

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ideaspark/models/video_generator_models.dart';
+import 'package:ideaspark/services/video_generator_service.dart';
 import 'package:ideaspark/services/video_idea_generator_service.dart';
 
 void main() {
@@ -7,7 +8,7 @@ void main() {
     late VideoIdeaGeneratorService service;
 
     setUp(() {
-      service = VideoIdeaGeneratorService();
+      service =   VideoIdeaGeneratorService();
     });
 
     test('Should generate requested number of ideas (batch)', () async {
