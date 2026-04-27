@@ -63,9 +63,14 @@ import 'package:ideaspark/views/social/user_profile_screen.dart';
 import 'package:ideaspark/views/profile/subscription_screen.dart';
 import 'package:ideaspark/views/ai/image_generator_screen.dart';
 import 'package:ideaspark/views/ai/image_history_screen.dart';
+import 'package:ideaspark/views/ai/edited_images_history_screen.dart';
+import 'package:ideaspark/views/ai/edited_videos_history_screen.dart';
 import 'package:ideaspark/views/ai/creative_ai_test_screen.dart';
 import 'package:ideaspark/views/ai/video_generator_screen.dart';
 import 'package:ideaspark/views/ai/video_history_screen.dart';
+import 'package:ideaspark/views/ai/image_editor_screen.dart';
+import 'package:ideaspark/views/ai/video_editor_screen.dart';
+import 'package:ideaspark/views/ai/advanced_share_screen.dart';
 
 import '../models/video_generator_models.dart';
 import '../models/brand.dart';
@@ -440,6 +445,20 @@ GoRouter createAppRouter() {
         ),
       ),
       GoRoute(
+        path: '/edited-images-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const EditedImagesHistoryScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/edited-videos-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const EditedVideosHistoryScreen()),
+        ),
+      ),
+      GoRoute(
         path: '/creative-ai-test',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CreativeAITestScreen(),
@@ -457,6 +476,59 @@ GoRouter createAppRouter() {
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const VideoHistoryScreen()),
         ),
+      ),
+      GoRoute(
+        path: '/image-editor',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final imageUrl = extra?['imageUrl'] as String? ?? '';
+          final imageId = extra?['imageId'] as String?;
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => ImageEditorScreen(
+                imageUrl: imageUrl,
+                imageId: imageId,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/video-editor',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final videoPath = extra?['videoPath'] as String? ?? '';
+          final videoId = extra?['videoId'] as String?;
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => VideoEditorScreen(
+                videoPath: videoPath,
+                videoId: videoId,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/advanced-share',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final contentUrl = extra?['contentUrl'] as String? ?? '';
+          final contentType = extra?['contentType'] as String? ?? 'image';
+          final contentId = extra?['contentId'] as String?;
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => AdvancedShareScreen(
+                contentUrl: contentUrl,
+                contentType: contentType,
+                contentId: contentId,
+              ),
+            ),
+          );
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {

@@ -93,6 +93,30 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                 const SizedBox(height: 16),
                 _buildSectionHeader(context, 'Bibliothèque'),
                 _SidebarItem(
+                  icon: Icons.collections_outlined,
+                  label: 'Images Éditées',
+                  isActive: GoRouterState.of(context).matchedLocation == '/edited-images-history',
+                  onTap: () => context.push('/edited-images-history'),
+                ),
+                _SidebarItem(
+                  icon: Icons.video_collection_outlined,
+                  label: 'Vidéos Éditées',
+                  isActive: GoRouterState.of(context).matchedLocation == '/edited-videos-history',
+                  onTap: () => context.push('/edited-videos-history'),
+                ),
+                _SidebarItem(
+                  icon: Icons.edit,
+                  label: 'Éditeur d\'Images',
+                  isActive: GoRouterState.of(context).matchedLocation == '/image-editor',
+                  onTap: () => context.push('/image-editor'),
+                ),
+                _SidebarItem(
+                  icon: Icons.video_settings,
+                  label: 'Éditeur Vidéo',
+                  isActive: GoRouterState.of(context).matchedLocation == '/video-editor',
+                  onTap: () => context.push('/video-editor'),
+                ),
+                _SidebarItem(
                   icon: Icons.favorite_outline,
                   label: 'Favoris',
                   isActive: location == '/favorites',

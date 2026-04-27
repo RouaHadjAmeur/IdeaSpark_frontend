@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/video_generator_service.dart';
+import '../../services/video_download_service.dart';
 import '../../models/video.dart';
+import 'video_editor_screen.dart';
+import 'advanced_share_screen.dart';
 
 class VideoHistoryScreen extends StatefulWidget {
   const VideoHistoryScreen({super.key});
@@ -245,11 +248,57 @@ class _VideoHistoryScreenState extends State<VideoHistoryScreen> {
                                     Expanded(
                                       child: OutlinedButton.icon(
                                         onPressed: () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('📥 Téléchargement...'),
-                                              backgroundColor: Colors.blue,
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => VideoEditorScreen(
+                                                videoPath: video.videoUrl, // Using video.videoUrl instead of video.url
+                                                videoId: video.id,
+                                              ),
                                             ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.edit, size: 16),
+                                        label: const Text('Éditer'),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => AdvancedShareScreen(
+                                                contentUrl: video.videoUrl,
+                                                contentType: 'video',
+                                                contentId: video.id,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        icon: const Icon(Icons.share, size: 16),
+                                        label: const Text('Partager'),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 8),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: () async {
+                                          await VideoDownloadService.showShareDialog(
+                                            context: context,
+                                            videoUrl: video.videoUrl,
+                                            caption: '🎬 Vidéo générée avec IdeaSpark\n\nPar ${video.user}\nDurée: ${video.durationFormatted}',
                                           );
                                         },
                                         icon: const Icon(Icons.download, size: 16),
@@ -262,16 +311,16 @@ class _VideoHistoryScreenState extends State<VideoHistoryScreen> {
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: OutlinedButton.icon(
-                                        onPressed: () {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('🔄 Régénération...'),
-                                              backgroundColor: Colors.orange,
-                                            ),
+                                        onPressed: () async {
+                                          await VideoDownloadService.shareToSocialMedia(
+                                            context: context,
+                                            videoUrl: video.videoUrl,
+                                            caption: '🎬 Vidéo générée avec IdeaSpark\n\nPar ${video.user}\nDurée: ${video.durationFormatted}',
+                                            platform: VideoSocialPlatform.tiktok, // TikTok par défaut pour les vidéos
                                           );
                                         },
-                                        icon: const Icon(Icons.refresh, size: 16),
-                                        label: const Text('Corriger'),
+                                        icon: const Icon(Icons.share, size: 16),
+                                        label: const Text('TikTok'),
                                         style: OutlinedButton.styleFrom(
                                           padding: const EdgeInsets.symmetric(vertical: 8),
                                         ),

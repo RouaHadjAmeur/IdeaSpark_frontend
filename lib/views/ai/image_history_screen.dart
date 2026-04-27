@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/image_generator_service.dart';
+import 'image_editor_screen.dart';
+import 'advanced_share_screen.dart';
 
 class ImageHistoryScreen extends StatefulWidget {
   const ImageHistoryScreen({super.key});
@@ -272,6 +274,56 @@ class _ImageHistoryScreenState extends State<ImageHistoryScreen> {
                       fontSize: 9,
                       color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  // Boutons d'action
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ImageEditorScreen(
+                                  imageUrl: image.url,
+                                  imageId: image.id,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.edit, size: 14),
+                          label: const Text('Éditer', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            minimumSize: const Size(0, 28),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AdvancedShareScreen(
+                                  contentUrl: image.url,
+                                  contentType: 'image',
+                                  contentId: image.id,
+                                ),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.share, size: 14),
+                          label: const Text('Partager', style: TextStyle(fontSize: 11)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            minimumSize: const Size(0, 28),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
