@@ -1,0 +1,59 @@
+warning • The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used • lib/view_models/profile_view_model.dart:126:53 • invalid_null_aware_operator
+warning • The value of the field '_collabService' isn't used • lib/view_models/social_view_model.dart:9:30 • unused_field
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/views/collaboration/collaborators_modal.dart:104:47 • invalid_null_aware_operator
+warning • Dead code • lib/views/collaboration/collaborators_modal.dart:104:68 • dead_code
+warning • The left operand can't be null, so the right operand is never executed • lib/views/collaboration/collaborators_modal.dart:104:71 • dead_null_aware_expression
+warning • The value of the field '_error' isn't used • lib/views/content/caption_generator_screen.dart:25:11 • unused_field
+warning • Unused import: '../../services/auth_service.dart' • lib/views/execution_hub/execution_hub_screen.dart:11:8 • unused_import
+warning • The value of the local variable 'isBrandOwner' isn't used • lib/views/execution_hub/project_board_screen.dart:108:11 • unused_local_variable
+warning • The '!' will have no effect because the receiver can't be null • lib/views/execution_hub/project_board_screen.dart:164:54 • unnecessary_non_null_assertion
+warning • The '!' will have no effect because the receiver can't be null • lib/views/execution_hub/project_board_screen.dart:165:52 • unnecessary_non_null_assertion
+  error • Undefined name 'isBrandOwner' • lib/views/execution_hub/project_board_screen.dart:275:58 • undefined_identifier
+  error • Undefined name 'isBrandOwner' • lib/views/execution_hub/project_board_screen.dart:345:52 • undefined_identifier
+warning • The value of the field '_tokens' isn't used • lib/views/google_calendar/google_calendar_settings_screen.dart:27:25 • unused_field
+warning • The value of the field '_isConnected' isn't used • lib/views/google_calendar/google_calendar_settings_screen.dart:29:8 • unused_field
+warning • Unused import: '../../widgets/day_detail_sheet.dart' • lib/views/home/brand_owner_dashboard.dart:12:8 • unused_import
+warning • Unused import: '../strategic_content_manager/dashboard_v2_screen.dart' • lib/views/home/brand_owner_dashboard.dart:15:8 • unused_import
+warning • The value of the field '_profileChecked' isn't used • lib/views/home/brand_owner_dashboard.dart:26:8 • unused_field
+  error • The argument type 'String' can't be assigned to the parameter type 'IconData'.  • lib/views/home/brand_owner_dashboard.dart:240:71 • argument_type_not_assignable
+warning • Unused import: '../../models/collaboration.dart' • lib/views/home/collaborator_dashboard.dart:8:8 • unused_import
+warning • Unused import: '../../core/app_localizations.dart' • lib/views/home/collaborator_dashboard.dart:10:8 • unused_import
+warning • The value of the local variable 'colorScheme' isn't used • lib/views/home/collaborator_dashboard.dart:46:11 • unused_local_variable
+warning • Unused import: 'package:ideaspark/services/favorites_storage_service.dart' • lib/views/library/favorites_screen.dart:7:8 • unused_import
+warning • The value of the field '_isLoadingSlogans' isn't used • lib/views/library/favorites_screen.dart:25:8 • unused_field
+warning • The declaration '_sendInvitationEmail' isn't referenced • lib/views/plan-collaboration/collaboration_screen.dart:441:16 • unused_element
+warning • Unused import: 'dart:convert' • lib/views/profile/edit_profile_screen.dart:1:8 • unused_import
+warning • Unused import: 'dart:convert' • lib/views/profile/profile_screen.dart:1:8 • unused_import
+  error • The argument type 'Object' can't be assigned to the parameter type 'String'.  • lib/views/social/community_feed_screen.dart:138:27 • argument_type_not_assignable
+  error • The argument type 'Object' can't be assigned to the parameter type 'String'.  • lib/views/social/discover_friends_screen.dart:194:21 • argument_type_not_assignable
+warning • Dead code • lib/views/social/discover_friends_screen.dart:194:31 • dead_code
+warning • The left operand can't be null, so the right operand is never executed • lib/views/social/discover_friends_screen.dart:194:34 • dead_null_aware_expression
+  error • The argument type 'Object' can't be assigned to the parameter type 'String'.  • lib/views/social/followers_screen.dart:95:24 • argument_type_not_assignable
+warning • Dead code • lib/views/social/followers_screen.dart:95:34 • dead_code
+warning • The left operand can't be null, so the right operand is never executed • lib/views/social/followers_screen.dart:95:37 • dead_null_aware_expression
+  error • The argument type 'Object' can't be assigned to the parameter type 'String'.  • lib/views/social/following_screen.dart:96:18 • argument_type_not_assignable
+warning • Dead code • lib/views/social/following_screen.dart:96:28 • dead_code
+warning • The left operand can't be null, so the right operand is never executed • lib/views/social/following_screen.dart:96:31 • dead_null_aware_expression
+  error • The argument type 'Object' can't be assigned to the parameter type 'String'.  • lib/views/social/friends_screen.dart:128:25 • argument_type_not_assignable
+warning • Dead code • lib/views/social/friends_screen.dart:128:42 • dead_code
+warning • The left operand can't be null, so the right operand is never executed • lib/views/social/friends_screen.dart:128:45 • dead_null_aware_expression
+warning • The operand can't be 'null', so the condition is always 'true' • lib/views/social/user_profile_screen.dart:139:29 • unnecessary_null_comparison
+  error • The argument type 'UserRole' can't be assigned to the parameter type 'String'.  • lib/views/social/user_profile_screen.dart:142:17 • argument_type_not_assignable
+warning • The '!' will have no effect because the receiver can't be null • lib/views/social/user_profile_screen.dart:142:28 • unnecessary_non_null_assertion
+warning • The operand can't be 'null', so the condition is always 'true' • lib/views/social/user_profile_screen.dart:183:33 • unnecessary_null_comparison
+  error • The argument type 'UserRole' can't be assigned to the parameter type 'String'.  • lib/views/social/user_profile_screen.dart:183:76 • argument_type_not_assignable
+warning • The '!' will have no effect because the receiver can't be null • lib/views/social/user_profile_screen.dart:183:87 • unnecessary_non_null_assertion
+warning • Unused import: '../../core/app_theme.dart' • lib/views/strategic_content_manager/ai_campaign_roadmap_screen.dart:2:8 • unused_import
+warning • Unused import: '../../models/brand.dart' • lib/views/strategic_content_manager/campaign_workspace_screen.dart:6:8 • unused_import
+warning • Unused import: '../../view_models/brand_view_model.dart' • lib/views/strategic_content_manager/campaign_workspace_screen.dart:8:8 • unused_import
+warning • Unused import: '../../view_models/profile_view_model.dart' • lib/views/strategic_content_manager/campaign_workspace_screen.dart:10:8 • unused_import
+warning • Unused import: '../../services/auth_service.dart' • lib/views/strategic_content_manager/campaign_workspace_screen.dart:12:8 • unused_import
+warning • The value of the field '_isLoading' isn't used • lib/views/strategic_content_manager/campaign_workspace_screen.dart:27:8 • unused_field
+warning • The receiver can't be null, so the null-aware operator '?.' is unnecessary • lib/views/strategic_content_manager/dashboard_v2_screen.dart:101:19 • invalid_null_aware_operator
+  error • The getter 'isEmpty' isn't defined for the type 'UserRole' • lib/views/strategic_content_manager/dashboard_v2_screen.dart:101:21 • undefined_getter
+warning • The declaration '_configureGoogleCalendar' isn't referenced • lib/views/strategic_content_manager/plan_detail_screen.dart:1050:16 • unused_element
+warning • The declaration '_syncToGoogleCalendar' isn't referenced • lib/views/strategic_content_manager/plan_detail_screen.dart:1071:16 • unused_element
+warning • Unused import: '../core/app_theme.dart' • lib/widgets/bottom_nav_v2.dart:4:8 • unused_import
+warning • Unused import: '../services/auth_service.dart' • lib/widgets/bottom_nav_v2.dart:6:8 • unused_import
+warning • The value of the local variable 'scheme' isn't used • lib/widgets/content_block_action_panel.dart:52:11 • unused_local_variable
+  error • Undefined name 'authVm' • lib/widgets/sidebar_navigation.dart:188:17 • undefined_identifier

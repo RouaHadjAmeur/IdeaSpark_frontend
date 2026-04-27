@@ -1,0 +1,102 @@
+// Add these models to your existing Prisma schema
+
+model Challenge {
+  id                String                @id @default(cuid())
+  title             String
+  description       String                @db.Text
+  brandId           String
+  brand             Brand                 @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  videoType         String                // UGC, Testimonial, Tutorial, Review
+  minDuration       Int                    // in seconds
+  maxDuration       Int                    // in seconds
+  language          String
+  targetAudience    String
+  winnerReward      Int
+  runnerUpReward    Int
+  maxSubmissions    Int
+  deadline          DateTime
+  status            String                @default("LIVE") // LIVE, REVIEW, CLOSED
+  createdBy         String                // Brand owner ID
+  criteria          ChallengeCriteria[]
+  submissions       Submission[]
+  shortlisted       ShortlistedCreator[]
+  notifications     ChallengeNotification[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@index([brandId])
+  @@index([createdBy])
+  @@index([status])
+}
+
+model ChallengeCriteria {
+  id          String    @id @default(cuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  criterion   String    @db.Text
+  order       Int
+  createdAt   DateTime  @default(now())
+
+  @@index([challengeId])
+}
+
+model Submission {
+  id                String                @id @default(cuid())
+  challengeId       String
+  challenge         Challenge             @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  creatorId         String
+  creator           User                  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  videoUrl          String
+  notes             String?               @db.Text
+  status            String                @default("SUBMITTED") // SUBMITTED, SHORTLISTED, REVISION_NEEDED, WINNER
+  rating            Int?                  // 1-5 star rating
+  tags              String[]              // Content tags
+  feedback          String?               @db.Text
+  winnerDeclaredAt  DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  @@unique([challengeId, creatorId])
+  @@index([challengeId])
+  @@index([creatorId])
+  @@index([status])
+}
+
+model ShortlistedCreator {
+  id          String    @id @default(cuid())
+  submissionId String
+  submission  Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  creatorId   String
+  creator     User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([submissionId, challengeId])
+  @@index([challengeId])
+  @@index([creatorId])
+}
+
+model ChallengeNotification {
+  id          String    @id @default(cuid())
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String    // submission_received, shortlisted, revision_request, winner
+  message     String    @db.Text
+  read        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  @@index([challengeId])
+  @@index([userId])
+  @@index([read])
+}
+
+// Add these relations to your existing User model:
+// submissions       Submission[]
+// shortlisted       ShortlistedCreator[]
+// notifications     ChallengeNotification[]
+
+// Add these relations to your existing Brand model:
+// challenges        Challenge[]

@@ -1,0 +1,621 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:ideaspark/view_models/locale_view_model.dart';
+import 'package:ideaspark/widgets/locale_rebuilder.dart';
+import 'package:ideaspark/views/splash/splash_screen.dart';
+import 'package:ideaspark/views/onboarding/onboarding_screen.dart';
+import 'package:ideaspark/views/auth/login_screen.dart';
+import 'package:ideaspark/views/auth/signup_screen.dart';
+import 'package:ideaspark/views/auth/verify_email_screen.dart';
+import 'package:ideaspark/views/auth/forgot_password_screen.dart';
+import 'package:ideaspark/views/home/home_screen.dart';
+import 'package:ideaspark/views/criteria/criteria_screen.dart';
+import 'package:ideaspark/views/loading/loading_screen.dart';
+import 'package:ideaspark/views/loading/ai_plan_loading_screen.dart';
+import 'package:ideaspark/views/results/results_screen.dart';
+import 'package:ideaspark/views/results/idea_detail_screen.dart';
+import 'package:ideaspark/views/library/favorites_screen.dart';
+import 'package:ideaspark/views/library/history_screen.dart';
+import 'package:ideaspark/views/profile/profile_screen.dart';
+import 'package:ideaspark/views/credits/credits_shop_screen.dart';
+import 'package:ideaspark/views/credits/payment_screen.dart';
+import 'package:ideaspark/views/generators/video_ideas_form_screen.dart';
+import 'package:ideaspark/views/generators/video_ideas_results_screen.dart';
+import 'package:ideaspark/views/generators/business_ideas_form_screen.dart';
+import 'package:ideaspark/views/generators/business_idea_detail_screen.dart';
+import 'package:ideaspark/views/generators/product_ideas_form_screen.dart';
+import 'package:ideaspark/views/generators/product_idea_result_screen.dart';
+import 'package:ideaspark/views/generators/slogans_form_screen.dart';
+import 'package:ideaspark/views/generators/slogans_results_screen.dart';
+import 'package:ideaspark/views/library/saved_ideas_library_screen.dart';
+import 'package:ideaspark/views/trends/trends_analysis_screen.dart';
+import 'package:ideaspark/views/profile/edit_profile_screen.dart';
+import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
+import 'package:ideaspark/modules/camera_coach/camera_coach_screen.dart';
+
+import 'package:ideaspark/modules/contacts/contacts_screen.dart';
+import 'package:ideaspark/modules/chat/chat_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/brands_list_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/brand_workspace_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/calendar_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/plan_project_flow.dart';
+import 'package:ideaspark/views/strategic_content_manager/ai_campaign_roadmap_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/insights_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/create_edit_brand_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/agent_full_access_screen.dart';
+import 'package:ideaspark/views/execution_hub/execution_hub_screen.dart';
+import 'package:ideaspark/views/execution_hub/project_board_screen.dart';
+import '../views/strategic_content_manager/campaign_workspace_screen.dart';
+
+import 'package:ideaspark/widgets/bottom_nav_v2.dart';
+import 'package:ideaspark/widgets/sidebar_navigation.dart';
+import 'package:ideaspark/widgets/page_shell.dart';
+import 'package:ideaspark/views/collaboration/notifications_screen.dart';
+import 'package:ideaspark/views/collaboration/community_hub_screen.dart';
+import 'package:ideaspark/views/generators/generators_screen.dart';
+
+import 'package:ideaspark/views/social/user_profile_screen.dart';
+import 'package:ideaspark/views/profile/subscription_screen.dart';
+import 'package:ideaspark/views/ai/image_generator_screen.dart';
+import 'package:ideaspark/views/ai/image_history_screen.dart';
+import 'package:ideaspark/views/ai/creative_ai_test_screen.dart';
+import 'package:ideaspark/views/ai/video_generator_screen.dart';
+import 'package:ideaspark/views/ai/video_history_screen.dart';
+
+import '../models/video_generator_models.dart';
+import '../models/brand.dart';
+import '../models/plan.dart';
+import '../services/auth_service.dart';
+
+final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
+final rootNavigatorKey = _rootNavigatorKey;
+
+GoRouter createAppRouter() {
+  return GoRouter(
+    navigatorKey: rootNavigatorKey,
+    initialLocation: '/splash',
+    routes: [
+      GoRoute(
+        path: '/splash',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const SplashScreen()),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const OnboardingScreen()),
+      ),
+      GoRoute(
+        path: '/login',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const LoginScreen()),
+      ),
+      GoRoute(
+        path: '/signup',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const SignUpScreen()),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => LocaleRebuilder(builder: (_) => const ForgotPasswordScreen()),
+      ),
+      GoRoute(
+        path: '/verify-email',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra;
+          String email = '';
+          bool isGoogleVerification = false;
+          bool isFacebookVerification = false;
+          if (extra is Map) {
+            final emailValue = extra['email'];
+            email = emailValue is String ? emailValue : (emailValue?.toString() ?? '');
+            isGoogleVerification = extra['source'] == 'google';
+            isFacebookVerification = extra['source'] == 'facebook';
+          } else if (extra is String) {
+            email = extra;
+          }
+          return LocaleRebuilder(
+            builder: (_) => VerifyEmailScreen(
+              email: email,
+              isGoogleVerification: isGoogleVerification,
+              isFacebookVerification: isFacebookVerification,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/persona-onboarding',
+        parentNavigatorKey: rootNavigatorKey,
+        redirect: (context, state) async {
+          final authService = AuthService();
+          final isLoggedIn = await authService.isLoggedIn();
+          if (!isLoggedIn) {
+            // Redirect to login, with return path to persona onboarding
+            return '/login?returnTo=/persona-onboarding';
+          }
+          return null; // Allow access
+        },
+        builder: (context, state) {
+          final userId = state.extra is String ? state.extra as String : '';
+          return LocaleRebuilder(
+            builder: (_) => PersonaOnboardingScreen(userId: userId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/loading',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra;
+          String? redirectTo;
+          Object? forwardData;
+          if (extra is String) {
+            redirectTo = extra;
+          } else if (extra is Map<String, dynamic>) {
+            redirectTo = extra['redirectTo'];
+            // Pass both the request and useRemoteGeneration flag
+            forwardData = {
+              'request': extra['data'],
+              'useRemoteGeneration': extra['useRemoteGeneration'] ?? true,
+            };
+          }
+          return LocaleRebuilder(builder: (_) => LoadingScreen(redirectTo: redirectTo, forwardData: forwardData));
+        },
+      ),
+      GoRoute(
+        path: '/loading-ai',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final brandName = state.extra is String ? state.extra as String : 'Brand';
+          return LocaleRebuilder(builder: (_) => AiPlanLoadingScreen(brandName: brandName));
+        },
+      ),
+      GoRoute(
+        path: '/video-ideas-form',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const VideoIdeasFormScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/video-ideas-results',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          VideoRequest? request;
+          bool useRemoteGeneration = true;
+
+          if (state.extra is VideoRequest) {
+            request = state.extra as VideoRequest;
+          } else if (state.extra is Map) {
+            final extra = state.extra as Map;
+            request = extra['request'] as VideoRequest?;
+            useRemoteGeneration = extra['useRemoteGeneration'] as bool? ?? true;
+          }
+
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => VideoIdeasResultsScreen(
+                request: request,
+                useRemoteGeneration: useRemoteGeneration,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/business-ideas-form',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const BusinessIdeasFormScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/business-idea-detail',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const BusinessIdeaDetailScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/product-ideas-form',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ProductIdeasFormScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/product-idea-result',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ProductIdeaResultScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/slogans-form',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const SlogansFormScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/slogans-results',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const SlogansResultsScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/saved-ideas',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const SavedIdeasLibraryScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/trends',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const TrendsAnalysisScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/criteria',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final String? type = state.extra is String ? state.extra as String : null;
+          return PageShell(
+            child: LocaleRebuilder(builder: (_) => CriteriaScreen(type: type)),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/results',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ResultsScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/idea/:id',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final id = state.pathParameters['id'] ?? '';
+          return PageShell(
+            child: LocaleRebuilder(builder: (_) => IdeaDetailScreen(id: id)),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/credits-shop',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const CreditsShopScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/payment',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final raw = state.extra;
+          final extra = raw is Map ? raw : null;
+          String? getStr(dynamic m, String k) {
+            if (m == null) return null;
+            final v = m[k];
+            return v is String ? v : v?.toString();
+          }
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => PaymentScreen(
+                packName: getStr(extra, 'name'),
+                credits: getStr(extra, 'credits'),
+                price: getStr(extra, 'price'),
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/project-board',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final plan = state.extra as Plan;
+          return ProjectBoardScreen(plan: plan);
+        },
+      ),
+      GoRoute(
+        path: '/brand-workspace',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final brand = state.extra as Brand?;
+          if (brand == null) return const SizedBox.shrink();
+          return BrandWorkspaceScreen(brand: brand);
+        },
+      ),
+      GoRoute(
+        path: '/brand-form',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final brand = state.extra is Brand ? state.extra as Brand : null;
+          return CreateEditBrandScreen(brand: brand);
+        },
+      ),
+      GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => NotificationsScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/plan-detail',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final plan = state.extra as Plan;
+          return CampaignWorkspaceScreen(plan: plan);
+        },
+      ),
+      GoRoute(
+        path: '/edit-profile',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(
+            builder: (_) => EditProfileScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/camera-coach',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const CameraCoachScreen(),
+      ),
+      GoRoute(
+        path: '/subscription-upgrade',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(
+            builder: (_) => const SubscriptionScreen(),
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/agent-full-access',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const AgentFullAccessScreen(),
+      ),
+      GoRoute(
+        path: '/chat/:receiverId',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final receiverId = state.pathParameters['receiverId']!;
+          final receiverName = state.extra is String ? state.extra as String : 'Utilisateur';
+          return LocaleRebuilder(
+            builder: (_) => ChatScreen(
+              receiverId: receiverId,
+              receiverName: receiverName,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/image-generator',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ImageGeneratorScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/image-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const ImageHistoryScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/creative-ai-test',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const CreativeAITestScreen(),
+      ),
+      GoRoute(
+        path: '/video-generator',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const VideoGeneratorScreen()),
+        ),
+      ),
+      GoRoute(
+        path: '/video-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const VideoHistoryScreen()),
+        ),
+      ),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainNavigationShell(navigationShell: navigationShell);
+        },
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/home',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const HomeScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/brands-list',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const BrandsListScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/calendar',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const CalendarScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/projects',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const ExecutionHubScreen(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'flow',
+                    builder: (context, state) => const PlanProjectFlow(),
+                  ),
+                  GoRoute(
+                    path: 'ai-campaign-roadmap',
+                    builder: (context, state) => const AICampaignRoadmapScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/insights',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const InsightsScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/generators',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const GeneratorsScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/contacts',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const ContactsScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: LocaleRebuilder(builder: (_) => const ProfileScreen()),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/history',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: LocaleRebuilder(builder: (_) => const HistoryScreen()),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/community',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: const CommunityHubScreen(),
+                ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/favorites',
+                pageBuilder: (context, state) => NoTransitionPage(
+                  key: state.pageKey,
+                  child: LocaleRebuilder(builder: (_) => const FavoritesScreen()),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: '/user/:userId',
+        name: 'user-profile',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return UserProfileScreen(userId: userId);
+        },
+      ),
+    ],
+  );
+}
+
+class MainNavigationShell extends StatelessWidget {
+  const MainNavigationShell({super.key, required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
+
+  @override
+  Widget build(BuildContext context) {
+    context.watch<LocaleViewModel>();
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
+    if (isMobile) {
+      return Scaffold(
+        drawer: const SidebarNavigation(),
+        body: navigationShell,
+        bottomNavigationBar: BottomNavV2(
+          currentIndex: navigationShell.currentIndex,
+          onTap: (index) => navigationShell.goBranch(index),
+        ),
+      );
+    }
+
+    return Scaffold(
+      body: Row(
+        children: [
+          const SidebarNavigation(),
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          Expanded(child: navigationShell),
+        ],
+      ),
+    );
+  }
+}
+
