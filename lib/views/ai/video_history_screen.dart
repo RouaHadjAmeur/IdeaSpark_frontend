@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../services/video_generator_service.dart';
 import '../../services/video_download_service.dart';
 import '../../models/video.dart';
-import 'video_editor_screen.dart';
 import 'advanced_share_screen.dart';
 
 class VideoHistoryScreen extends StatefulWidget {
@@ -247,19 +246,9 @@ class _VideoHistoryScreenState extends State<VideoHistoryScreen> {
                                   children: [
                                     Expanded(
                                       child: OutlinedButton.icon(
-                                        onPressed: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => VideoEditorScreen(
-                                                videoPath: video.videoUrl, // Using video.videoUrl instead of video.url
-                                                videoId: video.id,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                        icon: const Icon(Icons.edit, size: 16),
-                                        label: const Text('Éditer'),
+                                        onPressed: null, // Désactivé temporairement
+                                        icon: const Icon(Icons.edit_off, size: 16),
+                                        label: const Text('Éditer (bientôt)'),
                                         style: OutlinedButton.styleFrom(
                                           padding: const EdgeInsets.symmetric(vertical: 8),
                                         ),

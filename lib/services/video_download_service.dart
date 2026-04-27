@@ -79,29 +79,43 @@ class VideoDownloadService {
   /// Share video using native share dialog
   static Future<void> shareVideo(String videoUrl, {String? caption}) async {
     try {
-      print('📤 [VideoShare] Downloading video...');
+      print('📤 [VideoShare] Starting share process...');
       
-      final file = await downloadVideo(videoUrl);
-      
-      if (file == null) {
-        throw Exception('Failed to download video');
-      }
-      
-      print('📤 [VideoShare] Opening share dialog...');
-      
+      // Essayer d'abord de partager directement l'URL
       if (caption != null && caption.isNotEmpty) {
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: caption,
-        );
+        await Share.share('$caption\n\n$videoUrl');
       } else {
-        await Share.shareXFiles([XFile(file.path)]);
+        await Share.share(videoUrl);
       }
       
-      print('✅ [VideoShare] Share dialog opened');
+      print('✅ [VideoShare] URL shared successfully');
     } catch (e) {
-      print('❌ [VideoShare] Error: $e');
-      rethrow;
+      print('❌ [VideoShare] URL share failed, trying file download...');
+      
+      try {
+        // Si le partage d'URL échoue, télécharger et partager le fichier
+        final file = await downloadVideo(videoUrl);
+        
+        if (file == null) {
+          throw Exception('Failed to download video');
+        }
+        
+        print('📤 [VideoShare] Opening share dialog with file...');
+        
+        if (caption != null && caption.isNotEmpty) {
+          await Share.shareXFiles(
+            [XFile(file.path)],
+            text: caption,
+          );
+        } else {
+          await Share.shareXFiles([XFile(file.path)]);
+        }
+        
+        print('✅ [VideoShare] File shared successfully');
+      } catch (fileError) {
+        print('❌ [VideoShare] File share also failed: $fileError');
+        rethrow;
+      }
     }
   }
 
@@ -371,7 +385,26 @@ class VideoDownloadService {
                 subtitle: Text('Menu natif', style: TextStyle(fontSize: 12)),
                 onTap: () async {
                   Navigator.pop(context);
-                  await shareVideo(videoUrl, caption: caption);
+                  try {
+                    await shareVideo(videoUrl, caption: caption);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('✅ Partage ouvert'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('❌ Erreur partage: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
                 },
               ),
               

@@ -1,5 +1,5 @@
 import '../models/video_generator_models.dart';
-import '../services/video_generator_service.dart';
+import '../services/video_idea_generator_service.dart';
 
 /// Abstract repository for video idea generation
 /// Defines the contract for generating video ideas
