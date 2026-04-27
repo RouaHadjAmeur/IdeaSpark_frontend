@@ -469,64 +469,101 @@ class _DashboardContentState extends State<DashboardContent>
   Widget _buildAgentAccessSection(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () => context.push('/agent-full-access'),
+      onTap: () => context.push('/campaign-manager'), // Use the Campaign Manager Hub
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              colorScheme.primary,
-              colorScheme.secondary,
-            ],
+          gradient: const LinearGradient(
+            colors: [Color(0xFF7C3AED), Color(0xFFA855F7)], // var(--grad-p) equivalent
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.primary.withOpacity(0.3),
+              color: const Color(0xFF7C3AED).withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: const Text('🤖', style: TextStyle(fontSize: 24)),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Agent Full Access',
-                    style: GoogleFonts.syne(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
+            Row(
+              children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.5, end: 1.0),
+                  duration: const Duration(seconds: 1),
+                  curve: Curves.easeInOut,
+                  builder: (context, val, child) {
+                    return Container(
+                      width: 8, height: 8,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4ADE80),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF4ADE80).withOpacity(val * 0.5),
+                            blurRadius: 10 * val,
+                            spreadRadius: 2 * val,
+                          )
+                        ],
+                      ),
+                    );
+                  },
+                  onEnd: () {
+                    // Loop animation by rebuilding (simplified pulse)
+                  },
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Campaign Manager',
+                  style: GoogleFonts.syne(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Orchestrez toute votre stratégie IA en un seul prompt.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Agent IA en surveillance continue. 2 alertes détectées.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withOpacity(0.8),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 18),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: _buildVmMetric('94%', 'DNA Score')),
+                const SizedBox(width: 10),
+                Expanded(child: _buildVmMetric('2.8x', 'ROI Actuel')),
+                const SizedBox(width: 10),
+                Expanded(child: _buildVmMetric('+14%', 'Delta 24h')),
+              ],
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildVmMetric(String val, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Text(val, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white, fontFamily: 'Space Mono')),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: Colors.white.withOpacity(0.7))),
+        ],
       ),
     );
   }
@@ -900,7 +937,7 @@ class _DashboardContentState extends State<DashboardContent>
 
     if (campaign == null) {
       return GestureDetector(
-        onTap: () => context.push('/projects-flow'),
+        onTap: () => context.push('/projects/flow'),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(

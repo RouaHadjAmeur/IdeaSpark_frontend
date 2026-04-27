@@ -32,7 +32,7 @@ class _CommunityFeedScreenState extends State<CommunityFeedScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Community Feed', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Community Feed', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
         actions: [
           IconButton(
             icon: const Icon(Icons.person_add_outlined),

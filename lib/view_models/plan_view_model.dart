@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/plan.dart';
 import '../models/brand.dart';
 import '../services/plan_service.dart';
@@ -15,6 +16,7 @@ class PlanViewModel extends ChangeNotifier {
   bool _isGenerating = false;
   bool _isSaving = false;
   String? _error;
+  List<String> _hiddenPlanIds = [];
 
   // ─── AI Dashboard Alerts ──────────────────────────────────────────────────
   final _alertService = DashboardAlertService();
@@ -24,9 +26,19 @@ class PlanViewModel extends ChangeNotifier {
 
   // ─── Getters ──────────────────────────────────────────────────────────────
 
-  List<Plan> get plans => _plans;
+  List<Plan> get plans => _plans.where((p) => !_hiddenPlanIds.contains(p.id)).toList();
   Plan? get currentPlan => _currentPlan;
   List<CalendarEntry> get allCalendarEntries => _allCalendarEntries;
+
+  Plan? getDraftPlanForBrand(String brandId) {
+    try {
+      return _plans.firstWhere(
+        (p) => p.brandId == brandId && p.status == PlanStatus.draft,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   bool get isLoading => _isLoading;
   bool get isGenerating => _isGenerating;
@@ -48,6 +60,7 @@ class PlanViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       _plans = await PlanService.getPlans(brandId: brandId);
+      await _loadHiddenPlans();
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -81,6 +94,24 @@ class PlanViewModel extends ChangeNotifier {
       return null;
     } finally {
       _isSaving = false;
+      _isGenerating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Plan?> generatePlanStructure(String planId) async {
+    _isGenerating = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final generated = await PlanService.generatePlanStructure(planId);
+      _currentPlan = generated;
+      _updatePlanInList(generated);
+      return generated;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      return null;
+    } finally {
       _isGenerating = false;
       notifyListeners();
     }
@@ -137,6 +168,9 @@ class PlanViewModel extends ChangeNotifier {
   }
 
   Future<void> deletePlan(String planId) async {
+    _isSaving = true;
+    _error = null;
+    notifyListeners();
     try {
       await PlanService.deletePlan(planId);
       _plans.removeWhere((p) => p.id == planId);
@@ -144,8 +178,32 @@ class PlanViewModel extends ChangeNotifier {
       if (_currentPlan?.id == planId) _currentPlan = null;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isSaving = false;
+      notifyListeners();
     }
-    notifyListeners();
+  }
+
+  Future<void> hidePlan(String planId) async {
+    if (!_hiddenPlanIds.contains(planId)) {
+      _hiddenPlanIds.add(planId);
+      await _saveHiddenPlans();
+      notifyListeners();
+    }
+  }
+
+  Future<void> _loadHiddenPlans() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _hiddenPlanIds = prefs.getStringList('hidden_plan_ids') ?? [];
+    } catch (_) {}
+  }
+
+  Future<void> _saveHiddenPlans() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList('hidden_plan_ids', _hiddenPlanIds);
+    } catch (_) {}
   }
 
   Future<Plan?> regeneratePlan(String planId) async {
@@ -328,6 +386,36 @@ class PlanViewModel extends ChangeNotifier {
       _error = e.toString().replaceFirst('Exception: ', '');
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> generateHook(String planId, String blockId) async {
+    _isGenerating = true;
+    notifyListeners();
+    try {
+      final updated = await PlanService.generateHook(planId, blockId);
+      _updatePlanInList(updated);
+      if (_currentPlan?.id == planId) _currentPlan = updated;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isGenerating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> generateCaption(String planId, String blockId) async {
+    _isGenerating = true;
+    notifyListeners();
+    try {
+      final updated = await PlanService.generateCaption(planId, blockId);
+      _updatePlanInList(updated);
+      if (_currentPlan?.id == planId) _currentPlan = updated;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isGenerating = false;
       notifyListeners();
     }
   }

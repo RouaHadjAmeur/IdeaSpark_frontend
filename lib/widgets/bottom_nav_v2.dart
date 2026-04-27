@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../core/app_localizations.dart';
-import '../view_models/auth_view_model.dart';
 
 class BottomNavV2 extends StatelessWidget {
   final int currentIndex;
@@ -18,19 +15,14 @@ class BottomNavV2 extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final authVm = context.watch<AuthViewModel>();
     
-    // Change label and icon for non-premium users
-    final brandsLabel = authVm.isPremium ? context.tr('nav_brands') : 'Challenges';
-    final brandsIcon = authVm.isPremium ? Icons.label_important_outline_rounded : Icons.lightbulb_outline_rounded;
-    
-    // Unified tabs for all users
+    // 5 main tabs: Home, Brands, Calendar, Projects, Contacts
     final List<Map<String, dynamic>> tabs = [
-      {'icon': Icons.home_rounded, 'label': context.tr('nav_dashboard'), 'index': 0},
-      {'icon': brandsIcon, 'label': brandsLabel, 'index': 1},
-      {'icon': Icons.calendar_month_rounded, 'label': context.tr('nav_calendar'), 'index': 2},
-      {'icon': Icons.rocket_launch_rounded, 'label': 'Projects', 'index': 3},
-      {'icon': Icons.contacts_rounded, 'label': context.tr('nav_contacts'), 'index': 4},
+      {'icon': Icons.home_outlined, 'label': 'Accueil', 'index': 0},
+      {'icon': Icons.bookmark_outline, 'label': 'Marques', 'index': 1},
+      {'icon': Icons.insights_outlined, 'label': 'Stratégies', 'index': 2},
+      {'icon': Icons.rocket_launch_outlined, 'label': 'Projects', 'index': 3},
+      {'icon': Icons.contacts_outlined, 'label': 'Contacts', 'index': 6},
     ];
 
     final activeColor = colorScheme.primary;
@@ -38,58 +30,23 @@ class BottomNavV2 extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: colorScheme.surface,
-        border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+        border: Border(top: BorderSide(color: colorScheme.outlineVariant, width: 0.5)),
       ),
       child: SafeArea(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _NavItem(
-                  icon: Icons.home_rounded,
-                  label: context.tr('nav_dashboard'),
-                  isSelected: currentIndex == 0,
-                  onTap: () => onTap(0),
-                  colorScheme: colorScheme,
-                  activeColor: activeColor,
-                ),
-                _NavItem(
-                  icon: Icons.label_important_outline_rounded,
-                  label: context.tr('nav_brands'),
-                  isSelected: currentIndex == 1,
-                  onTap: () => onTap(1),
-                  colorScheme: colorScheme,
-                  activeColor: activeColor,
-                ),
-                _NavItem(
-                  icon: Icons.calendar_month_rounded,
-                  label: context.tr('nav_calendar'),
-                  isSelected: currentIndex == 2,
-                  onTap: () => onTap(2),
-                  colorScheme: colorScheme,
-                  activeColor: activeColor,
-                ),
-                _NavItem(
-                  icon: Icons.rocket_launch_rounded,
-                  label: 'Projects',
-                  isSelected: currentIndex == 3,
-                  onTap: () => onTap(3),
-                  colorScheme: colorScheme,
-                  activeColor: activeColor,
-                ),
-                _NavItem(
-                  icon: Icons.contacts_rounded,
-                  label: context.tr('nav_contacts'),
-                  isSelected: currentIndex == 4,
-                  onTap: () => onTap(4),
-                  colorScheme: colorScheme,
-                  activeColor: activeColor,
-                ),
-              ],
-            ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: tabs.map(
+              (tab) => _NavItem(
+                icon: tab['icon'] as IconData,
+                label: tab['label'] as String,
+                isSelected: currentIndex == tab['index'],
+                onTap: () => onTap(tab['index'] as int),
+                colorScheme: colorScheme,
+                activeColor: activeColor,
+              ),
+            ).toList(),
           ),
         ),
       ),
@@ -120,23 +77,15 @@ class _NavItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 22,
+              size: 24,
               color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
-              shadows: isSelected
-                  ? [
-                      Shadow(
-                        color: activeColor.withOpacity(0.5),
-                        blurRadius: 6,
-                      )
-                    ]
-                  : null,
             ),
             const SizedBox(height: 4),
             Text(
@@ -144,7 +93,7 @@ class _NavItem extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.syne(
-                fontSize: 8,
+                fontSize: 10,
                 color: isSelected ? activeColor : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),

@@ -253,7 +253,7 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => context.push('/projects-flow'),
+            onPressed: () => context.push('/projects/flow'),
             icon: const Icon(Icons.add_rounded),
             label: const Text('New Plan'),
           ),
@@ -290,7 +290,7 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
                 ),
                 const SizedBox(height: 24),
                 FilledButton.icon(
-                  onPressed: () => context.push('/projects-flow'),
+                  onPressed: () => context.push('/projects/flow'),
                   icon: const Icon(Icons.add_rounded),
                   label: const Text('New Plan'),
                   style: FilledButton.styleFrom(
@@ -350,7 +350,33 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
         ],
       ),
     );
-    if (ok == true) await vm.deletePlan(plan.id!);
+    if (ok == true) {
+      await vm.deletePlan(plan.id!);
+      if (mounted) {
+        if (vm.error != null) {
+          String msg = 'Erreur: ${vm.error}';
+          if (vm.error!.contains('403')) {
+            msg = "Accès refusé : Ce projet appartient à un autre utilisateur ou une session précédente.";
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(msg), 
+              backgroundColor: Colors.redAccent,
+              duration: const Duration(seconds: 6),
+              action: vm.error!.contains('403') ? SnackBarAction(
+                label: 'MASQUER',
+                textColor: Colors.white,
+                onPressed: () => vm.hidePlan(plan.id!),
+              ) : null,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Projet supprimé avec succès')),
+          );
+        }
+      }
+    }
   }
 }
 
@@ -435,15 +461,26 @@ class _ProjectCard extends StatelessWidget {
                           style: const TextStyle(fontSize: 18)),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          plan.name,
-                          style: TextStyle(
-                              fontFamily: 'Syne',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: cs.onSurface),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                plan.name,
+                                style: TextStyle(
+                                    fontFamily: 'Syne',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: cs.onSurface),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (plan.userId != context.read<AuthViewModel>().userId)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(Icons.lock_outline_rounded, size: 12, color: Colors.orangeAccent),
+                              ),
+                          ],
                         ),
                       ),
                       Container(
@@ -571,8 +608,13 @@ class _ProjectCard extends StatelessWidget {
                               color: cs.error.withValues(alpha: 0.08),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(Icons.delete_outline_rounded,
-                                size: 17, color: cs.error),
+                            child: isSaving 
+                              ? const Padding(
+                                  padding: EdgeInsets.all(10),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent),
+                                )
+                              : Icon(Icons.delete_outline_rounded,
+                                  size: 17, color: cs.error),
                           ),
                         ),
                       ],

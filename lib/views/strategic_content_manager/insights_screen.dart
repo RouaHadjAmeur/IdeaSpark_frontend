@@ -698,23 +698,30 @@ class _InsightsScreenState extends State<InsightsScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.tr('insights_title'),
-              style: GoogleFonts.syne(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface),
-            ),
-            Text(
-              context.tr('insights_subtitle'),
-              style:
-                  TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
-            ),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '◎ Insights & Analytics',
+                style: GoogleFonts.syne(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    color: cs.onSurface),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                'Vue globale · Plateformes · ✦ IA',
+                style:
+                    TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 12),
         GestureDetector(
           onTap: () => Scaffold.of(context).openDrawer(),
           child: Container(

@@ -12,7 +12,6 @@ import '../../models/google_calendar_tokens.dart';
 import '../../services/deep_link_service.dart';
 import '../../views/settings/google_calendar_token_screen.dart';
 import '../../services/notification_service.dart';
-import '../../services/in_app_notification_service.dart';
 import '../notifications/notifications_screen.dart';
 import '../content/post_preview_screen.dart';
 import '../content/caption_generator_screen.dart';
@@ -140,42 +139,70 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
             _plan.phases.fold<int>(0, (s, p) => s + p.contentBlocks.length);
         final brandColor = _brandColor(_plan.brandId);
 
-        return Scaffold(
-          backgroundColor: cs.surface,
-          body: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(cs, vm),
-                Expanded(
-                  child: _isLoadingDetail
-                      ? const Center(child: CircularProgressIndicator())
-                      : ListView(
-                          padding:
-                              const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                          children: [
-                            const SizedBox(height: 8),
-                            _buildInfoBanner(cs, brand, brandColor),
-                            const SizedBox(height: 16),
-                            _buildStats(cs, totalBlocks),
-                            const SizedBox(height: 20),
-                            _buildActions(cs, vm),
-                            if (_plan.phases.isNotEmpty) ...[
-                              const SizedBox(height: 28),
-                              _sectionLabel(context.tr('detail_phases_label'), cs),
-                              const SizedBox(height: 10),
-                              ..._plan.phases
-                                  .asMap()
-                                  .entries
-                                  .map((e) => _buildPhaseCard(
-                                      cs, e.key, e.value)),
-                            ] else if (!_isLoadingDetail) ...[
-                              const SizedBox(height: 24),
-                              _buildNoPhasesHint(cs),
+        return DefaultTabController(
+          length: 4,
+          child: Scaffold(
+            backgroundColor: cs.surface,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(cs, vm),
+                  Expanded(
+                    child: _isLoadingDetail
+                        ? const Center(child: CircularProgressIndicator())
+                        : NestedScrollView(
+                            headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 8),
+                                      _buildInfoBanner(cs, brand, brandColor),
+                                      const SizedBox(height: 16),
+                                      _buildStats(cs, totalBlocks),
+                                      const SizedBox(height: 20),
+                                      _buildActions(cs, vm),
+                                      const SizedBox(height: 12),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              SliverPersistentHeader(
+                                pinned: true,
+                                delegate: _SliverAppBarDelegate(
+                                  TabBar(
+                                    isScrollable: true,
+                                    tabAlignment: TabAlignment.start,
+                                    dividerColor: Colors.transparent,
+                                    indicatorColor: cs.primary,
+                                    indicatorWeight: 3,
+                                    labelColor: cs.primary,
+                                    unselectedLabelColor: cs.onSurfaceVariant,
+                                    labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontFamily: 'Syne'),
+                                    tabs: const [
+                                      Tab(text: 'Phases'),
+                                      Tab(text: 'Contenu'),
+                                      Tab(text: 'Budget'),
+                                      Tab(text: '✦ DNA IA'),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
-                          ],
-                        ),
-                ),
-              ],
+                            body: TabBarView(
+                              children: [
+                                _buildPhasesTab(cs),
+                                _buildContentTab(cs),
+                                _buildBudgetTab(cs),
+                                _buildDnaTab(cs),
+                              ],
+                            ),
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -1843,5 +1870,191 @@ Créé avec IdeaSpark ✨
       ),
     );
   }
+
+  Widget _buildPhasesTab(ColorScheme cs) {
+    if (_plan.phases.isEmpty) return _buildNoPhasesHint(cs);
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SizedBox(height: 8),
+        ..._plan.phases.asMap().entries.map((e) => _buildPhaseCard(cs, e.key, e.value)),
+        const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  Widget _buildContentTab(ColorScheme cs) {
+    if (_plan.phases.isEmpty) return _buildNoPhasesHint(cs);
+    final allBlocks = _plan.phases.expand((p) => p.contentBlocks).toList();
+    if (allBlocks.isEmpty) {
+      return const Center(child: Text('Aucun contenu planifié.'));
+    }
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        ...allBlocks.map((b) => _buildContentBlock(cs, b)),
+        const SizedBox(height: 100),
+      ],
+    );
+  }
+
+  Widget _buildBudgetTab(ColorScheme cs) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Row(
+          children: [
+            Expanded(child: _budgetCard(cs, '940€', 'Dépensé', const Color(0xFF7C3AED))),
+            const SizedBox(width: 10),
+            Expanded(child: _budgetCard(cs, '1560€', 'Restant', const Color(0xFF10B981))),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Par plateforme', style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 16),
+              _budgetItem(cs, 'TikTok', '40% du budget', '370€', 'ROAS 3.8x'),
+              const Divider(),
+              _budgetItem(cs, 'Instagram', '30% du budget', '300€', 'ROAS 4.2x'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _budgetCard(ColorScheme cs, String val, String lbl, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Text(val, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color, fontFamily: 'Space Mono')),
+          const SizedBox(height: 4),
+          Text(lbl, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+        ],
+      ),
+    );
+  }
+
+  Widget _budgetItem(ColorScheme cs, String title, String sub, String val, String roas) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          Text(sub, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+        ]),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text(val, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+          Text(roas, style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w700)),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildDnaTab(ColorScheme cs) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFF7C3AED), Color(0xFFA855F7)]),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Column(
+            children: [
+              Text('Score de Cohérence Globale', style: TextStyle(color: Colors.white70, fontSize: 12)),
+              SizedBox(height: 8),
+              Text('94%', style: TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.w800, fontFamily: 'Syne')),
+              Text('EXCELLENT', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+          ),
+          child: Column(
+            children: [
+              _dnaRow(cs, 'Engagement prévu', 84, const Color(0xFF7C3AED)),
+              const SizedBox(height: 16),
+              _dnaRow(cs, 'Cohérence contenu', 91, const Color(0xFF10B981)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.picture_as_pdf_rounded),
+          label: const Text('Exporter le Plan PDF'),
+          style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+        ),
+      ],
+    );
+  }
+
+  Widget _dnaRow(ColorScheme cs, String label, int pct, Color color) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            Text('$pct%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: pct / 100,
+          backgroundColor: cs.surfaceContainerHigh,
+          color: color,
+          minHeight: 6,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ],
+    );
+  }
 }
 
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate(this._tabBar);
+
+  final TabBar _tabBar;
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
+  }
+}

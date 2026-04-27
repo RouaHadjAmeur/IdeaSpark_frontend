@@ -9,6 +9,7 @@ import '../../view_models/auth_view_model.dart';
 import '../../view_models/challenge_view_model.dart';
 import '../collaboration/challenges_screen.dart';
 import '../collaboration/brand_team_sheet.dart';
+import '../../view_models/plan_view_model.dart';
 
 class BrandsListScreen extends StatefulWidget {
   const BrandsListScreen({super.key});
@@ -52,6 +53,7 @@ class _BrandsListScreenState extends State<BrandsListScreen> with SingleTickerPr
     _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BrandViewModel>().loadBrands();
+      context.read<PlanViewModel>().loadPlans();
     });
   }
 
@@ -112,7 +114,7 @@ class _BrandsListScreenState extends State<BrandsListScreen> with SingleTickerPr
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: colorScheme.outlineVariant.withOpacity(0.3),
+                color: colorScheme.outlineVariant.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -123,12 +125,12 @@ class _BrandsListScreenState extends State<BrandsListScreen> with SingleTickerPr
             unselectedLabelColor: colorScheme.onSurfaceVariant,
             indicatorColor: colorScheme.primary,
             labelStyle: GoogleFonts.syne(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
             tabs: const [
-              Tab(text: 'MY BRANDS'),
-              Tab(text: 'LAUNCH CHALLENGE'),
+              Tab(text: 'My Brands'),
+              Tab(text: 'Launch Challenge'),
             ],
           ),
         ),
@@ -150,12 +152,11 @@ class _BrandsListScreenState extends State<BrandsListScreen> with SingleTickerPr
     return Row(
       children: [
         Text(
-          'BRANDS & CHALLENGES',
+          'Marques',
           style: GoogleFonts.syne(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
             color: colorScheme.onSurface,
-            letterSpacing: 1.2,
           ),
         ),
       ],
@@ -166,7 +167,12 @@ class _BrandsListScreenState extends State<BrandsListScreen> with SingleTickerPr
     return Consumer<BrandViewModel>(
       builder: (context, vm, _) {
         return RefreshIndicator(
-          onRefresh: vm.loadBrands,
+          onRefresh: () async {
+            await vm.loadBrands();
+            if (context.mounted) {
+              await context.read<PlanViewModel>().loadPlans();
+            }
+          },
           child: CustomScrollView(
             slivers: [
               if (vm.isLoading)
@@ -797,133 +803,165 @@ class _BrandCard extends StatelessWidget {
 
   const _BrandCard({required this.brand, required this.onDelete});
 
-  static const _accentColors = [
-    Color(0xFFFF6B6B),
-    Color(0xFF6BCB77),
-    Color(0xFF4D96FF),
-    Color(0xFFFFD93D),
-    Color(0xFFC77DFF),
-  ];
-
-  Color get _accent {
-    final idx = brand.name.codeUnits.fold(0, (a, b) => a + b) % _accentColors.length;
-    return _accentColors[idx];
-  }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: () => context.push('/brand-workspace', extra: brand),
-      child: Dismissible(
-        key: Key(brand.id ?? brand.name),
-        direction: DismissDirection.endToStart,
-        confirmDismiss: (_) async {
-          onDelete();
-          return false; // The confirm dialog handles actual deletion
-        },
-        background: Container(
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          decoration: BoxDecoration(
-            color: colorScheme.errorContainer,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(Icons.delete_outline_rounded, color: colorScheme.error),
+    return Dismissible(
+      key: Key(brand.id ?? brand.name),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        onDelete();
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(16),
         ),
+        child: Icon(Icons.delete_outline_rounded, color: colorScheme.error),
+      ),
+      child: GestureDetector(
+        onTap: () => context.push('/brand-workspace', extra: brand),
         child: Container(
-          clipBehavior: Clip.antiAlias,
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest,
-            border: Border.all(color: colorScheme.outlineVariant),
+            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5), // var(--card) equivalent
+            border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Positioned(left: 0, top: 0, bottom: 0, width: 4, child: Container(color: _accent)),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      brand.name.isNotEmpty ? brand.name[0].toUpperCase() : 'B',
+                      style: const TextStyle(
+                        fontFamily: 'Syne',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF7C3AED), // var(--p)
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                brand.name,
-                                style: TextStyle(fontFamily: 'Syne', fontSize: 18, fontWeight: FontWeight.w700, color: colorScheme.onSurface),
-                              ),
-                              if (brand.description != null && brand.description!.isNotEmpty)
-                                Text(
-                                  brand.description!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
-                                ),
-                            ],
+                        Text(
+                          brand.name,
+                          style: TextStyle(
+                            fontFamily: 'Syne',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurface,
                           ),
                         ),
-                        _ToneChip(tone: brand.tone),
-                        const SizedBox(width: 4),
-                        if (context.read<AuthViewModel>().isBrandOwner)
-                          PopupMenuButton<String>(
-                            icon: Icon(Icons.more_vert_rounded, color: colorScheme.onSurfaceVariant, size: 18),
-                            onSelected: (v) {
-                              if (v == 'edit') context.push('/brand-form', extra: brand);
-                              if (v == 'delete') onDelete();
-                              if (v == 'team') BrandTeamSheet.show(context, brand.id!, brand.name);
-                            },
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(
-                                value: 'team',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.group_outlined, size: 16),
-                                    SizedBox(width: 8),
-                                    Text('Manage Team'),
-                                  ],
-                                ),
-                              ),
-                              const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                              const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                            ],
-                          ),
+                        const SizedBox(height: 2),
+                        Text(
+                          brand.description?.isNotEmpty == true ? brand.description! : 'No description',
+                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
-                    if (brand.platforms.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Wrap(
-                          spacing: 6,
-                          runSpacing: 6,
-                          children: brand.platforms.map((p) => _PlatformChip(platform: p, colorScheme: colorScheme)).toList(),
+                  ),
+                  if (context.read<AuthViewModel>().isBrandOwner)
+                    Container(
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: PopupMenuButton<String>(
+                        icon: const Icon(Icons.settings, color: Color(0xFF7C3AED), size: 14),
+                        padding: EdgeInsets.zero,
+                        onSelected: (v) {
+                          if (v == 'edit') context.push('/brand-form', extra: brand);
+                          if (v == 'delete') onDelete();
+                          if (v == 'team') BrandTeamSheet.show(context, brand.id!, brand.name);
+                        },
+                        itemBuilder: (_) => [
+                          const PopupMenuItem(
+                            value: 'team',
+                            child: Row(
+                              children: [
+                                Icon(Icons.group_outlined, size: 16),
+                                SizedBox(width: 8),
+                                Text('Manage Team'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                          const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '3 Campagnes Actives',
+                            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'DNA: 92%',
+                          style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      final planVm = context.read<PlanViewModel>();
+                      final draft = planVm.getDraftPlanForBrand(brand.id!);
+                      context.push('/campaign-planner', extra: {
+                        'brand': brand,
+                        'plan': draft,
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF6D4ED3), Color(0xFF8B6FE8)]),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Launch Campaign',
+                        style: GoogleFonts.syne(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
                         ),
                       ),
-                    ],
-                    if (brand.contentPillars.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      Divider(color: colorScheme.outlineVariant, height: 1),
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _BrandStat(label: 'Pillars', value: '${brand.contentPillars.length}', color: colorScheme.primary),
-                            _BrandStat(label: 'Platforms', value: '${brand.platforms.length}', color: colorScheme.primary),
-                            _BrandStat(label: 'Audience', value: brand.audience.ageRange.isNotEmpty ? brand.audience.ageRange : '—', color: colorScheme.primary),
-                            _BrandStat(label: 'Tone', value: _capitalize(brand.tone.name), color: colorScheme.primary),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -932,67 +970,5 @@ class _BrandCard extends StatelessWidget {
     );
   }
 
-  String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
-class _ToneChip extends StatelessWidget {
-  final BrandTone tone;
-  const _ToneChip({required this.tone});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        tone.name[0].toUpperCase() + tone.name.substring(1),
-        style: TextStyle(fontSize: 10, color: colorScheme.onPrimaryContainer, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-class _PlatformChip extends StatelessWidget {
-  final BrandPlatform platform;
-  final ColorScheme colorScheme;
-  const _PlatformChip({required this.platform, required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        platform.name[0].toUpperCase() + platform.name.substring(1),
-        style: TextStyle(fontSize: 10, color: colorScheme.onSurfaceVariant),
-      ),
-    );
-  }
-}
-
-class _BrandStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _BrandStat({required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        Text(value, style: TextStyle(fontFamily: 'Syne', fontSize: 14, fontWeight: FontWeight.w700, color: color)),
-        Text(label.toUpperCase(), style: TextStyle(fontSize: 9, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8))),
-      ],
-    );
-  }
-}

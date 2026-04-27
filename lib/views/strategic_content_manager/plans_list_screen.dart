@@ -148,7 +148,7 @@ class _PlansListScreenState extends State<PlansListScreen> {
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => context.push('/projects-flow'),
+            onPressed: () => context.push('/projects/flow'),
             icon: const Icon(Icons.add_rounded),
             label: Text(context.tr('plans_new_btn')),
           ),
@@ -164,15 +164,14 @@ class _PlansListScreenState extends State<PlansListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(context.tr('plans_title'),
+            const Text('◎ Plans',
                 style: TextStyle(
                     fontFamily: 'Syne',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: cs.onSurface)),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800)),
             if (vm.plans.isNotEmpty)
-              Text('${vm.plans.length} plan${vm.plans.length == 1 ? '' : 's'}',
-                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+              Text('${vm.plans.length} campagne${vm.plans.length == 1 ? '' : 's'} actives',
+                  style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
           ],
         ),
       );
@@ -262,7 +261,7 @@ class _PlansListScreenState extends State<PlansListScreen> {
                         TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
                 const SizedBox(height: 24),
                 FilledButton.icon(
-                  onPressed: () => context.push('/projects-flow'),
+                  onPressed: () => context.push('/projects/flow'),
                   icon: const Icon(Icons.add_rounded),
                   label: Text(context.tr('plans_create_btn')),
                   style: FilledButton.styleFrom(
@@ -420,185 +419,166 @@ class _PlanCard extends StatelessWidget {
   };
 
   Map<PlanStatus, String> _statusLabels(BuildContext context) => {
-    PlanStatus.draft: context.tr('plan_status_draft'),
-    PlanStatus.active: context.tr('plan_status_active'),
-    PlanStatus.completed: context.tr('plan_status_completed'),
-  };
+        PlanStatus.draft: context.tr('plan_status_draft'),
+        PlanStatus.active: context.tr('plan_status_active'),
+        PlanStatus.completed: context.tr('plan_status_completed'),
+      };
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final statusColor =
-        _statusColors[plan.status] ?? cs.onSurfaceVariant;
-    final totalBlocks =
-        plan.phases.fold<int>(0, (s, p) => s + p.contentBlocks.length);
+    final statusColor = _statusColors[plan.status] ?? cs.onSurfaceVariant;
+    final totalBlocks = plan.phases.fold<int>(0, (s, p) => s + p.contentBlocks.length);
+    final String title = plan.name.isNotEmpty ? plan.name : 'Sans titre';
+    final String dateRange = _formatDateRange(plan.startDate, plan.endDate);
+
+    // Mock progress calculation for UI consistency with prototype
+    double progress = plan.status == PlanStatus.completed ? 1.0 : (plan.status == PlanStatus.active ? 0.4 : 0.0);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: cs.surfaceContainerHighest,
-          border: Border.all(color: cs.outlineVariant),
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.5), // var(--card) equivalent
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)), // var(--bdr) equivalent
           borderRadius: BorderRadius.circular(16),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Brand color bar
-              Container(width: 4, color: brandColor),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                Padding(
+                  padding: const EdgeInsets.only(right: 60),
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'Syne',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
 
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Meta
+                Row(
                   children: [
-                    // Title row
-                    Row(
-                      children: [
-                        Text(
-                          plan.objective.emoji,
-                          style: const TextStyle(fontSize: 18),
+                    Text('📅 $dateRange', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                    const SizedBox(width: 12),
+                    Text('📱 ${plan.objective.label}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Stats Boxes
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: cs.surface, // var(--surf)
+                          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            plan.name,
-                            style: TextStyle(
-                              fontFamily: 'Syne',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: cs.onSurface,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        child: Column(
+                          children: [
+                            Text('${plan.phases.length}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Space Mono', color: cs.onSurface)),
+                            const SizedBox(height: 2),
+                            Text('Phases', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                          ],
                         ),
-                        // Status badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            _statusLabels(context)[plan.status] ?? '',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: statusColor,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 6),
-
-                    // Brand + objective
-                    Text(
-                      '${brand?.name ?? context.tr('detail_unknown_brand')} · ${plan.objective.label}',
-                      style: TextStyle(
-                          fontSize: 12, color: cs.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 4),
-
-                    // Dates
-                    Text(
-                      _formatDateRange(plan.startDate, plan.endDate),
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.8)),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // Stats row
-                    Row(
-                      children: [
-                        _miniStat(
-                            '${plan.phases.length}',
-                            plan.phases.length == 1 ? 'phase' : 'phases',
-                            cs),
-                        const SizedBox(width: 12),
-                        _miniStat(
-                            '$totalBlocks',
-                            totalBlocks == 1 ? 'post' : 'posts',
-                            cs),
-                        const SizedBox(width: 12),
-                        _miniStat('${plan.durationWeeks}w', 'duration', cs),
-                        const Spacer(),
-                        // Action buttons
-                        _actionIcon(
-                          icon: Icons.calendar_month_outlined,
-                          tooltip: context.tr('detail_add_cal_btn'),
-                          color: cs.primary,
-                          onTap: isSaving ? null : onAddToCalendar,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: cs.surface,
+                          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        const SizedBox(width: 4),
-                        _actionIcon(
-                          icon: Icons.delete_outline_rounded,
-                          tooltip: context.tr('delete'),
-                          color: cs.error,
-                          onTap: isSaving ? null : onDelete,
+                        child: Column(
+                          children: [
+                            Text('$totalBlocks', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'Space Mono', color: cs.onSurface)),
+                            const SizedBox(height: 2),
+                            Text('Posts', style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant)),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 16),
+
+                // Progress Bar
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 6,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: progress,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF7C3AED), // var(--p)
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Avancement : ${(progress * 100).toInt()}%',
+                        style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant.withValues(alpha: 0.8)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            // Badge (Positioned top-right)
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _statusLabels(context)[plan.status] ?? '',
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: statusColor),
                 ),
               ),
             ),
           ],
         ),
-        ), // IntrinsicHeight
       ),
     );
   }
 
-  Widget _miniStat(String value, String label, ColorScheme cs) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(value,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: cs.onSurface)),
-          const SizedBox(width: 3),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 11, color: cs.onSurfaceVariant)),
-        ],
-      );
 
-  Widget _actionIcon({
-    required IconData icon,
-    required String tooltip,
-    required Color color,
-    required VoidCallback? onTap,
-  }) =>
-      GestureDetector(
-        onTap: onTap,
-        child: Tooltip(
-          message: tooltip,
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: onTap == null
-                  ? Colors.grey.withValues(alpha: 0.08)
-                  : color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              size: 16,
-              color: onTap == null ? Colors.grey : color,
-            ),
-          ),
-        ),
-      );
 
   String _formatDateRange(DateTime start, DateTime end) {
     const months = [

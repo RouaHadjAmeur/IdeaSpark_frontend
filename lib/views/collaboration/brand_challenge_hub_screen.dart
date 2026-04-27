@@ -137,15 +137,6 @@ class _BrandChallengeHubScreenState extends State<BrandChallengeHubScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Gradient top bar
-        Container(
-          height: 3,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppColors.primary, AppColors.secondary, AppColors.accent],
-            ),
-          ),
-        ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(
@@ -154,30 +145,21 @@ class _BrandChallengeHubScreenState extends State<BrandChallengeHubScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-                      ),
-                      child: Text(
-                        'BRAND OWNER',
-                        style: GoogleFonts.spaceMono(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                          letterSpacing: 1.5,
-                        ),
+                    Text(
+                      '⊛ Communauté',
+                      style: GoogleFonts.syne(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? AppColors.textPrimary : const Color(0xFF1A1D29),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      user?.displayName ?? 'Brand Owner',
-                      style: GoogleFonts.syne(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: isDark ? AppColors.textPrimary : const Color(0xFF1A1D29),
+                      'Challenges · Collaborations · Communauté',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? AppColors.textSecondary : const Color(0xFF6B7280),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],

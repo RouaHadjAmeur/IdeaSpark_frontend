@@ -7,6 +7,8 @@ import '../../models/plan.dart';
 import '../../view_models/brand_view_model.dart';
 import '../../view_models/plan_view_model.dart';
 import '../loading/ai_plan_loading_screen.dart';
+import '../../services/social_service.dart';
+import '../../services/auth_service.dart';
 
 class PlanProjectFlow extends StatefulWidget {
   const PlanProjectFlow({super.key});
@@ -23,23 +25,33 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
   Brand? _selectedBrand;
 
   // Step 2
+  List<Product> _selectedProducts = [];
+
+  // Step 3
   final _nameCtrl = TextEditingController();
   DateTime _startDate = DateTime.now().add(const Duration(days: 1));
   int _durationWeeks = 4;
   int _postingFrequency = 3;
+  final List<String> _collaboratorEmails = [];
+  final _collabEmailCtrl = TextEditingController();
 
   // Step 3
   PlanObjective? _objective;
 
-  // Step 4 (result)
+  // Step 4 (Linking)
+  Plan? _linkedStrategy;
+  Phase? _linkedPhase;
+
+  // Step 5 (result)
   Plan? _generatedPlan;
   final Set<int> _expandedPhases = {};
 
   bool get _canContinue {
     switch (_step) {
       case 0: return _selectedBrand != null;
-      case 1: return _nameCtrl.text.trim().isNotEmpty;
-      case 2: return _objective != null;
+      case 1: return _selectedProducts.isNotEmpty;
+      case 2: return _nameCtrl.text.trim().isNotEmpty;
+      case 3: return _objective != null;
       default: return false;
     }
   }
@@ -61,7 +73,7 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
 
   void _nextStep() {
     if (!_canContinue) return;
-    if (_step < 2) {
+    if (_step < 4) {
       setState(() => _step++);
       _pageCtrl.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeInOut);
     } else {
@@ -70,7 +82,7 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
   }
 
   void _prevStep() {
-    if (_step > 0 && _step < 3) {
+    if (_step > 0 && _step < 5) {
       setState(() => _step--);
       _pageCtrl.previousPage(duration: const Duration(milliseconds: 280), curve: Curves.easeInOut);
     } else if (_step == 0) {
@@ -80,18 +92,24 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
 
   Future<void> _createPlan() async {
     final vm = context.read<PlanViewModel>();
-    setState(() => _step = 3);
+    setState(() => _step = 4);
     _pageCtrl.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeInOut);
 
     final mix = _selectedBrand?.contentMix;
     final data = {
       'name': _nameCtrl.text.trim(),
+      'brandId': _selectedBrand?.id,
+      'productNames': _selectedProducts.map((p) => p.name).toList(),
+      'productIds': _selectedProducts.map((p) => p.id).toList(),
       'objective': _objective!.apiValue,
       'startDate': _startDate.toIso8601String().split('T').first,
       'durationWeeks': _durationWeeks,
       'promotionIntensity': _selectedBrand?.promotionIntensity?.name ?? 'balanced',
       'postingFrequency': _postingFrequency,
       'platforms': _selectedBrand?.platforms.map((p) => p.name).toList() ?? [],
+      'collaboratorEmails': _collaboratorEmails,
+      'linkedStrategyId': _linkedStrategy?.id,
+      'linkedPhaseId': _linkedPhase?.id,
       'contentMixPreference': mix != null
           ? {
               'educational': mix.educational,
@@ -116,7 +134,7 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
     final working = context.watch<PlanViewModel>().isGenerating || context.watch<PlanViewModel>().isSaving;
     
     // If working, show full immersive loading view
-    if (working && _step == 3) {
+    if (working && _step == 4) {
       return Scaffold(
         backgroundColor: Colors.black,
         body: AiPlanLoadingView(brandName: _selectedBrand?.name ?? 'Brand'),
@@ -140,10 +158,12 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
                   _buildStep2(cs),
                   _buildStep3(cs),
                   _buildStep4(cs),
+                  _buildStep5(cs),
+                  _buildStepResult(cs),
                 ],
               ),
             ),
-            if (_step < 3) _buildNavBar(cs),
+            if (_step < 5) _buildNavBar(cs),
           ],
         ),
       ),
@@ -180,8 +200,8 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
             style: TextStyle(fontFamily: 'Syne', fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface),
           ),
           const Spacer(),
-          if (_step < 3)
-            Text('${_step + 1} / 3',
+          if (_step < 5)
+            Text('${_step + 1} / 5',
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600)),
         ],
       ),
@@ -194,7 +214,7 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
       child: Row(
-        children: List.generate(5, (i) {
+        children: List.generate(9, (i) {
           if (i.isOdd) {
             return Expanded(
               child: Container(height: 2, color: (i ~/ 2) < _step ? cs.primary : cs.outlineVariant),
@@ -280,7 +300,10 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
                       : '${_cap(brand.tone.name)} · ${brand.platforms.map((p) => _cap(p.name)).join(", ")}',
                   isSelected: _selectedBrand?.id == brand.id,
                   cs: cs,
-                  onTap: () => setState(() => _selectedBrand = brand),
+                  onTap: () => setState(() {
+                    _selectedBrand = brand;
+                    _selectedProducts = []; // Reset products when brand changes
+                  }),
                 )),
           ],
         );
@@ -288,9 +311,64 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
     );
   }
 
-  // ─── Step 2: Plan Details ─────────────────────────────────────────────────
+  // ─── Step 2: Choose Product ───────────────────────────────────────────────
 
   Widget _buildStep2(ColorScheme cs) {
+    if (_selectedBrand == null) return const SizedBox.shrink();
+    final products = _selectedBrand!.products;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+      children: [
+        Text('Choose Product',
+            style: TextStyle(fontFamily: 'Syne', fontSize: 22, fontWeight: FontWeight.w700, color: cs.onSurface)),
+        const SizedBox(height: 6),
+        Text('Every campaign is linked to a specific product.',
+            style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+        const SizedBox(height: 24),
+        if (products.isEmpty)
+          Center(
+            child: Column(
+              children: [
+                const Icon(Icons.shopping_bag_outlined, size: 48, color: Colors.grey),
+                const SizedBox(height: 12),
+                const Text('No products found for this brand.'),
+                const SizedBox(height: 12),
+                FilledButton(
+                  onPressed: () => context.push('/brand-form', extra: _selectedBrand),
+                  child: const Text('Add Products to Brand'),
+                ),
+              ],
+            ),
+          )
+        else
+          ...products.map((p) {
+            final isSelected = _selectedProducts.contains(p);
+            return _OptionCard(
+              imageUrl: p.imageUrl,
+              emoji: '📦',
+              name: p.name,
+              desc: 'Product in ${_selectedBrand!.name}',
+              isSelected: isSelected,
+              cs: cs,
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    _selectedProducts.remove(p);
+                  } else {
+                    _selectedProducts.add(p);
+                  }
+                });
+              },
+            );
+          }),
+      ],
+    );
+  }
+
+  // ─── Step 3: Plan Details ─────────────────────────────────────────────────
+
+  Widget _buildStep3(ColorScheme cs) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       children: [
@@ -308,6 +386,9 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
           style: TextStyle(color: cs.onSurface),
           onChanged: (_) => setState(() {}),
         ),
+        const SizedBox(height: 24),
+        _label('Collaborators', cs),
+        _buildCollaboratorsInput(cs),
         const SizedBox(height: 24),
         _label(context.tr('plan_start_date'), cs),
         GestureDetector(
@@ -393,9 +474,108 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
     );
   }
 
-  // ─── Step 3: Objective ────────────────────────────────────────────────────
+  Widget _buildCollaboratorsInput(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_collaboratorEmails.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _collaboratorEmails.map((email) {
+              return Chip(
+                label: Text(email, style: const TextStyle(fontSize: 11)),
+                onDeleted: () => setState(() => _collaboratorEmails.remove(email)),
+                deleteIconColor: cs.error,
+                backgroundColor: cs.surfaceContainerHighest,
+              );
+            }).toList(),
+          ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) async {
+                  if (textEditingValue.text.length < 2) {
+                    return const Iterable<String>.empty();
+                  }
+                  try {
+                    final users = await SocialService().searchUsers(textEditingValue.text);
+                    return users.map((u) => u.email).where((email) => !_collaboratorEmails.contains(email));
+                  } catch (_) {
+                    return const Iterable<String>.empty();
+                  }
+                },
+                onSelected: (String selection) {
+                  _collabEmailCtrl.text = selection;
+                  _addCollab();
+                },
+                fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                  return TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: _deco('Collaborator Email', cs),
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(fontSize: 13),
+                    onSubmitted: (v) {
+                      _collabEmailCtrl.text = v;
+                      _addCollab();
+                    },
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(12),
+                      color: cs.surface,
+                      child: Container(
+                        width: MediaQuery.of(context).size.width - 100,
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final email = options.elementAt(index);
+                            return ListTile(
+                              title: Text(email, style: const TextStyle(fontSize: 13)),
+                              onTap: () => onSelected(email),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton.filledTonal(
+              onPressed: _addCollab,
+              icon: const Icon(Icons.person_add_rounded),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
-  Widget _buildStep3(ColorScheme cs) {
+  void _addCollab() {
+    final email = _collabEmailCtrl.text.trim();
+    if (email.isNotEmpty && email.contains('@') && !_collaboratorEmails.contains(email)) {
+      setState(() {
+        _collaboratorEmails.add(email);
+        _collabEmailCtrl.clear();
+      });
+    }
+  }
+
+  // ─── Step 4: Objective ────────────────────────────────────────────────────
+
+  Widget _buildStep4(ColorScheme cs) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
       children: [
@@ -417,9 +597,81 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
     );
   }
 
-  // ─── Step 4: Generating / Result ──────────────────────────────────────────
+  // ─── Step 5: Link to Strategy ──────────────────────────────────────────────
+  Widget _buildStep5(ColorScheme cs) {
+    return Consumer<PlanViewModel>(
+      builder: (context, vm, _) {
+        final brandPlans = vm.plans.where((p) => p.brandId == _selectedBrand?.id).toList();
 
-  Widget _buildStep4(ColorScheme cs) {
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          children: [
+            Text('Lien Stratégique',
+                style: TextStyle(fontFamily: 'Syne', fontSize: 22, fontWeight: FontWeight.w700, color: cs.onSurface)),
+            const SizedBox(height: 6),
+            Text('Assigner ce projet à une phase de ta stratégie marketing (Optionnel).',
+                style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant)),
+            const SizedBox(height: 24),
+            
+            if (brandPlans.isEmpty)
+              Center(
+                child: Column(
+                  children: [
+                    _OptionCard(
+                      emoji: '📢',
+                      name: 'Aucune campagne active',
+                      desc: 'Crée d\'abord une stratégie pour cette marque.',
+                      isSelected: false,
+                      cs: cs,
+                      onTap: () {},
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: () => context.push('/campaign-planner', extra: _selectedBrand),
+                      icon: const Icon(Icons.rocket_launch_rounded, size: 18),
+                      label: const Text('Lancer une Stratégie'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(50),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              _label('Choisir la Campagne', cs),
+              ...brandPlans.map((plan) => _OptionCard(
+                emoji: plan.objective.emoji,
+                name: plan.name,
+                desc: '${plan.phases.length} phases · ${plan.platforms.join(", ")}',
+                isSelected: _linkedStrategy?.id == plan.id,
+                cs: cs,
+                onTap: () => setState(() {
+                  _linkedStrategy = plan;
+                  _linkedPhase = null;
+                }),
+              )),
+              
+              if (_linkedStrategy != null) ...[
+                const SizedBox(height: 24),
+                _label('Assigner à une Phase', cs),
+                ..._linkedStrategy!.phases.map((phase) => _OptionCard(
+                  emoji: '📍',
+                  name: phase.name,
+                  desc: 'Semaine ${phase.weekNumber}',
+                  isSelected: _linkedPhase?.id == phase.id,
+                  cs: cs,
+                  onTap: () => setState(() => _linkedPhase = phase),
+                )),
+              ],
+            ],
+          ],
+        );
+      }
+    );
+  }
+
+  // ─── Step 6: Generating / Result ──────────────────────────────────────────
+  Widget _buildStepResult(ColorScheme cs) {
     return Consumer<PlanViewModel>(
       builder: (context, vm, child) {
         final working = vm.isSaving || vm.isGenerating;
@@ -584,7 +836,7 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: Text(
-                _step == 2 ? context.tr('plan_generate_btn') : context.tr('plan_continue'),
+                _step == 3 ? context.tr('plan_generate_btn') : context.tr('plan_continue'),
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),
@@ -629,7 +881,8 @@ class _PlanProjectFlowState extends State<PlanProjectFlow> {
 // ─── Option card ──────────────────────────────────────────────────────────────
 
 class _OptionCard extends StatelessWidget {
-  final String emoji;
+  final String? emoji;
+  final String? imageUrl;
   final String name;
   final String desc;
   final bool isSelected;
@@ -637,7 +890,8 @@ class _OptionCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _OptionCard({
-    required this.emoji,
+    this.emoji,
+    this.imageUrl,
     required this.name,
     required this.desc,
     this.isSelected = false,
@@ -659,7 +913,22 @@ class _OptionCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 24)),
+            if (imageUrl != null && imageUrl!.isNotEmpty)
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  image: DecorationImage(
+                    image: NetworkImage(imageUrl!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              )
+            else if (emoji != null)
+              Text(emoji!, style: const TextStyle(fontSize: 24))
+            else
+              const Icon(Icons.inventory_2_outlined),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -688,9 +957,9 @@ class _OptionCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected ? cs.primary : Colors.transparent,
                 border: Border.all(color: isSelected ? cs.primary : cs.outlineVariant, width: 2),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(6),
               ),
-              child: isSelected ? Icon(Icons.check_rounded, size: 10, color: cs.onPrimary) : null,
+              child: isSelected ? Icon(Icons.check_rounded, size: 12, color: cs.onPrimary) : null,
             ),
           ],
         ),

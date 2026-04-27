@@ -26,6 +26,26 @@ enum PromotionIntensity { low, balanced, aggressive }
 
 enum BrandSeasonality { seasonal, alwaysActive, campaignBased }
 
+class Product {
+  final String? id;
+  final String name;
+  final String? imageUrl;
+
+  Product({this.id, required this.name, this.imageUrl});
+
+  factory Product.fromJson(Map<String, dynamic> json) => Product(
+        id: json['id'] ?? json['_id'],
+        name: json['name'] ?? '',
+        imageUrl: json['imageUrl'],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'imageUrl': imageUrl,
+      };
+}
+
 // ─────────────── Nested models ───────────────
 
 class BrandAudience {
@@ -168,6 +188,9 @@ class Brand {
   // Smart rotation
   final SmartRotation? smartRotation;
 
+  // Products
+  final List<Product> products;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -191,6 +214,7 @@ class Brand {
     this.competitors = const [],
     this.seasonality,
     this.smartRotation,
+    this.products = const [],
     this.createdAt,
     this.updatedAt,
   });
@@ -229,6 +253,10 @@ class Brand {
       competitors: List<String>.from(json['competitors'] ?? []),
       seasonality: enumOrNull(BrandSeasonality.values, json['seasonality']),
       smartRotation: json['smartRotation'] != null ? SmartRotation.fromJson(json['smartRotation']) : null,
+      products: (json['products'] as List<dynamic>?)
+              ?.map((e) => Product.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
     );
@@ -257,6 +285,7 @@ class Brand {
       if (competitors.isNotEmpty) 'competitors': competitors,
       if (seasonality != null) 'seasonality': seasonality!.name,
       if (smartRotation != null) 'smartRotation': smartRotation!.toJson(),
+      'products': products.map((e) => e.toJson()).toList(),
     };
   }
 }

@@ -95,6 +95,8 @@ class ApiConfig {
   static String updateCampaignCopyUrl(String id) => '$plansBase/$id/campaign-copy';
   static String planDNAUrl(String id) => '$plansBase/$id/dna';
   static String aiProjectInsightsUrl(String id) => '$plansBase/$id/ai-insights';
+  static String generateHookUrl(String planId, String blockId) => '$plansBase/$planId/generate-hook/$blockId';
+  static String generateCaptionUrl(String planId, String blockId) => '$plansBase/$planId/generate-caption/$blockId';
 
   // Content Blocks Endpoints
   static String get contentBlocksBase => '$baseUrl/content-blocks';

@@ -4,6 +4,10 @@ import 'package:provider/provider.dart';
 import '../../core/app_localizations.dart';
 import '../../models/brand.dart';
 import '../../view_models/brand_view_model.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../../services/upload_service.dart';
+import 'package:path/path.dart' as p;
 
 // ─── Suggestion data ───
 
@@ -89,6 +93,13 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
   late int _maxConsecutivePromo;
   late int _minGapDays;
 
+  // Step: Products
+  late final List<Product> _products;
+  final _productNameCtrl = TextEditingController();
+  String? _currentProductImageUrl;
+  bool _isUploadingProductImage = false;
+  final _picker = ImagePicker();
+
   // UI helper (not persisted)
   String? _brandCategory;
 
@@ -146,6 +157,8 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
     _seasonality = b?.seasonality ?? BrandSeasonality.alwaysActive;
     _maxConsecutivePromo = rotation?.maxConsecutivePromoPosts ?? 2;
     _minGapDays = rotation?.minGapBetweenPromotions ?? 3;
+
+    _products = List.from(b?.products ?? []);
   }
 
   @override
@@ -155,6 +168,7 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
       _nameCtrl, _descCtrl, _ageRangeCtrl, _genderCtrl, _interestInputCtrl,
       _pillarInputCtrl, _customFreqCtrl, _revenueTargetCtrl, _followerTargetCtrl,
       _conversionGoalCtrl, _uniqueAngleCtrl, _painPointCtrl, _competitorInputCtrl,
+      _productNameCtrl,
     ]) {
       c.dispose();
     }
@@ -190,6 +204,32 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
       _pageCtrl.previousPage(duration: const Duration(milliseconds: 280), curve: Curves.easeInOut);
     } else {
       context.pop();
+    }
+  }
+
+  Future<void> _pickAndUploadProductImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+      if (image == null) return;
+
+      setState(() => _isUploadingProductImage = true);
+
+      final file = File(image.path);
+      final url = await UploadService().uploadFile(file, p.basename(image.path));
+
+      setState(() {
+        _currentProductImageUrl = url;
+        _isUploadingProductImage = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('✅ Image uploaded successfully!'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating),
+      );
+    } catch (e) {
+      setState(() => _isUploadingProductImage = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ Upload failed: $e'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+      );
     }
   }
 
@@ -254,6 +294,7 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
         'maxConsecutivePromoPosts': _maxConsecutivePromo,
         'minGapBetweenPromotions': _minGapDays,
       },
+      'products': _products.map((e) => e.toJson()).toList(),
     };
 
     final vm = context.read<BrandViewModel>();
@@ -432,6 +473,193 @@ class _CreateEditBrandScreenState extends State<CreateEditBrandScreen> {
               ),
             );
           }).toList(),
+        ),
+        const SizedBox(height: 24),
+        _label('AI Assistance', cs),
+        _buildAIHelpTools(cs),
+        const SizedBox(height: 24),
+        _label('Products', cs),
+        _buildProductsSection(cs),
+      ],
+    );
+  }
+
+  Widget _buildAIHelpTools(ColorScheme cs) {
+    return Column(
+      children: [
+        _aiToolButton(
+          label: 'Product Ideas Generator',
+          icon: Icons.lightbulb_outline_rounded,
+          color: Colors.amber,
+          onTap: () => context.push('/product-ideas-form'),
+          cs: cs,
+        ),
+        const SizedBox(height: 8),
+        _aiToolButton(
+          label: 'Slogan & Names Generator',
+          icon: Icons.text_fields_rounded,
+          color: Colors.blue,
+          onTap: () => context.push('/slogans-form'),
+          cs: cs,
+        ),
+        const SizedBox(height: 8),
+        _aiToolButton(
+          label: 'AI Image Generator',
+          icon: Icons.image_search_rounded,
+          color: Colors.purple,
+          onTap: () => context.push('/image-generator'),
+          cs: cs,
+        ),
+      ],
+    );
+  }
+
+  Widget _aiToolButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required ColorScheme cs,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 12, color: cs.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductsSection(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_products.isNotEmpty) ...[
+          SizedBox(
+            height: 100,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _products.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final product = _products[index];
+                return Container(
+                  width: 140,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: cs.outlineVariant),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Icon(Icons.shopping_bag_outlined, size: 12, color: cs.primary),
+                          GestureDetector(
+                            onTap: () => setState(() => _products.removeAt(index)),
+                            child: Icon(Icons.close_rounded, size: 14, color: cs.error),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      if (product.imageUrl != null)
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(product.imageUrl!, width: double.infinity, fit: BoxFit.cover),
+                          ),
+                        )
+                      else
+                        const Expanded(child: Icon(Icons.image_not_supported_outlined, size: 24, color: Colors.grey)),
+                      const SizedBox(height: 4),
+                      Text(
+                        product.name,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _productNameCtrl,
+                decoration: _deco('Product Name', cs).copyWith(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+                style: const TextStyle(fontSize: 13),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton.filledTonal(
+                  onPressed: _isUploadingProductImage ? null : _pickAndUploadProductImage,
+                  icon: Icon(
+                    _currentProductImageUrl != null ? Icons.check_circle_rounded : Icons.add_a_photo_rounded,
+                    size: 20,
+                    color: _currentProductImageUrl != null ? Colors.green : null,
+                  ),
+                ),
+                if (_isUploadingProductImage)
+                  const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+              ],
+            ),
+            const SizedBox(width: 8),
+            IconButton.filled(
+              onPressed: () {
+                final name = _productNameCtrl.text.trim();
+                if (name.isNotEmpty) {
+                  setState(() {
+                    _products.add(Product(
+                      id: DateTime.now().millisecondsSinceEpoch.toString(),
+                      name: name,
+                      imageUrl: _currentProductImageUrl,
+                    ));
+                    _productNameCtrl.clear();
+                    _currentProductImageUrl = null;
+                  });
+                }
+              },
+              icon: const Icon(Icons.add_rounded),
+            ),
+          ],
         ),
       ],
     );

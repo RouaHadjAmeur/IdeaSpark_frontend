@@ -2,22 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../models/plan.dart';
+import '../../models/brand.dart';
 import '../../models/task.dart';
 import '../../view_models/plan_view_model.dart';
 import '../../view_models/collaboration_view_model.dart';
 import '../plan-collaboration/collaboration_screen.dart';
-import '../content/post_preview_screen.dart';
 import '../../view_models/auth_view_model.dart';
-import 'package:share_plus/share_plus.dart';
 import '../../services/google_calendar_storage_service.dart';
 import '../../models/google_calendar_tokens.dart';
-import '../../services/deep_link_service.dart';
-import '../../views/settings/google_calendar_token_screen.dart';
-import '../../services/notification_service.dart';
-import '../../services/in_app_notification_service.dart';
-import '../notifications/notifications_screen.dart';
-import '../analytics/plan_stats_screen.dart';
 import '../../services/pdf_export_service.dart';
+import '../../modules/camera_coach/camera_coach_screen.dart';
+import '../generators/video_ideas_form_screen.dart';
+import '../../services/deep_link_service.dart';
+import '../../view_models/brand_view_model.dart';
 
 class CampaignWorkspaceScreen extends StatefulWidget {
   final Plan plan;
@@ -34,13 +31,13 @@ class _CampaignWorkspaceScreenState extends State<CampaignWorkspaceScreen> with 
   // Feature states
   bool _isGoogleCalendarConnected = false;
   GoogleCalendarTokens? _googleTokens;
-  bool _remindersActive = false;
+
 
   @override
   void initState() {
     super.initState();
     _plan = widget.plan;
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     
     _checkGoogleCalendarConnection();
     
@@ -117,10 +114,11 @@ class _CampaignWorkspaceScreenState extends State<CampaignWorkspaceScreen> with 
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildCommandCenter(cs),
-                  _buildContentPlan(cs),
-                  _buildNotesSection(cs),
-                  _buildCollaboration(cs),
+                  _buildPhasesTab(cs),
+                  _buildContentTab(cs),
+                  _buildBudgetTab(cs),
+                  _buildDNATab(cs),
+                  _buildTeamTab(cs),
                 ],
               ),
             ),
@@ -131,75 +129,156 @@ class _CampaignWorkspaceScreenState extends State<CampaignWorkspaceScreen> with 
   }
 
   Widget _buildHeader(ColorScheme cs) {
+    final progress = _plan.phases.isEmpty 
+        ? 0 
+        : (_plan.phases.where((p) => p.status == PhaseStatus.terminated).length / _plan.phases.length * 100).toInt();
+    
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          IconButton.filledTonal(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          // Back button and title
+          Row(
+            children: [
+              IconButton.filledTonal(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                style: IconButton.styleFrom(
+                  backgroundColor: cs.surfaceContainerHighest,
+                  foregroundColor: cs.onSurface,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
                   _plan.name,
-                  style: const TextStyle(fontFamily: 'Syne', fontSize: 20, fontWeight: FontWeight.w800),
+                  style: const TextStyle(fontFamily: 'Syne', fontSize: 24, fontWeight: FontWeight.w800),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(
-                  '${_plan.objective.label} • ${_plan.durationWeeks} Weeks',
-                  style: TextStyle(fontSize: 13, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500),
+              ),
+              IconButton.filledTonal(
+                onPressed: () {},
+                icon: const Icon(Icons.add_rounded, size: 18),
+                style: IconButton.styleFrom(
+                  backgroundColor: cs.primary,
+                  foregroundColor: cs.onPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Campaign info card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [cs.primary.withValues(alpha: 0.2), cs.primary.withValues(alpha: 0.05)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '⚡ ${_plan.objective.label}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _plan.name,
+                            style: const TextStyle(
+                              fontFamily: 'Syne',
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Campagne active • Sem. ${_plan.durationWeeks}/8',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '$progress%',
+                          style: const TextStyle(
+                            fontFamily: 'Syne',
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF7C3AED),
+                          ),
+                        ),
+                        Text(
+                          'complet',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Platform badges
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    _platformBadge('● Live', Colors.green, cs),
+                    _platformBadge('TikTok', const Color(0xFF000000), cs),
+                    _platformBadge('Instagram', const Color(0xFFE1306C), cs),
+                  ],
                 ),
               ],
             ),
           ),
-          if (_plan.status == PlanStatus.draft)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilledButton.icon(
-                onPressed: () => _activatePlan(),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                  minimumSize: const Size(0, 32),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                icon: const Icon(Icons.rocket_launch_rounded, size: 14),
-                label: const Text('Activate', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-              ),
-            ),
-          _statusBadge(_plan.status, cs),
-          const SizedBox(width: 8),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
-            onSelected: (value) {
-              switch (value) {
-                case 'share': _sharePlan(); break;
-                case 'regen': _regenerate(); break;
-                case 'template': _saveAsTemplate(); break;
-                case 'delete': _confirmDelete(); break;
-              }
-            },
-            itemBuilder: (context) {
-              final isOwner = context.read<AuthViewModel>().isBrandOwner;
-              return [
-                const PopupMenuItem(value: 'share', child: Row(children: [Icon(Icons.share_rounded, size: 18), SizedBox(width: 12), Text('Share Plan')])),
-                if (isOwner)
-                  const PopupMenuItem(value: 'regen', child: Row(children: [Icon(Icons.auto_fix_high_rounded, size: 18), SizedBox(width: 12), Text('Regenerate AI')])),
-                if (isOwner)
-                  const PopupMenuItem(value: 'template', child: Row(children: [Icon(Icons.bookmark_added_rounded, size: 18), SizedBox(width: 12), Text('Save Template')])),
-                if (isOwner) const PopupMenuDivider(),
-                if (isOwner)
-                  PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline_rounded, size: 18, color: cs.error), const SizedBox(width: 12), Text('Delete Campaign', style: TextStyle(color: cs.error))])),
-              ];
-            },
-          ),
         ],
+      ),
+    );
+  }
+
+  Widget _platformBadge(String label, Color color, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }
@@ -212,449 +291,431 @@ class _CampaignWorkspaceScreenState extends State<CampaignWorkspaceScreen> with 
       decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(12)),
       child: TabBar(
         controller: _tabController,
+        isScrollable: true,
         dividerColor: Colors.transparent,
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(color: activeColor, borderRadius: BorderRadius.circular(10)),
         labelColor: cs.onPrimary,
         unselectedLabelColor: cs.onSurfaceVariant,
-        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        tabAlignment: TabAlignment.start,
         tabs: const [
-          Tab(text: 'Command'),
-          Tab(text: 'Plan'),
-          Tab(text: 'Notes'),
-          Tab(text: 'Collab'),
+          Tab(text: 'Phases'),
+          Tab(text: 'Content'),
+          Tab(text: 'Budget'),
+          Tab(text: 'DNA IA'),
+          Tab(text: 'Team'),
         ],
       ),
     );
   }
 
-  Widget _buildCommandCenter(ColorScheme cs) {
-    final pvm = context.watch<PlanViewModel>();
-    final cvm = context.watch<CollaborationViewModel>();
-    final insights = pvm.aiInsights;
-    final readiness = _plan.projectDNA.performance.readinessScore;
-
+  Widget _buildPhasesTab(ColorScheme cs) {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _buildReadinessCard(cs, readiness, insights),
-        if (_plan.status == PlanStatus.draft) ...[
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: FilledButton.icon(
-              onPressed: () => _activatePlan(),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.green,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 4,
-                shadowColor: Colors.green.withValues(alpha: 0.3),
-              ),
-              icon: const Icon(Icons.rocket_launch_rounded),
-              label: const Text('Activate Campaign', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        ..._plan.phases.asMap().entries.map((entry) {
+          final idx = entry.key;
+          final phase = entry.value;
+          
+          Color statusColor;
+          String statusText;
+          switch (phase.status) {
+            case PhaseStatus.terminated:
+              statusColor = Colors.green;
+              statusText = 'DONE';
+              break;
+            case PhaseStatus.inProgress:
+              statusColor = const Color(0xFF6D4ED3);
+              statusText = 'ACTIVE';
+              break;
+            case PhaseStatus.upcoming:
+              statusColor = Colors.grey;
+              statusText = 'UPCOMING';
+              break;
+          }
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 24),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                      child: Center(child: Text('${idx + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                    ),
+                    if (idx < _plan.phases.length - 1)
+                      Container(width: 2, height: 100, color: statusColor.withValues(alpha: 0.3)),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(phase.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                          _tag(statusText, statusColor),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          _taskTag('✓ DONE', Colors.green),
+                          _taskTag('⟳ IN PROGRESS', Colors.purple),
+                          _taskTag('○ TODO', Colors.grey),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          if (phase.status != PhaseStatus.terminated)
+                            _phaseActionButton('✦ Ideas', Colors.blue, () => _openIdeaGen(phase.contentBlocks.first)),
+                          if (phase.name.toLowerCase().contains('conversion')) ...[
+                            const SizedBox(width: 8),
+                            _phaseActionButton('✦ Captions', Colors.purple, () {}),
+                          ],
+                        ],
+                      ),
+                      if (phase.productIds.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildPhaseProducts(phase, cs),
+                      ],
+                      if (phase.status != PhaseStatus.terminated) ...[
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: () => _showProductPicker(phase),
+                          child: Text('+ Add product to phase', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: cs.primary)),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+          );
+        }),
         const SizedBox(height: 20),
-        _buildProgressSection(cs, cvm),
-        const SizedBox(height: 20),
-        _buildQuickStats(cs),
-        const SizedBox(height: 24),
-        _buildActionGrid(cs),
-        const SizedBox(height: 24),
-        _buildAIRecommendations(cs, insights),
+        _milestoneBanner(cs),
       ],
     );
   }
 
-  Widget _buildActionGrid(ColorScheme cs) {
-    final isActive = _plan.status == PlanStatus.active;
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Campaign Management', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 2.2,
-          children: [
-            _actionCard(
-              cs, 
-              _isGoogleCalendarConnected ? 'Sync Google Cal' : 'Connect Google Cal', 
-              Icons.calendar_month_rounded, 
-              isActive ? const Color(0xFF4285F4) : Colors.grey,
-              onTap: isActive ? _syncToGoogleCalendar : null,
-            ),
-            _actionCard(
-              cs, 
-              _remindersActive ? 'Disable Reminders' : 'Enable Reminders', 
-              _remindersActive ? Icons.notifications_active_rounded : Icons.notifications_none_rounded, 
-              _remindersActive ? Colors.orange : cs.primary,
-              onTap: isActive ? _toggleReminders : null,
-            ),
-            _actionCard(
-              cs, 
-              'Campaign Stats', 
-              Icons.bar_chart_rounded, 
-              const Color(0xFF673AB7),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlanStatsScreen(plan: _plan))),
-            ),
-            _actionCard(
-              cs, 
-              'Export PDF', 
-              Icons.picture_as_pdf_rounded, 
-              const Color(0xFFE53935),
-              onTap: () => PdfExportService.exportPlan(_plan),
-            ),
-          ],
-        ),
-        if (!isActive)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text('Note: Calendar & Reminders features require an "Active" campaign.', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontStyle: FontStyle.italic)),
-          ),
-      ],
+  Widget _tag(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4), border: Border.all(color: color.withValues(alpha: 0.3))),
+      child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: color)),
     );
   }
 
-  Widget _actionCard(ColorScheme cs, String label, IconData icon, Color color, {VoidCallback? onTap}) {
-    final isDisabled = onTap == null;
-    return GestureDetector(
+  Widget _taskTag(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(4)),
+      child: Text(label, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color)),
+    );
+  }
+
+  Widget _phaseActionButton(String label, Color color, VoidCallback onTap) {
+    return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withValues(alpha: 0.2), shape: BoxShape.circle), child: Icon(icon, size: 20, color: isDisabled ? Colors.grey : color)),
-            const SizedBox(width: 12),
-            Expanded(child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: isDisabled ? Colors.grey : cs.onSurface))),
-          ],
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: color.withValues(alpha: 0.2))),
+        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: color)),
       ),
     );
   }
 
-  Future<void> _activatePlan() async {
-    final vm = context.read<PlanViewModel>();
-    final activated = await vm.activatePlan(_plan.id!);
-    if (activated != null && mounted) {
-      setState(() {
-        _plan = activated;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Campaign Activated! 🚀 Your schedule is now live.'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
-  }
-
-  // ─── Legacy Actions Port ──────────────────────────────────────────────────
-
-  Future<void> _toggleReminders() async {
-    if (_remindersActive) {
-      await NotificationService.cancelAll();
-      InAppNotificationService().clear();
-      setState(() => _remindersActive = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rappels désactivés 🔕'), behavior: SnackBarBehavior.floating));
-      }
-    } else {
-      await _schedulePostReminders();
-      setState(() => _remindersActive = true);
-    }
-  }
-
-  Future<void> _schedulePostReminders() async {
-    final phases = _plan.phases;
-    if (phases.isEmpty) return;
-
-    int count = 0;
-    for (final phase in phases) {
-      for (final block in phase.contentBlocks) {
-        count++;
-        InAppNotificationService().add(AppNotification(id: count, title: '📢 Post to publish - ${_plan.name}', body: '${block.title}\n${block.format.name}', time: DateTime.now(), type: 'post'));
-        await NotificationService.schedulePublicationReminder(id: count, title: '📢 ${_plan.name} - Ready to post!', body: block.title, scheduledTime: DateTime.now());
-      }
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('✅ $count reminders activated for ${_plan.name}!'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
-    }
-  }
-
-  Future<void> _sharePlan() async {
-    final totalPosts = _plan.phases.fold<int>(0, (s, p) => s + p.contentBlocks.length);
-    final text = '''🚀 Marketing Plan: ${_plan.name}\nObjective: ${_plan.objective.label}\n📅 Duration: ${_plan.durationWeeks} weeks • $totalPosts posts\n\nCreated with IdeaSpark ✨''';
-    final box = context.findRenderObject() as RenderBox?;
-    await Share.share(text, subject: 'Marketing Plan - ${_plan.name}', sharePositionOrigin: box != null ? box.localToGlobal(Offset.zero) & box.size : null);
-  }
-
-  Future<void> _saveAsTemplate() async {
-    // In a real app, we'd use a TemplateService. 
-    // For now, let's show a success message as in the legacy detail view.
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('🔖 "${_plan.name}" saved as template!'), backgroundColor: Colors.purple, behavior: SnackBarBehavior.floating));
-  }
-
-
-  Future<void> _configureGoogleCalendar() async {
-    final result = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const GoogleCalendarTokenScreen()));
-    if (result == true) {
-      await _checkGoogleCalendarConnection();
-    }
-  }
-
-  Future<void> _syncToGoogleCalendar() async {
-    if (_googleTokens == null) {
-      _configureGoogleCalendar();
-      return;
-    }
-    try {
-      await Future.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Plan synchronized with Google Calendar!'), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
-      }
-    } catch (e) {
-      debugPrint('Google Calendar sync error: $e');
-    }
-  }
-
-  Future<void> _regenerate() async {
-    final pvm = context.read<PlanViewModel>();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Regenerate Plan?'),
-        content: const Text('This will replace your current content strategy with a new one generated by AI.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Regenerate')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    
-    final plan = await pvm.regeneratePlan(_plan.id!);
-    if (plan != null && mounted) {
-      setState(() => _plan = plan);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✨ Plan regenerated successfully!'), behavior: SnackBarBehavior.floating));
-    }
-  }
-
-  Future<void> _confirmDelete() async {
-    final pvm = context.read<PlanViewModel>();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Campaign?'),
-        content: Text('Are you sure you want to delete "${_plan.name}"? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), style: FilledButton.styleFrom(backgroundColor: Colors.red), child: const Text('Delete')),
-        ],
-      ),
-    );
-    if (ok == true) {
-      await pvm.deletePlan(_plan.id!);
-      if (mounted) Navigator.pop(context);
-    }
-  }
-
-  Widget _buildReadinessCard(ColorScheme cs, int score, Map<String, dynamic> insights) {
+  Widget _milestoneBanner(ColorScheme cs) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [cs.primary, cs.primary.withValues(alpha: 0.8)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: cs.primary.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 10))],
-      ),
-      child: Column(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(16)),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Project Readiness', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
-                  SizedBox(height: 4),
-                  Text('AI Insights', style: TextStyle(color: Colors.white, fontSize: 24, fontFamily: 'Syne', fontWeight: FontWeight.w800)),
-                ],
-              ),
-              Container(width: 70, height: 70, decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle), child: Center(child: Text('$score%', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)))),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
-            child: Row(
+          const Icon(Icons.flag_rounded, color: Colors.white),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(child: Text(insights['summary'] ?? 'AI is analyzing your campaign DNA for readiness improvements...', style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4))),
+                Text('NEXT MILESTONE', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900)),
+                Text('Launch Product Sequence', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700)),
               ],
             ),
           ),
+          Text('IN 3 DAYS', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w800)),
         ],
       ),
     );
   }
 
-  Widget _buildProgressSection(ColorScheme cs, CollaborationViewModel cvm) {
-    final totalTasks = cvm.tasks.length;
-    final doneTasks = cvm.tasks.where((t) => t.status == TaskStatus.done).length;
-    final progress = totalTasks == 0 ? 0.0 : doneTasks / totalTasks;
+  Widget _buildContentTab(ColorScheme cs) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        _injectBanner(cs),
+        const SizedBox(height: 20),
+        ..._plan.phases.expand((p) => p.contentBlocks).map((block) => _buildStrategyBlockCard(cs, block)),
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Create New Block'),
+          style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+        ),
+      ],
+    );
+  }
 
+  Widget _injectBanner(ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: cs.secondaryContainer.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(12), border: Border.all(color: cs.secondary.withValues(alpha: 0.2))),
+      child: Row(
+        children: [
+          Icon(Icons.auto_awesome, color: cs.secondary, size: 20),
+          const SizedBox(width: 12),
+          const Expanded(child: Text('Generate whole week strategy with AI', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+          Icon(Icons.chevron_right_rounded, color: cs.secondary),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStrategyBlockCard(ColorScheme cs, ContentBlock block) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(20), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5))),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _formatIcon(block.format, cs),
+              const SizedBox(width: 12),
+              Expanded(child: Text(block.title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _inputField('Hook', 'Enter viral hook...', block.hook, cs, () => context.read<PlanViewModel>().generateHook(_plan.id!, block.id!)),
+          const SizedBox(height: 12),
+          _inputField('Caption', 'Enter engaging caption...', block.caption, cs, () => context.read<PlanViewModel>().generateCaption(_plan.id!, block.id!)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _blockAction(Icons.videocam_rounded, '🎥 Coach', Colors.blue, () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const CameraCoachScreen()));
+              }),
+              _blockAction(Icons.auto_fix_high_rounded, '✦ Video IA', Colors.purple, () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const VideoIdeasFormScreen()));
+              }),
+              if (block.format == ContentFormat.carousel)
+                _blockAction(Icons.collections_rounded, '🖼 Slides IA', Colors.amber, () {}),
+              _blockAction(Icons.calendar_month_rounded, '📅 Schedule', Colors.green, () {}),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _formatIcon(ContentFormat f, ColorScheme cs) {
+    IconData icon;
+    switch (f) {
+      case ContentFormat.reel: icon = Icons.movie_outlined; break;
+      case ContentFormat.carousel: icon = Icons.view_carousel_outlined; break;
+      case ContentFormat.story: icon = Icons.history_rounded; break;
+      case ContentFormat.post: icon = Icons.image_outlined; break;
+    }
+    return Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)), child: Icon(icon, size: 20, color: cs.primary));
+  }
+
+  Widget _inputField(String label, String hint, String value, ColorScheme cs, VoidCallback onGen) {
+    final pvm = context.watch<PlanViewModel>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Execution Progress', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            Text('${(progress * 100).toInt()}%', style: TextStyle(color: cs.primary, fontWeight: FontWeight.w900)),
+            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.grey)),
+            if (pvm.isGenerating)
+              const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2))
+            else
+              InkWell(onTap: onGen, child: Text('✦ Generate', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: cs.primary))),
           ],
         ),
-        const SizedBox(height: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: LinearProgressIndicator(value: progress, minHeight: 12, backgroundColor: cs.surfaceContainerHighest, valueColor: AlwaysStoppedAnimation(cs.primary)),
+        const SizedBox(height: 4),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(color: cs.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: cs.outlineVariant)),
+          child: Text(value.isEmpty ? hint : value, style: TextStyle(fontSize: 12, color: value.isEmpty ? cs.onSurfaceVariant.withValues(alpha: 0.5) : cs.onSurface)),
         ),
-        const SizedBox(height: 8),
-        Text('$doneTasks of $totalTasks milestones completed', style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
       ],
     );
   }
 
-  Widget _buildQuickStats(ColorScheme cs) {
-    final totalPosts = _plan.phases.fold<int>(0, (s, p) => s + p.contentBlocks.length);
-    return Row(
-      children: [
-        _quickStatCard(cs, '$totalPosts', 'Total Posts', Icons.grid_view_rounded),
-        const SizedBox(width: 12),
-        _quickStatCard(cs, '${_plan.platforms.length}', 'Platforms', Icons.devices_rounded),
-        const SizedBox(width: 12),
-        _quickStatCard(cs, '${_plan.productIds.length}', 'Products', Icons.inventory_2_outlined),
-      ],
-    );
-  }
-
-  Widget _quickStatCard(ColorScheme cs, String value, String label, IconData icon) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(20), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5))),
-        child: Column(children: [Icon(icon, size: 24, color: cs.primary), const SizedBox(height: 12), Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)), Text(label, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant))]),
+  Widget _blockAction(IconData icon, String label, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: color)),
+        ],
       ),
     );
   }
 
-  Widget _buildAIRecommendations(ColorScheme cs, Map<String, dynamic> insights) {
-    final List list = insights['recommendations'] ?? [];
-    if (list.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Strategic Recommendations', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 12),
-        ...list.map((rec) => Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: cs.secondaryContainer.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(16), border: Border.all(color: cs.secondary.withValues(alpha: 0.1))),
-          child: Row(children: [Icon(Icons.tips_and_updates_rounded, color: cs.secondary, size: 20), const SizedBox(width: 16), Expanded(child: Text(rec.toString(), style: const TextStyle(fontSize: 13, height: 1.4)))]),
-        )),
-      ],
-    );
-  }
+  Widget _buildBudgetTab(ColorScheme cs) {
+    final budget = _plan.projectDNA.budget;
+    final total = budget.totalBudget > 0 ? budget.totalBudget : 1000;
+    final spent = budget.spentBudget;
+    final remaining = total - spent;
+    final pct = (spent / total * 100).toInt();
 
-  Widget _buildNotesSection(ColorScheme cs) {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _sectionHeader(cs, 'Project Notes', Icons.note_alt_rounded),
+        Row(
+          children: [
+            Expanded(child: _budgetTile('Spent', '\$$spent', Colors.red, cs)),
+            const SizedBox(width: 12),
+            Expanded(child: _budgetTile('Remaining', '\$$remaining', Colors.green, cs)),
+            const SizedBox(width: 12),
+            Expanded(child: _budgetTile('Usage', '$pct%', Colors.amber, cs)),
+          ],
+        ),
+        const SizedBox(height: 32),
+        const Text('Platform Breakdown', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        ..._plan.platforms.map((p) => _platformROASRow(p, cs)),
+      ],
+    );
+  }
+
+  Widget _budgetTile(String label, String val, Color color, ColorScheme cs) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: color.withValues(alpha: 0.15))),
+      child: Column(
+        children: [
+          Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey)),
+          const SizedBox(height: 4),
+          Text(val, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color)),
+        ],
+      ),
+    );
+  }
+
+  Widget _platformROASRow(String platform, ColorScheme cs) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(platform.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+              const Text('ROAS: 4.2x', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: Colors.green)),
+            ],
           ),
-          child: TextField(
-            maxLines: 15,
-            decoration: InputDecoration(
-              hintText: 'Start writing project notes, ideas, or reminders...',
-              border: InputBorder.none,
-              hintStyle: TextStyle(color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
-            ),
-            style: const TextStyle(fontSize: 14, height: 1.5),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(value: 0.6, borderRadius: BorderRadius.circular(4), minHeight: 6, backgroundColor: cs.outlineVariant.withValues(alpha: 0.2)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDNATab(ColorScheme cs) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Center(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(width: 120, height: 120, child: CircularProgressIndicator(value: 0.94, strokeWidth: 12, backgroundColor: cs.outlineVariant.withValues(alpha: 0.2))),
+              const Column(
+                children: [
+                  Text('94%', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, fontFamily: 'Syne')),
+                  Text('DNA SCORE', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Colors.grey)),
+                ],
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 20),
-        const Text(
-          'Notes are saved automatically to your project.',
-          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
-          textAlign: TextAlign.center,
+        const SizedBox(height: 40),
+        _dnaBar('Consistency', 0.85, cs),
+        _dnaBar('Engagement', 0.92, cs),
+        _dnaBar('Budget Efficiency', 0.78, cs),
+        _dnaBar('Timing', 0.96, cs),
+        const SizedBox(height: 32),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(color: cs.primaryContainer.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(20)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: Color(0xFF6D4ED3), size: 18),
+                  SizedBox(width: 8),
+                  Text('STRATEGIC INSIGHT', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF6D4ED3))),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Your engagement is peaking on Reels. Consider shifting 15% of your static post budget to high-impact video production for the launch phase.',
+                style: TextStyle(fontSize: 13, height: 1.5, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: () => PdfExportService.exportPlan(_plan),
+                icon: const Icon(Icons.picture_as_pdf_rounded, size: 16),
+                label: const Text('Export Strategy PDF'),
+                style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 45)),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildContentPlan(ColorScheme cs) {
-    if (_plan.phases.isEmpty) {
-      return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.auto_fix_high_rounded, size: 64, color: cs.primary.withValues(alpha: 0.5)), const SizedBox(height: 16), const Text('No content strategy found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)), const SizedBox(height: 8), const Text('Generate your AI content plan to see it here.', style: TextStyle(color: Colors.grey))]));
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.all(20), itemCount: _plan.phases.length,
-      itemBuilder: (context, idx) {
-        final phase = _plan.phases[idx];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _dnaBar(String label, double val, ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(children: [Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(8)), child: Text('Week ${phase.weekNumber}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: cs.primary))), const SizedBox(width: 12), Text(phase.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800))]),
-              const SizedBox(height: 16),
-              ...phase.contentBlocks.map((block) => _buildBlockCard(cs, block)),
+              Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+              Text('${(val * 100).toInt()}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: cs.primary)),
             ],
           ),
-        );
-      },
+          const SizedBox(height: 6),
+          LinearProgressIndicator(value: val, borderRadius: BorderRadius.circular(4), minHeight: 8, backgroundColor: cs.outlineVariant.withValues(alpha: 0.2)),
+        ],
+      ),
     );
   }
-
-  Widget _buildBlockCard(ColorScheme cs, ContentBlock block) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12), padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(16), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5))),
-      child: Row(children: [Container(width: 48, height: 48, decoration: BoxDecoration(color: cs.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: Icon(_formatIcon(block.format), color: cs.primary, size: 24)), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(block.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)), const SizedBox(height: 4), Text('${block.format.name.toUpperCase()} • ${block.pillar}', style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.w600))])), IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PostPreviewScreen(block: block, brandName: _plan.name))), icon: const Icon(Icons.arrow_forward_ios_rounded, size: 16))]),
-    );
-  }
-
-  IconData _formatIcon(ContentFormat format) {
-    switch (format) {
-      case ContentFormat.reel: return Icons.movie_outlined;
-      case ContentFormat.carousel: return Icons.view_carousel_outlined;
-      case ContentFormat.story: return Icons.history_rounded;
-      case ContentFormat.post: return Icons.image_outlined;
-    }
-  }
-
-  Widget _buildCollaboration(ColorScheme cs) {
+  Widget _buildTeamTab(ColorScheme cs) {
     final cvm = context.watch<CollaborationViewModel>();
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -663,7 +724,7 @@ class _CampaignWorkspaceScreenState extends State<CampaignWorkspaceScreen> with 
         const SizedBox(height: 12),
         if (cvm.tasks.isEmpty) _emptyState(cs, 'No tasks assigned yet.') else ...cvm.tasks.map((task) => _buildTaskItem(cs, task)),
         const SizedBox(height: 32),
-        _sectionHeader(cs, 'Timeline / Activity', Icons.history_rounded),
+        _sectionHeader(cs, 'Full Timeline', Icons.history_rounded),
         const SizedBox(height: 12),
         ...cvm.activityLog.map((log) => _buildActivityItem(cs, log)),
         const SizedBox(height: 32),
@@ -689,7 +750,6 @@ class _CampaignWorkspaceScreenState extends State<CampaignWorkspaceScreen> with 
     final actionType = log['actionType']?.toString() ?? '';
     final userName = log['userName']?.toString() ?? 'Utilisateur';
     
-    // Map backend roles/actions to friendly labels
     String displayAction = actionType;
     if (actionType == 'owner') displayAction = 'Propriétaire';
     if (actionType == 'user') displayAction = 'Collaborateur';
@@ -741,5 +801,155 @@ class _CampaignWorkspaceScreenState extends State<CampaignWorkspaceScreen> with 
   Widget _sectionHeader(ColorScheme cs, String title, IconData icon) { return Row(children: [Icon(icon, size: 18, color: cs.primary), const SizedBox(width: 10), Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5))]); }
   Widget _emptyState(ColorScheme cs, String message) { return Container(padding: const EdgeInsets.symmetric(vertical: 32), width: double.infinity, decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(16), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3))), child: Center(child: Text(message, style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)))); }
   Widget _statusBadge(PlanStatus status, ColorScheme cs) { final color = status == PlanStatus.active ? Colors.green : (status == PlanStatus.draft ? Colors.orange : Colors.blue); return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(100), border: Border.all(color: color.withValues(alpha: 0.3))), child: Text(status.name.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w900))); }
+
+  void _openIdeaGen(ContentBlock block) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const VideoIdeasFormScreen()));
+  }
+
+  Widget _collaboratorAvatars(List<String> ids, ColorScheme cs) {
+    return Row(
+      children: [
+        const Text('Collaborators: ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.grey)),
+        const SizedBox(width: 4),
+        SizedBox(
+          height: 24,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            shrinkWrap: true,
+            itemCount: ids.length.clamp(0, 5),
+            itemBuilder: (context, index) {
+              return Container(
+                margin: const EdgeInsets.only(right: 4),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(color: cs.secondaryContainer, shape: BoxShape.circle, border: Border.all(color: cs.outline, width: 1)),
+                child: Center(child: Text(ids[index].substring(0, 1).toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: cs.onSecondaryContainer))),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhaseProducts(Phase phase, ColorScheme cs) {
+    final bvm = context.read<BrandViewModel>();
+    final brand = bvm.brands.firstWhere((b) => b.id == _plan.brandId, orElse: () => bvm.brands.first);
+    final phaseProducts = brand.products.where((p) => phase.productIds.contains(p.id)).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('PHASE PRODUCTS', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: Colors.grey, letterSpacing: 0.5)),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 60,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: phaseProducts.length,
+            itemBuilder: (context, idx) {
+              final prod = phaseProducts[idx];
+              return Container(
+                width: 140,
+                margin: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: cs.surfaceContainerLow, borderRadius: BorderRadius.circular(12), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5))),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.network(prod.imageUrl ?? '', width: 44, height: 44, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: cs.surfaceContainerHighest, child: const Icon(Icons.inventory_2_rounded, size: 20))),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(prod.name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showProductPicker(Phase phase) {
+    final bvm = context.read<BrandViewModel>();
+    final brand = bvm.brands.firstWhere((b) => b.id == _plan.brandId, orElse: () => bvm.brands.first);
+    
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, borderRadius: const BorderRadius.vertical(top: Radius.circular(32))),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Assign Product to Phase', style: TextStyle(fontFamily: 'Syne', fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 20),
+            ...brand.products.map((prod) {
+              final isSelected = phase.productIds.contains(prod.id);
+              return ListTile(
+                leading: CircleAvatar(backgroundImage: prod.imageUrl != null ? NetworkImage(prod.imageUrl!) : null, child: prod.imageUrl == null ? const Icon(Icons.inventory_2_rounded) : null),
+                title: Text(prod.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                trailing: Checkbox(
+                  value: isSelected,
+                  onChanged: (val) async {
+                    final newIds = List<String>.from(phase.productIds);
+                    if (val == true && prod.id != null) {
+                      newIds.add(prod.id!);
+                    } else if (prod.id != null) {
+                      newIds.remove(prod.id!);
+                    }
+                    
+                    // Update locally
+                    final List<Phase> newPhases = _plan.phases.map<Phase>((p) {
+                      if (p.id == phase.id) {
+                        return Phase(
+                          id: p.id,
+                          name: p.name,
+                          weekNumber: p.weekNumber,
+                          description: p.description,
+                          contentBlocks: p.contentBlocks,
+                          status: p.status,
+                          productIds: newIds,
+                        );
+                      }
+                      return p;
+                    }).toList();
+                    
+                    final updatedPlan = Plan(
+                      id: _plan.id,
+                      brandId: _plan.brandId,
+                      name: _plan.name,
+                      objective: _plan.objective,
+                      startDate: _plan.startDate,
+                      endDate: _plan.endDate,
+                      durationWeeks: _plan.durationWeeks,
+                      userId: _plan.userId,
+                      phases: newPhases,
+                      projectDNA: _plan.projectDNA,
+                      collaboratorIds: _plan.collaboratorIds,
+                    );
+                    
+                    setState(() => _plan = updatedPlan);
+                    await context.read<PlanViewModel>().updateProjectDNA(_plan.id!, {'phases': newPhases.map((p) => p.toJson()).toList()});
+                    if (mounted) Navigator.pop(context);
+                  },
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _activatePlan() {}
+  void _sharePlan() {}
+  void _regenerate() {}
+  void _saveAsTemplate() {}
+  void _confirmDelete() {}
 }
 

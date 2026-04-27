@@ -136,78 +136,82 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Month navigation
-          GestureDetector(
-            onTap: _prevMonth,
-            child: Icon(Icons.chevron_left_rounded, color: cs.onSurfaceVariant),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(
-              _monthLabel,
-              style: TextStyle(
-                fontFamily: 'Syne',
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: cs.onSurface,
+          Row(
+            children: [
+              Text(
+                'Calendrier',
+                style: TextStyle(
+                  fontFamily: 'Syne',
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface,
+                ),
               ),
-            ),
-          ),
-          GestureDetector(
-            onTap: _nextMonth,
-            child: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
-          ),
-          const SizedBox(width: 12),
-          // View toggle
-          _ViewToggleBtn(
-            label: 'MO',
-            isActive: _isMonthlyView,
-            onTap: () => setState(() => _isMonthlyView = true),
-          ),
-          const SizedBox(width: 4),
-          _ViewToggleBtn(
-            label: 'WK',
-            isActive: !_isMonthlyView,
-            onTap: () => setState(() => _isMonthlyView = false),
-          ),
-          const SizedBox(width: 12),
-          // Refresh
-          GestureDetector(
-            onTap: planVm.isLoading ? null : planVm.loadAllCalendar,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                border: Border.all(color: cs.outlineVariant),
-                borderRadius: BorderRadius.circular(10),
+              const Spacer(),
+              // View toggle
+              _ViewToggleBtn(
+                label: 'MO',
+                isActive: _isMonthlyView,
+                onTap: () => setState(() => _isMonthlyView = true),
               ),
-              child: planVm.isLoading
-                  ? Center(
-                      child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: cs.primary)))
-                  : Icon(Icons.refresh_rounded, size: 20, color: cs.onSurface),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Menu
-          GestureDetector(
-            onTap: () => _scaffoldKey.currentState?.openDrawer(),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest,
-                border: Border.all(color: cs.outlineVariant),
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(width: 4),
+              _ViewToggleBtn(
+                label: 'WK',
+                isActive: !_isMonthlyView,
+                onTap: () => setState(() => _isMonthlyView = false),
               ),
-              child: Icon(Icons.menu_rounded, size: 20, color: cs.onSurface),
-            ),
+              const SizedBox(width: 12),
+              // Refresh
+              GestureDetector(
+                onTap: planVm.isLoading ? null : planVm.loadAllCalendar,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest,
+                    border: Border.all(color: cs.outlineVariant),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: planVm.isLoading
+                      ? Center(
+                          child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: cs.primary)))
+                      : Icon(Icons.refresh_rounded, size: 20, color: cs.onSurface),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              // Month navigation
+              GestureDetector(
+                onTap: _prevMonth,
+                child: Icon(Icons.chevron_left_rounded, color: cs.onSurfaceVariant),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  _monthLabel,
+                  style: TextStyle(
+                    fontFamily: 'Syne',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: _nextMonth,
+                child: Icon(Icons.chevron_right_rounded, color: cs.onSurfaceVariant),
+              ),
+            ],
           ),
         ],
       ),

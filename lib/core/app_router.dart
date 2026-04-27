@@ -48,6 +48,9 @@ import 'package:ideaspark/views/strategic_content_manager/agent_full_access_scre
 import 'package:ideaspark/views/execution_hub/execution_hub_screen.dart';
 import 'package:ideaspark/views/execution_hub/project_board_screen.dart';
 import '../views/strategic_content_manager/campaign_workspace_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/campaign_manager_hub_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/campaign_planner_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/marketing_strategy_screen.dart';
 
 import 'package:ideaspark/widgets/bottom_nav_v2.dart';
 import 'package:ideaspark/widgets/sidebar_navigation.dart';
@@ -69,8 +72,7 @@ import '../models/brand.dart';
 import '../models/plan.dart';
 import '../services/auth_service.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
-final rootNavigatorKey = _rootNavigatorKey;
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 GoRouter createAppRouter() {
   return GoRouter(
@@ -168,7 +170,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/loading-ai',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final brandName = state.extra is String ? state.extra as String : 'Brand';
           return LocaleRebuilder(builder: (_) => AiPlanLoadingScreen(brandName: brandName));
@@ -264,7 +266,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/social-video-trends',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const SocialVideoTrendsScreen()),
         ),
@@ -343,6 +345,22 @@ GoRouter createAppRouter() {
         },
       ),
       GoRoute(
+        path: '/campaign-planner',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra;
+          Brand? brand;
+          Plan? plan;
+          if (extra is Brand) {
+            brand = extra;
+          } else if (extra is Map<String, dynamic>) {
+            brand = extra['brand'] as Brand?;
+            plan = extra['plan'] as Plan?;
+          }
+          return CampaignPlannerScreen(brand: brand, existingPlan: plan);
+        },
+      ),
+      GoRoute(
         path: '/brand-form',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
@@ -352,7 +370,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/notifications',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => NotificationsScreen()),
         ),
@@ -381,7 +399,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/subscription-upgrade',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(
             builder: (_) => const SubscriptionScreen(),
@@ -409,33 +427,33 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/image-generator',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const ImageGeneratorScreen()),
         ),
       ),
       GoRoute(
         path: '/image-history',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const ImageHistoryScreen()),
         ),
       ),
       GoRoute(
         path: '/creative-ai-test',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CreativeAITestScreen(),
       ),
       GoRoute(
         path: '/video-generator',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const VideoGeneratorScreen()),
         ),
       ),
       GoRoute(
         path: '/video-history',
-        parentNavigatorKey: _rootNavigatorKey,
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const VideoHistoryScreen()),
         ),
@@ -473,7 +491,7 @@ GoRouter createAppRouter() {
                 path: '/calendar',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: const CalendarScreen(),
+                  child: const MarketingStrategyScreen(),
                 ),
               ),
             ],
@@ -573,6 +591,20 @@ GoRouter createAppRouter() {
                   key: state.pageKey,
                   child: LocaleRebuilder(builder: (_) => const FavoritesScreen()),
                 ),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/campaign-manager',
+                pageBuilder: (context, state) {
+                  final plan = state.extra is Plan ? state.extra as Plan : null;
+                  return NoTransitionPage(
+                    key: state.pageKey,
+                    child: CampaignManagerHubScreen(plan: plan),
+                  );
+                },
               ),
             ],
           ),

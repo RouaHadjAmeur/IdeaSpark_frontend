@@ -30,7 +30,6 @@ import 'services/video_idea_generator_service.dart';
 import 'view_models/challenge_view_model.dart';
 import 'services/call_service.dart';
 import 'modules/chat/call_screen.dart';
-import 'services/notification_service.dart';
 
 
 Future<void> main() async {

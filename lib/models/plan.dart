@@ -19,6 +19,8 @@ enum ContentBlockStatus { draft, scheduled, edited }
 
 enum CalendarEntryStatus { scheduled, published, cancelled }
 
+enum PhaseStatus { terminated, inProgress, upcoming }
+
 // ─── Project DNA ─────────────────────────────────────────────────────────────
 
 class StrategicDNA {
@@ -145,23 +147,63 @@ class PerformanceDNA {
   final int readinessScore;
   final List<String> weakPoints;
   final List<String> blockers;
+  final int consistencyScore;
+  final int engagementScore;
+  final int budgetScore;
+  final int timingScore;
 
   const PerformanceDNA({
     this.readinessScore = 0,
     this.weakPoints = const [],
     this.blockers = const [],
+    this.consistencyScore = 0,
+    this.engagementScore = 0,
+    this.budgetScore = 0,
+    this.timingScore = 0,
   });
 
   factory PerformanceDNA.fromJson(Map<String, dynamic> json) => PerformanceDNA(
         readinessScore: (json['readinessScore'] as num?)?.toInt() ?? 0,
         weakPoints: List<String>.from(json['weakPoints'] ?? []),
         blockers: List<String>.from(json['blockers'] ?? []),
+        consistencyScore: (json['consistencyScore'] as num?)?.toInt() ?? 0,
+        engagementScore: (json['engagementScore'] as num?)?.toInt() ?? 0,
+        budgetScore: (json['budgetScore'] as num?)?.toInt() ?? 0,
+        timingScore: (json['timingScore'] as num?)?.toInt() ?? 0,
       );
 
   Map<String, dynamic> toJson() => {
         'readinessScore': readinessScore,
         'weakPoints': weakPoints,
         'blockers': blockers,
+        'consistencyScore': consistencyScore,
+        'engagementScore': engagementScore,
+        'budgetScore': budgetScore,
+        'timingScore': timingScore,
+      };
+}
+
+class BudgetDNA {
+  final int totalBudget;
+  final int spentBudget;
+  final List<Map<String, dynamic>> platformROAS;
+
+  const BudgetDNA({
+    this.totalBudget = 0,
+    this.spentBudget = 0,
+    this.platformROAS = const [],
+  });
+
+  factory BudgetDNA.fromJson(Map<String, dynamic> json) => BudgetDNA(
+        totalBudget: (json['totalBudget'] as num?)?.toInt() ?? 0,
+        spentBudget: (json['spentBudget'] as num?)?.toInt() ?? 0,
+        platformROAS: List<Map<String, dynamic>>.from(json['platformROAS'] ?? []),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'totalBudget': totalBudget,
+        'spentBudget': spentBudget,
+        'platformROAS': platformROAS,
       };
 }
 
@@ -171,6 +213,7 @@ class ProjectDNA {
   final ResourceDNA resource;
   final SkillDNA skill;
   final PerformanceDNA performance;
+  final BudgetDNA budget;
 
   const ProjectDNA({
     this.strategic = const StrategicDNA(),
@@ -178,6 +221,7 @@ class ProjectDNA {
     this.resource = const ResourceDNA(),
     this.skill = const SkillDNA(),
     this.performance = const PerformanceDNA(),
+    this.budget = const BudgetDNA(),
   });
 
   factory ProjectDNA.fromJson(Map<String, dynamic> json) => ProjectDNA(
@@ -186,6 +230,7 @@ class ProjectDNA {
         resource: ResourceDNA.fromJson(json['resource'] ?? {}),
         skill: SkillDNA.fromJson(json['skill'] ?? {}),
         performance: PerformanceDNA.fromJson(json['performance'] ?? {}),
+        budget: BudgetDNA.fromJson(json['budget'] ?? {}),
       );
 
   Map<String, dynamic> toJson() => {
@@ -194,6 +239,7 @@ class ProjectDNA {
         'resource': resource.toJson(),
         'skill': skill.toJson(),
         'performance': performance.toJson(),
+        'budget': budget.toJson(),
       };
 }
 
@@ -224,6 +270,10 @@ class ContentBlock {
     this.recommendedTime,
     this.status = ContentBlockStatus.draft,
     this.imageUrl,
+    this.hook = '',
+    this.caption = '',
+    this.hookGenerated = false,
+    this.captionGenerated = false,
   });
 
   factory ContentBlock.fromJson(Map<String, dynamic> json) {
@@ -244,8 +294,35 @@ class ContentBlock {
       recommendedTime: json['recommendedTime'],
       status: enumOrNull(ContentBlockStatus.values, json['status']) ?? ContentBlockStatus.draft,
       imageUrl: json['imageUrl'],
+      hook: json['hook'] ?? '',
+      caption: json['caption'] ?? '',
+      hookGenerated: json['hookGenerated'] ?? false,
+      captionGenerated: json['captionGenerated'] ?? false,
     );
   }
+
+  final String hook;
+  final String caption;
+  final bool hookGenerated;
+  final bool captionGenerated;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'pillar': pillar,
+        'productId': productId,
+        'format': format.name,
+        'ctaType': ctaType.name,
+        'emotionalTrigger': emotionalTrigger,
+        'recommendedDayOffset': recommendedDayOffset,
+        'recommendedTime': recommendedTime,
+        'status': status.name,
+        'imageUrl': imageUrl,
+        'hook': hook,
+        'caption': caption,
+        'hookGenerated': hookGenerated,
+        'captionGenerated': captionGenerated,
+      };
 }
 
 class Phase {
@@ -254,6 +331,8 @@ class Phase {
   final int weekNumber;
   final String? description;
   final List<ContentBlock> contentBlocks;
+  final PhaseStatus status;
+  final List<String> productIds;
 
   const Phase({
     this.id,
@@ -261,18 +340,43 @@ class Phase {
     required this.weekNumber,
     this.description,
     this.contentBlocks = const [],
+    this.status = PhaseStatus.upcoming,
+    this.productIds = const [],
+    this.linkedPlanIds = const [],
   });
 
-  factory Phase.fromJson(Map<String, dynamic> json) => Phase(
-        id: json['_id'] ?? json['id'],
-        name: json['name'] ?? '',
-        weekNumber: (json['weekNumber'] as num?)?.toInt() ?? 1,
-        description: json['description'],
-        contentBlocks: (json['contentBlocks'] as List<dynamic>?)
-                ?.map((b) => ContentBlock.fromJson(b as Map<String, dynamic>))
-                .toList() ??
-            [],
-      );
+  final List<String> linkedPlanIds;
+
+  factory Phase.fromJson(Map<String, dynamic> json) {
+    T? enumOrNull<T extends Enum>(List<T> values, dynamic raw) {
+      if (raw == null) return null;
+      return values.cast<T?>().firstWhere((e) => e?.name == raw, orElse: () => null);
+    }
+    return Phase(
+      id: json['_id'] ?? json['id'],
+      name: json['name'] ?? '',
+      weekNumber: (json['weekNumber'] as num?)?.toInt() ?? 1,
+      description: json['description'],
+      contentBlocks: (json['contentBlocks'] as List<dynamic>?)
+              ?.map((b) => ContentBlock.fromJson(b as Map<String, dynamic>))
+              .toList() ??
+          [],
+      status: enumOrNull(PhaseStatus.values, json['status']) ?? PhaseStatus.upcoming,
+      productIds: List<String>.from(json['productIds'] ?? []),
+      linkedPlanIds: List<String>.from(json['linkedPlanIds'] ?? []),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'weekNumber': weekNumber,
+    'description': description,
+    'contentBlocks': contentBlocks.map((b) => b.toJson()).toList(),
+    'status': status.name,
+    'productIds': productIds,
+    'linkedPlanIds': linkedPlanIds,
+  };
 }
 
 // ─── CalendarEntry ────────────────────────────────────────────────────────────
@@ -371,6 +475,9 @@ class Plan {
   final String notes;
   final bool notesSeen;
   final String? lastNoteAuthorId;
+  final List<String> collaboratorIds;
+  final String? linkedStrategyId;
+  final String? linkedPhaseId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -386,6 +493,7 @@ class Plan {
     this.postingFrequency = 3,
     this.platforms = const [],
     this.productIds = const [],
+    this.collaboratorIds = const [],
     this.contentMixPreference = const {
       'educational': 25,
       'promotional': 25,
@@ -399,6 +507,8 @@ class Plan {
     this.notes = '',
     this.notesSeen = true,
     this.lastNoteAuthorId,
+    this.linkedStrategyId,
+    this.linkedPhaseId,
     this.createdAt,
     this.updatedAt,
   });
@@ -436,6 +546,9 @@ class Plan {
       notes: json['notes'] ?? '',
       notesSeen: json['notesSeen'] ?? true,
       lastNoteAuthorId: json['lastNoteAuthorId'],
+      linkedStrategyId: json['linkedStrategyId'],
+      linkedPhaseId: json['linkedPhaseId'],
+      collaboratorIds: List<String>.from(json['collaboratorIds'] ?? []),
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
     );
@@ -460,6 +573,9 @@ class Plan {
     'notes': notes,
     'notesSeen': notesSeen,
     'lastNoteAuthorId': lastNoteAuthorId,
+    'collaboratorIds': collaboratorIds,
+    'linkedStrategyId': linkedStrategyId,
+    'linkedPhaseId': linkedPhaseId,
   };
 
   /// Look up a [ContentBlock] by its id within this plan's embedded phases.

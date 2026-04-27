@@ -54,7 +54,7 @@ class VoiceNavigationHandler {
     'BRAND_WORKSPACE': _NavTarget('/brand-workspace', replace: false),
     'BRAND_FORM': _NavTarget('/brand-form', replace: false),
     'PROJECT_BOARD': _NavTarget('/project-board', replace: false),
-    'PLANS': _NavTarget('/projects-flow', replace: false),
+    'PLANS': _NavTarget('/projects/flow', replace: false),
     'AI_CAMPAIGN_ROADMAP': _NavTarget('/ai-campaign-roadmap', replace: false),
     'PLAN_DETAIL': _NavTarget('/plan-detail', replace: false),
 

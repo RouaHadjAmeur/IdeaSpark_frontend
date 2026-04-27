@@ -14,9 +14,10 @@ class PlanService {
     return authService.accessToken;
   }
 
-  static Map<String, String> _headers(String? token) => {
+  static Map<String, String> _headers(String? token, {String? brandId}) => {
         'Content-Type': 'application/json',
         if (token != null) 'Authorization': 'Bearer $token',
+        if (brandId != null) 'x-brand-id': brandId,
       };
 
   // ─── Create ──────────────────────────────────────────────────────────────
@@ -25,10 +26,12 @@ class PlanService {
     final token = await _getToken();
     final url = '${ApiConfig.createPlanUrl}?brandId=$brandId';
     
-    debugPrint('[PlanService] POST $url body=${jsonEncode(data)}');
+    final headers = _headers(token, brandId: brandId);
+    debugPrint('[PlanService] POST $url | Headers: ${headers.keys} | Token Present: ${token != null}');
+    debugPrint('[PlanService] Body: ${jsonEncode(data)}');
     final response = await http.post(
       Uri.parse(url),
-      headers: _headers(token),
+      headers: headers,
       body: jsonEncode(data),
     );
     
@@ -36,6 +39,11 @@ class PlanService {
     if (response.statusCode == 201) {
       return Plan.fromJson(jsonDecode(response.body));
     }
+    
+    if (response.statusCode == 403) {
+      throw Exception('Accès refusé : Votre abonnement ou vos crédits sont peut-être insuffisants pour cette action.');
+    }
+    
     throw Exception('Failed to create plan: ${response.statusCode} - ${response.body}');
   }
 
@@ -44,7 +52,7 @@ class PlanService {
   static Future<List<Plan>> getPlans({String? brandId}) async {
     final token = await _getToken();
     final url = ApiConfig.getPlansUrl(brandId: brandId);
-    final response = await http.get(Uri.parse(url), headers: _headers(token));
+    final response = await http.get(Uri.parse(url), headers: _headers(token, brandId: brandId));
     if (response.statusCode == 200) {
       final List<dynamic> list = jsonDecode(response.body);
       return list.map((e) => Plan.fromJson(e as Map<String, dynamic>)).toList();
@@ -136,8 +144,8 @@ class PlanService {
       Uri.parse(url),
       headers: _headers(token),
     ).timeout(
-      const Duration(seconds: 120),
-      onTimeout: () => throw Exception('Plan generation timed out (>120s). Please try again.'),
+      const Duration(seconds: 180),
+      onTimeout: () => throw Exception('Plan generation timed out (>180s). Please try again.'),
     );
     
     debugPrint('[PlanService] generatePlanStructure status=${response.statusCode} body=${response.body.substring(0, response.body.length.clamp(0, 400))}');
@@ -230,5 +238,29 @@ class PlanService {
       return jsonDecode(response.body);
     }
     throw Exception('Failed to get AI insights: ${response.statusCode} - ${response.body}');
+  }
+
+  static Future<Plan> generateHook(String planId, String blockId) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse(ApiConfig.generateHookUrl(planId, blockId)),
+      headers: _headers(token),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Plan.fromJson(jsonDecode(response.body));
+    }
+    throw Exception('Failed to generate hook: ${response.statusCode} - ${response.body}');
+  }
+
+  static Future<Plan> generateCaption(String planId, String blockId) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse(ApiConfig.generateCaptionUrl(planId, blockId)),
+      headers: _headers(token),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Plan.fromJson(jsonDecode(response.body));
+    }
+    throw Exception('Failed to generate caption: ${response.statusCode} - ${response.body}');
   }
 }
