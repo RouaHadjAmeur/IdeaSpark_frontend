@@ -9,8 +9,7 @@ plugins {
 android {
     namespace = "com.example.ideaspark"
     compileSdk = flutter.compileSdkVersion
-    // Pin to a stable NDK to avoid corrupted 28.2 downloads; use 26.x which installs reliably
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -45,4 +44,5 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("com.google.android.material:material:1.12.0")
 }

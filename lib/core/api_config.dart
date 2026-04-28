@@ -10,7 +10,7 @@ class ApiConfig {
   static String get baseUrl {
     const envUrl = String.fromEnvironment('API_BASE_URL');
     if (envUrl.isNotEmpty) return envUrl;
-    // Android emulator uses 10.0.2.2 to reach host localhost
+    // Android emulator uses 10.0.2.2 to reach host localhost --- to use phone 192.168.1.24:3000
     if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
       return 'http://10.0.2.2:3000';
     }
@@ -141,6 +141,23 @@ class ApiConfig {
 
   // Social & Community
   static String get socialBase => '$baseUrl/social';
+  static String get youtubeTrendsBase => '$baseUrl/youtube-trends';
+  static String youtubeTrendsUrl({
+    String? format,
+    String? sort,
+    String? search,
+    int? limit,
+  }) {
+    final params = <String, String>{};
+    if (format != null && format.isNotEmpty) params['format'] = format;
+    if (sort != null && sort.isNotEmpty) params['sort'] = sort;
+    if (search != null && search.isNotEmpty) params['search'] = search;
+    if (limit != null && limit > 0) params['limit'] = '$limit';
+    final query = params.entries
+        .map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+        .join('&');
+    return query.isEmpty ? youtubeTrendsBase : '$youtubeTrendsBase?$query';
+  }
   static String get socialFeed => '$baseUrl/social/feed';
   static String get socialSuggestions => '$baseUrl/social/suggestions';
   static String get socialAccept => '$baseUrl/social/accept'; // /id at end
@@ -177,6 +194,22 @@ class ApiConfig {
   static String get stripeBase => '$baseUrl/stripe';
   static String get stripeCreateSubscriptionUrl => '$stripeBase/create-subscription';
   static String get usersConfirmSubscriptionUrl => '$usersBase/confirm-subscription';
+
+  // YouTube Auth & Publishing Endpoints
+  static String get youtubeAuthBase => '$baseUrl/youtube-auth';
+  static String get youtubeStartUrl => '$youtubeAuthBase/start';
+  static String get youtubeMeUrl => '$youtubeAuthBase/me';
+  static String get youtubeDisconnectUrl => '$youtubeAuthBase/disconnect';
+  static String get youtubePublishUrl => '$youtubeAuthBase/publish';
+  static String get youtubePublishUploadUrl => '$youtubeAuthBase/publish-upload';
+
+  // Instagram Auth & Publishing Endpoints
+  static String get instagramAuthBase => '$baseUrl/instagram-auth';
+  static String get instagramStartUrl => '$instagramAuthBase/start';
+  static String get instagramMeUrl => '$instagramAuthBase/me';
+  static String get instagramDisconnectUrl => '$instagramAuthBase/disconnect';
+  static String get instagramPublishUrl => '$instagramAuthBase/publish';
+  static String get instagramPublishUploadUrl => '$instagramAuthBase/publish-upload';
 
   // Google Sign-In Web Client ID (set via --dart-define=GOOGLE_WEB_CLIENT_ID=...)
   static const String googleWebClientId = String.fromEnvironment(

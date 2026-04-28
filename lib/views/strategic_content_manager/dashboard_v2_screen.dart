@@ -49,6 +49,31 @@ class _DashboardContentState extends State<DashboardContent>
 
   Color _colorForIndex(int i) => _brandColors[i % _brandColors.length];
 
+  List<_TrendSectionColors> _trendSectionColors(ColorScheme cs) {
+    return [
+      _TrendSectionColors(
+        background: cs.primaryContainer,
+        title: cs.onPrimaryContainer,
+        subtitle: cs.onPrimaryContainer.withValues(alpha: 0.84),
+      ),
+      _TrendSectionColors(
+        background: cs.secondaryContainer,
+        title: cs.onSecondaryContainer,
+        subtitle: cs.onSecondaryContainer.withValues(alpha: 0.84),
+      ),
+      _TrendSectionColors(
+        background: cs.tertiaryContainer,
+        title: cs.onTertiaryContainer,
+        subtitle: cs.onTertiaryContainer.withValues(alpha: 0.84),
+      ),
+      _TrendSectionColors(
+        background: cs.surfaceContainerHighest,
+        title: cs.onSurface,
+        subtitle: cs.onSurfaceVariant,
+      ),
+    ];
+  }
+
   @override
   void initState() {
     super.initState();
@@ -98,7 +123,6 @@ class _DashboardContentState extends State<DashboardContent>
     if (user == null) return;
 
     final isIncomplete = (user.username?.isEmpty ?? true) ||
-        (user.role == null) ||
         (user.skills?.isEmpty ?? true) ||
         (user.interests?.isEmpty ?? true);
 
@@ -477,7 +501,7 @@ class _DashboardContentState extends State<DashboardContent>
               ),
             ),
             TextButton(
-              onPressed: () => context.push('/trends'),
+              onPressed: () => _showTrendsMenuSheet(context),
               child: Text(context.tr('see_all'),
                   style:
                       TextStyle(color: colorScheme.primary, fontSize: 13)),
@@ -497,6 +521,162 @@ class _DashboardContentState extends State<DashboardContent>
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _showTrendsMenuSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        final colorScheme = Theme.of(sheetContext).colorScheme;
+        final bottomInset = MediaQuery.of(sheetContext).padding.bottom;
+        final trendColors = _trendSectionColors(colorScheme);
+
+        return FractionallySizedBox(
+          heightFactor: 0.82,
+          child: Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(28),
+              ),
+            ),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 14, 16, 12 + bottomInset),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Explore Trends',
+                    style: GoogleFonts.syne(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      height: 1,
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          const gap = 8.0;
+                          const baseTop = 136.0;
+                          const baseMid = 124.0;
+                          const baseBottom = 176.0;
+                          final baseTotal =
+                              baseTop +
+                              baseMid +
+                              baseMid +
+                              baseBottom +
+                              (gap * 3);
+                          final scale = (constraints.maxHeight / baseTotal)
+                              .clamp(0.82, 1.2);
+
+                          final topHeight = baseTop * scale;
+                          final midHeight = baseMid * scale;
+                          final bottomHeight =
+                              constraints.maxHeight -
+                              topHeight -
+                              midHeight -
+                              midHeight -
+                              (gap * 3);
+
+                          return Column(
+                            children: [
+                              SizedBox(
+                                height: topHeight,
+                                child: _TrendsPanelSection(
+                                  title: 'YouTube Trends',
+                                  subtitle:
+                                      'Explore viral videos\nand channels',
+                                  background: trendColors[0].background,
+                                  titleColor: trendColors[0].title,
+                                  subtitleColor: trendColors[0].subtitle,
+                                  logoUrl:
+                                      'assets/images/Youtube_logo-removebg-preview.png',
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/social-video-trends');
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: gap),
+                              SizedBox(
+                                height: midHeight,
+                                child: _TrendsPanelSection(
+                                  title: 'TikTok Trends',
+                                  subtitle:
+                                      'Discover new creative\nshort videos',
+                                  background: trendColors[1].background,
+                                  titleColor: trendColors[1].title,
+                                  subtitleColor: trendColors[1].subtitle,
+                                  logoUrl:
+                                      'assets/images/tiktok_logo-removebg-preview.png',
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/trends');
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: gap),
+                              SizedBox(
+                                height: midHeight,
+                                child: _TrendsPanelSection(
+                                  title: 'Instagram\nTrends',
+                                  subtitle: 'Explore viral photos\nand reels',
+                                  background: trendColors[2].background,
+                                  titleColor: trendColors[2].title,
+                                  subtitleColor: trendColors[2].subtitle,
+                                  logoUrl:
+                                      'assets/images/insta_logo-removebg-preview.png',
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/trends');
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: gap),
+                              SizedBox(
+                                height: bottomHeight,
+                                child: _TrendsPanelSection(
+                                  title: 'News Trends',
+                                  subtitle: 'Stay updated on\ncurrent events',
+                                  background: trendColors[3].background,
+                                  titleColor: trendColors[3].title,
+                                  subtitleColor: trendColors[3].subtitle,
+                                  logoUrl:
+                                      'assets/images/news_logo-removebg-preview.png',
+                                  showCta: true,
+                                  onTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/trends');
+                                  },
+                                  onCtaTap: () {
+                                    Navigator.of(sheetContext).pop();
+                                    context.push('/trends');
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1079,3 +1259,154 @@ class _AISuggestion extends StatelessWidget {
     );
   }
 }
+
+class _TrendSectionColors {
+  final Color background;
+  final Color title;
+  final Color subtitle;
+
+  const _TrendSectionColors({
+    required this.background,
+    required this.title,
+    required this.subtitle,
+  });
+}
+
+class _TrendsPanelSection extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Color background;
+  final Color titleColor;
+  final Color subtitleColor;
+  final String logoUrl;
+  final VoidCallback onTap;
+  final VoidCallback? onCtaTap;
+  final bool showCta;
+
+  const _TrendsPanelSection({
+    required this.title,
+    required this.subtitle,
+    required this.background,
+    required this.titleColor,
+    required this.subtitleColor,
+    required this.logoUrl,
+    required this.onTap,
+    this.onCtaTap,
+    this.showCta = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxHeight < 118;
+        final contentPadding = EdgeInsets.fromLTRB(
+          16,
+          isCompact ? 10 : 14,
+          16,
+          isCompact ? 8 : 12,
+        );
+        final logoSize = (constraints.maxHeight * (showCta ? 0.42 : 0.72))
+            .clamp(isCompact ? 84.0 : 96.0, 132.0);
+        final titleSize = isCompact ? 16.0 : 18.0;
+        final subtitleSize = isCompact ? 11.0 : 12.0;
+
+        return Material(
+          color: background,
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              padding: contentPadding,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.syne(
+                                  fontSize: titleSize,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.05,
+                                  color: titleColor,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                subtitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: subtitleSize,
+                                  height: 1.18,
+                                  color: subtitleColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          width: logoSize,
+                          height: logoSize,
+                          child: Image.asset(
+                            logoUrl,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.image_not_supported_outlined,
+                                  color: subtitleColor,
+                                  size: isCompact ? 26 : 30,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (showCta) ...[
+                    const SizedBox(height: 8),
+                    FilledButton(
+                      onPressed: onCtaTap ?? onTap,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: cs.primary,
+                        foregroundColor: cs.onPrimary,
+                        minimumSize: const Size(double.infinity, 44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        "Let's Explore!",
+                        style: GoogleFonts.syne(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+

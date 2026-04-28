@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -55,7 +56,11 @@ Future<void> main() async {
   );
   await Stripe.instance.applySettings();
   // Initialize deep link service for OAuth callbacks
-  await DeepLinkService().init();
+  unawaited(
+    DeepLinkService().init().catchError((e) {
+      debugPrint('DeepLinkService init skipped: $e');
+    }),
+  );
   runApp(const IdeaSparkApp());
 }
 

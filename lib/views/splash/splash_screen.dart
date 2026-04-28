@@ -69,31 +69,47 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _navigateNext() async {
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
-    final authVm = context.read<AuthViewModel>();
-    final loggedIn = await authVm.restoreSession();
-    if (!mounted) return;
-    if (loggedIn) {
-      final onboardingDone = await authVm.isOnboardingDone();
+
+    try {
+      final authVm = context.read<AuthViewModel>();
+      final loggedIn = await authVm
+          .restoreSession()
+          .timeout(const Duration(seconds: 5), onTimeout: () => false);
       if (!mounted) return;
-      if (onboardingDone) {
-        // Check if persona onboarding is completed
-        final personaCompleted = await PersonaCompletionService.isPersonaCompleted();
-        if (!mounted) return;
-        if (personaCompleted) {
-          context.go('/home');
-          // Fire-and-forget: ask about hands-free (or restore silent mode).
-          // This runs AFTER navigation so there is no splash delay.
-          context.read<HandsFreeModeController>().runInitialVoiceOnboardingIfNeeded();
-        } else {
-          // Redirect to persona onboarding if not completed
-          final userId = authVm.userId ?? '';
-          context.go('/persona-onboarding', extra: userId);
-        }
-      } else {
-        context.go('/onboarding');
+
+      if (!loggedIn) {
+        context.go('/login');
+        return;
       }
-    } else {
-      context.go('/login');
+
+      final onboardingDone = await authVm
+          .isOnboardingDone()
+          .timeout(const Duration(seconds: 3), onTimeout: () => false);
+      if (!mounted) return;
+
+      if (!onboardingDone) {
+        context.go('/onboarding');
+        return;
+      }
+
+      final personaCompleted = await PersonaCompletionService.isPersonaCompleted()
+          .timeout(const Duration(seconds: 3), onTimeout: () => false);
+      if (!mounted) return;
+
+      if (personaCompleted) {
+        context.go('/home');
+        // Fire-and-forget: ask about hands-free (or restore silent mode).
+        // This runs AFTER navigation so there is no splash delay.
+        context.read<HandsFreeModeController>().runInitialVoiceOnboardingIfNeeded();
+      } else {
+        final userId = authVm.userId ?? '';
+        context.go('/persona-onboarding', extra: userId);
+      }
+    } catch (e) {
+      debugPrint('[Splash] Navigation fallback: $e');
+      if (mounted) {
+        context.go('/login');
+      }
     }
   }
 
