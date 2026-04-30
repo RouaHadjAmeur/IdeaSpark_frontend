@@ -57,6 +57,8 @@ import 'package:ideaspark/views/ai/creative_ai_test_screen.dart';
 import 'package:ideaspark/views/ai/video_generator_screen.dart';
 import 'package:ideaspark/views/ai/video_history_screen.dart';
 import 'package:ideaspark/views/ai/image_editor_screen.dart';
+import 'package:ideaspark/views/ai/video_editor_screen_safe.dart';
+import 'package:ideaspark/views/ai/edited_videos_history_screen.dart';
 import 'package:ideaspark/views/ai/advanced_share_screen.dart';
 
 import '../models/video_generator_models.dart';
@@ -398,6 +400,7 @@ GoRouter createAppRouter() {
           child: LocaleRebuilder(builder: (_) => const VideoHistoryScreen()),
         ),
       ),
+      // ⚡ OPTIMISATION: Éditeurs avec chargement optimisé
       GoRoute(
         path: '/image-editor',
         parentNavigatorKey: _rootNavigatorKey,
@@ -414,6 +417,30 @@ GoRouter createAppRouter() {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: '/video-editor',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final videoUrl = extra?['videoUrl'] as String? ?? '';
+          final videoId = extra?['videoId'] as String?;
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => VideoEditorScreen(
+                videoUrl: videoUrl,
+                videoId: videoId,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/edited-videos-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const EditedVideosHistoryScreen()),
+        ),
       ),
       GoRoute(
         path: '/advanced-share',
