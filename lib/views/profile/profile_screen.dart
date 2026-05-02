@@ -1,8 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:ideaspark/core/app_localizations.dart';
 import 'package:ideaspark/view_models/profile_view_model.dart';
 import 'package:ideaspark/view_models/theme_view_model.dart';
@@ -208,7 +209,7 @@ void _showChangePasswordDialog(BuildContext context, ProfileViewModel vm) {
     context: context,
     builder: (dialogContext) => ListenableBuilder(
       listenable: vm,
-      builder: (_, __) {
+      builder: (_, state) {
         return AlertDialog(
           title: Text(tr('change_password_title')),
           content: SingleChildScrollView(
@@ -492,6 +493,8 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 _PersonaSection(vm: vm, colorScheme: colorScheme),
                 const SizedBox(height: 24),
+                _LinkedAccountsSection(vm: vm, colorScheme: colorScheme),
+                const SizedBox(height: 24),
                 _SettingsGroup(
                   title: context.tr('content'),
                   colorScheme: colorScheme,
@@ -559,6 +562,21 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   onTap: () => context.push('/credits-shop'),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: Colors.amber.shade700,
+                  ),
+                  title: Text(
+                    vm.isPremium ? 'Manage Premium Subscription' : 'Upgrade to Premium',
+                    style: TextStyle(
+                      color: Colors.amber.shade700,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () => context.push('/subscription-upgrade'),
                 ),
                 const SizedBox(height: 24),
                 _SettingsGroup(
@@ -792,6 +810,743 @@ class _PersonaEmpty extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LinkedAccountsSection extends StatelessWidget {
+  final ProfileViewModel vm;
+  final ColorScheme colorScheme;
+
+  const _LinkedAccountsSection({required this.vm, required this.colorScheme});
+
+  Future<void> _showInstagramPublishDialog(BuildContext context) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) =>
+          _InstagramPublishDialog(vm: vm, colorScheme: colorScheme),
+    );
+  }
+
+  Future<void> _startInstagramConnectFlow(BuildContext context) async {
+    final authUrl = await vm.startInstagramConnect();
+    if (!context.mounted) return;
+
+    if (authUrl == null || authUrl.isEmpty) {
+      final msg =
+          vm.instagramErrorMessage ?? 'Could not start Instagram connection.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    final launched = await launchUrl(
+      Uri.parse(authUrl),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          launched
+              ? 'Finish Meta consent, then tap Refresh.'
+              : 'Could not open Instagram auth page.',
+        ),
+        backgroundColor: launched ? colorScheme.primary : colorScheme.error,
+      ),
+    );
+  }
+
+  Future<void> _startYouTubeConnectFlow(BuildContext context) async {
+    final authUrl = await vm.startYouTubeConnect();
+    if (!context.mounted) return;
+
+    if (authUrl == null || authUrl.isEmpty) {
+      final msg = vm.youtubeErrorMessage ?? 'Could not start YouTube connection.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    final launched = await launchUrl(
+      Uri.parse(authUrl),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          launched
+              ? 'Finish Google consent, then tap Refresh.'
+              : 'Could not open Google auth page.',
+        ),
+        backgroundColor: launched ? colorScheme.primary : colorScheme.error,
+      ),
+    );
+  }
+
+  Future<void> _unlinkInstagram(BuildContext context) async {
+    final ok = await vm.disconnectInstagram();
+    if (!context.mounted) return;
+
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Instagram account unlinked.')),
+      );
+    } else {
+      final msg = vm.instagramErrorMessage ?? 'Could not unlink Instagram.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _unlinkYouTube(BuildContext context) async {
+    final ok = await vm.disconnectYouTube();
+    if (!context.mounted) return;
+
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('YouTube account unlinked.')),
+      );
+    } else {
+      final msg = vm.youtubeErrorMessage ?? 'Could not unlink YouTube.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmAndUnlink(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Unlink YouTube?'),
+        content: const Text('You can link another channel right after this.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Unlink'),
+          ),
+        ],
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (confirmed == true) {
+      await _unlinkYouTube(context);
+    }
+  }
+
+  Future<void> _confirmAndUnlinkInstagram(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Unlink Instagram?'),
+        content: const Text('You can link another account right after this.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Unlink'),
+          ),
+        ],
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (confirmed == true) {
+      await _unlinkInstagram(context);
+    }
+  }
+
+  Future<void> _relinkAnotherChannel(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Link another channel?'),
+        content:
+            const Text('Your current YouTube channel will be unlinked first.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final ok = await vm.disconnectYouTube();
+    if (!context.mounted) return;
+
+    if (!ok) {
+      final msg = vm.youtubeErrorMessage ?? 'Could not unlink YouTube.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Previous channel unlinked. Connect the new one.'),
+      ),
+    );
+    await _startYouTubeConnectFlow(context);
+  }
+
+  Future<void> _relinkAnotherInstagram(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Link another Instagram account?'),
+        content: const Text(
+          'Your current Instagram account will be unlinked first.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final ok = await vm.disconnectInstagram();
+    if (!context.mounted) return;
+
+    if (!ok) {
+      final msg = vm.instagramErrorMessage ?? 'Could not unlink Instagram.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Previous Instagram account unlinked. Connect the new one.',
+        ),
+      ),
+    );
+    await _startInstagramConnectFlow(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final instagramBusy =
+        vm.isInstagramChecking ||
+        vm.isInstagramConnecting ||
+        vm.isInstagramDisconnecting ||
+        vm.isInstagramPublishing;
+    final youtubeBusy =
+        vm.isYoutubeChecking || vm.isYoutubeConnecting || vm.isYoutubeDisconnecting;
+    final anyBusy = instagramBusy || youtubeBusy;
+
+    final youtubeStatusColor = vm.isYoutubeConnected
+        ? const Color(0xFF10B981)
+        : colorScheme.onSurfaceVariant;
+    final instagramStatusColor = vm.isInstagramConnected
+        ? const Color(0xFF10B981)
+        : colorScheme.onSurfaceVariant;
+
+    final youtubeStatusLabel = vm.isYoutubeChecking
+        ? 'Checking YouTube connection...'
+        : vm.isYoutubeDisconnecting
+            ? 'Disconnecting YouTube...'
+            : (vm.isYoutubeConnected
+                ? 'YouTube connected'
+                : 'YouTube not connected');
+
+    final instagramStatusLabel = vm.isInstagramChecking
+        ? 'Checking Instagram connection...'
+        : vm.isInstagramDisconnecting
+            ? 'Disconnecting Instagram...'
+            : (vm.isInstagramConnected
+                ? 'Instagram connected'
+                : 'Instagram not connected');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Linked Accounts',
+          style: GoogleFonts.syne(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colorScheme.outlineVariant),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _LinkedAccountButton(
+                      label: vm.isInstagramConnected
+                          ? 'Unlink Instagram'
+                          : 'Connect Instagram',
+                      icon: Icons.camera_alt_outlined,
+                      colorScheme: colorScheme,
+                      isActive: vm.isInstagramConnected,
+                      isLoading: instagramBusy,
+                      onTap: () async {
+                        if (instagramBusy) return;
+                        if (vm.isInstagramConnected) {
+                          await _confirmAndUnlinkInstagram(context);
+                          return;
+                        }
+                        await _startInstagramConnectFlow(context);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _LinkedAccountButton(
+                      label: vm.isYoutubeConnected
+                          ? 'Unlink YouTube'
+                          : 'Connect YouTube',
+                      icon: Icons.ondemand_video,
+                      colorScheme: colorScheme,
+                      isActive: vm.isYoutubeConnected,
+                      isLoading: youtubeBusy,
+                      onTap: () async {
+                        if (youtubeBusy) return;
+                        if (vm.isYoutubeConnected) {
+                          await _confirmAndUnlink(context);
+                          return;
+                        }
+                        await _startYouTubeConnectFlow(context);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _LinkedAccountButton(
+                      label: 'TikTok',
+                      icon: Icons.music_note_outlined,
+                      colorScheme: colorScheme,
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('TikTok link is coming soon.'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(
+                    vm.isInstagramConnected
+                        ? Icons.check_circle
+                        : Icons.info_outline,
+                    size: 15,
+                    color: instagramStatusColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      instagramStatusLabel,
+                      style: TextStyle(fontSize: 12, color: instagramStatusColor),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: anyBusy
+                        ? null
+                        : () async {
+                            await vm.checkInstagramConnection();
+                            await vm.checkYouTubeConnection();
+                          },
+                    child: const Text('Refresh'),
+                  ),
+                  if (vm.isInstagramConnected)
+                    TextButton(
+                      onPressed: anyBusy
+                          ? null
+                          : () => _relinkAnotherInstagram(context),
+                      child: const Text('Link another'),
+                    ),
+                ],
+              ),
+              if (vm.isInstagramConnected) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: anyBusy
+                        ? null
+                        : () => _showInstagramPublishDialog(context),
+                    icon: const Icon(Icons.send_rounded, size: 16),
+                    label: const Text('Publish Reel/Feed'),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Icon(
+                    vm.isYoutubeConnected ? Icons.check_circle : Icons.info_outline,
+                    size: 15,
+                    color: youtubeStatusColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      youtubeStatusLabel,
+                      style: TextStyle(fontSize: 12, color: youtubeStatusColor),
+                    ),
+                  ),
+                  if (vm.isYoutubeConnected)
+                    TextButton(
+                      onPressed:
+                          anyBusy ? null : () => _relinkAnotherChannel(context),
+                      child: const Text('Link another'),
+                    ),
+                ],
+              ),
+              if (vm.instagramErrorMessage != null &&
+                  vm.instagramErrorMessage!.isNotEmpty)
+                Text(
+                  vm.instagramErrorMessage!,
+                  style: TextStyle(fontSize: 12, color: colorScheme.error),
+                ),
+              if (vm.youtubeErrorMessage != null &&
+                  vm.youtubeErrorMessage!.isNotEmpty)
+                Text(
+                  vm.youtubeErrorMessage!,
+                  style: TextStyle(fontSize: 12, color: colorScheme.error),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InstagramPublishDialog extends StatefulWidget {
+  const _InstagramPublishDialog({required this.vm, required this.colorScheme});
+
+  final ProfileViewModel vm;
+  final ColorScheme colorScheme;
+
+  @override
+  State<_InstagramPublishDialog> createState() => _InstagramPublishDialogState();
+}
+
+class _InstagramPublishDialogState extends State<_InstagramPublishDialog> {
+  final _urlController = TextEditingController();
+  final _captionController = TextEditingController();
+  final ImagePicker _picker = ImagePicker();
+  String _mediaType = 'reel';
+  bool _shareToFeed = true;
+  XFile? _selectedMedia;
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _captionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: widget.vm,
+      builder: (context, _) {
+        return AlertDialog(
+          title: const Text('Publish to Instagram'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: _mediaType,
+                  decoration: const InputDecoration(
+                    labelText: 'Format',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'reel', child: Text('Reel')),
+                    DropdownMenuItem(value: 'video', child: Text('Feed Video')),
+                    DropdownMenuItem(value: 'image', child: Text('Feed Image')),
+                  ],
+                  onChanged: widget.vm.isInstagramPublishing
+                      ? null
+                      : (value) {
+                          if (value == null) return;
+                          setState(() {
+                            _mediaType = value;
+                            _selectedMedia = null;
+                          });
+                        },
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed:
+                      widget.vm.isInstagramPublishing ? null : _pickFromPhone,
+                  icon: const Icon(Icons.perm_media_rounded, size: 16),
+                  label: Text(
+                    _selectedMedia == null
+                        ? (_mediaType == 'image'
+                            ? 'Choose image from phone'
+                            : 'Choose video from phone')
+                        : 'Selected: ${_selectedMedia!.name}',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tip: pick from phone OR paste public URL below.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: widget.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _urlController,
+                  enabled: !widget.vm.isInstagramPublishing,
+                  decoration: const InputDecoration(
+                    labelText: 'Public media URL',
+                    hintText: 'https://.../video.mp4 or image.jpg',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _captionController,
+                  enabled: !widget.vm.isInstagramPublishing,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Caption (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                if (_mediaType == 'reel') ...[
+                  const SizedBox(height: 8),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Share Reel to Feed'),
+                    value: _shareToFeed,
+                    onChanged: widget.vm.isInstagramPublishing
+                        ? null
+                        : (value) => setState(() => _shareToFeed = value),
+                  ),
+                ],
+                if (widget.vm.instagramErrorMessage != null &&
+                    widget.vm.instagramErrorMessage!.isNotEmpty)
+                  Text(
+                    widget.vm.instagramErrorMessage!,
+                    style: TextStyle(fontSize: 12, color: widget.colorScheme.error),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: widget.vm.isInstagramPublishing
+                  ? null
+                  : () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: widget.vm.isInstagramPublishing ? null : _submit,
+              child: widget.vm.isInstagramPublishing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Publish'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _submit() async {
+    final mediaUrl = _urlController.text.trim();
+    final hasPickedFile = _selectedMedia != null;
+    final hasValidUrl = mediaUrl.isNotEmpty && mediaUrl.startsWith('http');
+
+    if (!hasPickedFile && !hasValidUrl) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pick a local media file or enter a valid public URL.'),
+          backgroundColor: widget.colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    final permalink = hasPickedFile
+        ? await widget.vm.publishInstagramUpload(
+            filePath: _selectedMedia!.path,
+            mediaType: _mediaType,
+            caption: _captionController.text.trim(),
+            shareToFeed: _mediaType == 'reel' ? _shareToFeed : null,
+          )
+        : await widget.vm.publishInstagramFromUrl(
+            mediaType: _mediaType,
+            mediaUrl: mediaUrl,
+            caption: _captionController.text.trim(),
+            shareToFeed: _mediaType == 'reel' ? _shareToFeed : null,
+          );
+
+    if (!mounted) return;
+
+    if (permalink != null && permalink.isNotEmpty) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Published successfully: $permalink')),
+      );
+      return;
+    }
+
+    if (widget.vm.instagramErrorMessage != null &&
+        widget.vm.instagramErrorMessage!.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.vm.instagramErrorMessage!),
+          backgroundColor: widget.colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _pickFromPhone() async {
+    try {
+      if (_mediaType == 'image') {
+        final image = await _picker.pickImage(source: ImageSource.gallery);
+        if (!mounted) return;
+        if (image != null) {
+          setState(() => _selectedMedia = image);
+        }
+        return;
+      }
+
+      final video = await _picker.pickVideo(source: ImageSource.gallery);
+      if (!mounted) return;
+      if (video != null) {
+        setState(() => _selectedMedia = video);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Could not pick media from phone.'),
+          backgroundColor: widget.colorScheme.error,
+        ),
+      );
+    }
+  }
+}
+
+class _LinkedAccountButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final ColorScheme colorScheme;
+  final bool isActive;
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  const _LinkedAccountButton({
+    required this.label,
+    required this.icon,
+    required this.colorScheme,
+    required this.onTap,
+    this.isActive = false,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor =
+        isActive ? const Color(0xFFEF4444) : colorScheme.onSurfaceVariant;
+    return OutlinedButton.icon(
+      onPressed: isLoading ? null : onTap,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: activeColor,
+        side: BorderSide(
+          color: isActive ? const Color(0xFFEF4444) : colorScheme.outlineVariant,
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+      ),
+      icon: isLoading
+          ? SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: activeColor,
+              ),
+            )
+          : Icon(icon, size: 16),
+      label: Text(
+        label,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

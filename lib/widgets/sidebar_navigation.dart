@@ -62,6 +62,12 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
                   onTap: () => context.push('/calendar'),
                 ),
                 _SidebarItem(
+                  icon: Icons.speed_rounded,
+                  label: 'Professional Dashboard',
+                  isActive: location.startsWith('/professional-dashboard'),
+                  onTap: () => context.push('/professional-dashboard'),
+                ),
+                _SidebarItem(
                   icon: Icons.dashboard_customize_rounded,
                   label: 'Execution Hub',
                   isActive: location.startsWith('/projects') ||

@@ -15,6 +15,7 @@ class AdvancedShareService {
     required List<SocialPlatform> platforms,
     required List<String> accountIds,
     required DateTime scheduledTime,
+    String? audioUrl,
   }) async {
     try {
       final token = AuthService().accessToken;
@@ -26,7 +27,7 @@ class AdvancedShareService {
       print('📅 [AdvancedShare] Scheduled for: $scheduledTime');
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/social/schedule'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/schedule'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -40,8 +41,9 @@ class AdvancedShareService {
           'platforms': platforms.map((e) => e.name).toList(),
           'accountIds': accountIds,
           'scheduledTime': scheduledTime.toIso8601String(),
+          if (audioUrl != null) 'audioUrl': audioUrl,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 180));
 
       print('📅 [AdvancedShare] Response: ${response.statusCode}');
 
@@ -68,7 +70,7 @@ class AdvancedShareService {
       print('📊 [AdvancedShare] Getting share stats for: $postId');
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/social/stats/$postId'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/statistics/$postId'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -96,6 +98,7 @@ class AdvancedShareService {
     required String caption,
     required List<SocialPlatform> platforms,
     required List<String> accountIds,
+    String? audioUrl,
   }) async {
     try {
       final token = AuthService().accessToken;
@@ -104,19 +107,26 @@ class AdvancedShareService {
       print('💬 [AdvancedShare] Sharing with custom caption...');
       print('💬 [AdvancedShare] Platforms: ${platforms.map((e) => e.name).join(', ')}');
 
+      final isVideo = contentUrl.toLowerCase().contains('.mp4') || contentUrl.toLowerCase().contains('.mov');
+      final contentType = isVideo ? 'video' : 'image';
+
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/social/share'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/share-now'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
+          'contentId': 'temp_id',
+          'contentType': contentType,
           'contentUrl': contentUrl,
           'caption': caption,
+          'hashtags': [],
           'platforms': platforms.map((e) => e.name).toList(),
           'accountIds': accountIds,
+          if (audioUrl != null) 'audioUrl': audioUrl,
         }),
-      ).timeout(const Duration(seconds: 15));
+      ).timeout(const Duration(seconds: 180));
 
       print('💬 [AdvancedShare] Share response: ${response.statusCode}');
 
@@ -146,7 +156,7 @@ class AdvancedShareService {
       print('🏷️ [AdvancedShare] Content length: ${content.length}');
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/social/hashtags/generate'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/generate-hashtags'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -183,6 +193,7 @@ class AdvancedShareService {
     required String caption,
     required List<String> hashtags,
     required List<String> accountIds,
+    String? audioUrl,
   }) async {
     try {
       final token = AuthService().accessToken;
@@ -191,19 +202,26 @@ class AdvancedShareService {
       print('👥 [AdvancedShare] Sharing to multiple accounts...');
       print('👥 [AdvancedShare] Accounts: ${accountIds.length}');
 
+      final isVideo = contentUrl.toLowerCase().contains('.mp4') || contentUrl.toLowerCase().contains('.mov');
+      final contentType = isVideo ? 'video' : 'image';
+
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/social/share/multiple'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/share-now'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
+          'contentId': 'temp_id',
+          'contentType': contentType,
           'contentUrl': contentUrl,
           'caption': caption,
           'hashtags': hashtags,
+          'platforms': ['instagram'],
           'accountIds': accountIds,
+          if (audioUrl != null) 'audioUrl': audioUrl,
         }),
-      ).timeout(const Duration(seconds: 30));
+      ).timeout(const Duration(seconds: 180));
 
       print('👥 [AdvancedShare] Multiple share response: ${response.statusCode}');
 
@@ -230,7 +248,7 @@ class AdvancedShareService {
       print('📋 [AdvancedShare] Getting scheduled posts...');
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/social/scheduled'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/scheduled-posts'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -274,7 +292,7 @@ class AdvancedShareService {
       print('❌ [AdvancedShare] Cancelling scheduled post: $postId');
 
       final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/social/scheduled/$postId'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/scheduled-posts/$postId'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -302,7 +320,7 @@ class AdvancedShareService {
       print('🔗 [AdvancedShare] Getting connected accounts...');
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/social/accounts'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/connected-accounts'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -349,7 +367,7 @@ class AdvancedShareService {
       print('🔗 [AdvancedShare] Connecting ${platform.name} account...');
 
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/social/accounts/connect'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/connect-account'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -385,7 +403,7 @@ class AdvancedShareService {
       print('🔌 [AdvancedShare] Disconnecting account: $accountId');
 
       final response = await http.delete(
-        Uri.parse('${ApiConfig.baseUrl}/social/accounts/$accountId'),
+        Uri.parse('${ApiConfig.baseUrl}/advanced-share/disconnect-account/$accountId'),
         headers: {
           'Authorization': 'Bearer $token',
         },

@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Backend API base URL. Change for production or use env.
 /// For iOS Simulator use http://localhost:3000
 /// For Android Emulator use http://10.0.2.2:3000
@@ -14,7 +12,7 @@ class ApiConfig {
     // return 'https://YOUR_NGROK_URL.ngrok.io'; // ← Décommentez et mettez votre URL ngrok
     // Use the correct network IP where backend is accessible
     // Backend confirmed working on this IP with all modules loaded
-    return 'http://10.202.174.19:3000';
+    return 'http://10.0.2.2:3000';
   }
 
   static String get authBase => '$baseUrl/auth';
@@ -116,6 +114,23 @@ class ApiConfig {
 
   // Social & Community
   static String get socialBase => '$baseUrl/social';
+  static String get youtubeTrendsBase => '$baseUrl/youtube-trends';
+  static String youtubeTrendsUrl({
+    String? format,
+    String? sort,
+    String? search,
+    int? limit,
+  }) {
+    final params = <String, String>{};
+    if (format != null && format.isNotEmpty) params['format'] = format;
+    if (sort != null && sort.isNotEmpty) params['sort'] = sort;
+    if (search != null && search.isNotEmpty) params['search'] = search;
+    if (limit != null && limit > 0) params['limit'] = '$limit';
+    final query = params.entries
+        .map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+        .join('&');
+    return query.isEmpty ? youtubeTrendsBase : '$youtubeTrendsBase?$query';
+  }
   // These depend on runtime `baseUrl` (which itself depends on platform), so expose
   // them as getters rather than compile-time constants.
   static String get socialFeed => '$baseUrl/social/feed';
@@ -132,6 +147,22 @@ class ApiConfig {
 
   // User Search
   static String searchUsersUrl(String query) => '$usersBase/search?q=$query';
+
+  // YouTube Auth & Publishing Endpoints
+  static String get youtubeAuthBase => '$baseUrl/youtube-auth';
+  static String get youtubeStartUrl => '$youtubeAuthBase/start';
+  static String get youtubeMeUrl => '$youtubeAuthBase/me';
+  static String get youtubeDisconnectUrl => '$youtubeAuthBase/disconnect';
+  static String get youtubePublishUrl => '$youtubeAuthBase/publish';
+  static String get youtubePublishUploadUrl => '$youtubeAuthBase/publish-upload';
+
+  // Instagram Auth & Publishing Endpoints
+  static String get instagramAuthBase => '$baseUrl/instagram-auth';
+  static String get instagramStartUrl => '$instagramAuthBase/start';
+  static String get instagramMeUrl => '$instagramAuthBase/me';
+  static String get instagramDisconnectUrl => '$instagramAuthBase/disconnect';
+  static String get instagramPublishUrl => '$instagramAuthBase/publish';
+  static String get instagramPublishUploadUrl => '$instagramAuthBase/publish-upload';
 
   // Google Sign-In Web Client ID (set via --dart-define=GOOGLE_WEB_CLIENT_ID=...)
   static const String googleWebClientId = String.fromEnvironment(

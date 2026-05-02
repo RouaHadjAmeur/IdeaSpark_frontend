@@ -1,0 +1,176 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../core/api_config.dart';
+import 'auth_service.dart';
+
+class InstagramUploadService {
+  InstagramUploadService._();
+
+  static final InstagramUploadService _instance = InstagramUploadService._();
+  factory InstagramUploadService() => _instance;
+
+  Future<bool> isConnected() async {
+    final token = await _getToken();
+    final res = await http.get(
+      Uri.parse(ApiConfig.instagramMeUrl),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (res.statusCode != 200) {
+      throw Exception(_errorMessage(res));
+    }
+    final map = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+    return map['connected'] == true;
+  }
+
+  Future<String> createConnectUrl() async {
+    final token = await _getToken();
+    final res = await http.post(
+      Uri.parse(ApiConfig.instagramStartUrl),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({}),
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception(_errorMessage(res));
+    }
+
+    final map = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+    final authUrl = map['authUrl']?.toString() ?? '';
+    if (authUrl.isEmpty) {
+      throw Exception('No authUrl returned by backend');
+    }
+    return authUrl;
+  }
+
+  Future<void> disconnect() async {
+    final token = await _getToken();
+    final res = await http.delete(
+      Uri.parse(ApiConfig.instagramDisconnectUrl),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 204) {
+      throw Exception(_errorMessage(res));
+    }
+  }
+
+  Future<String?> publishFromUrl({
+    required String mediaType,
+    required String mediaUrl,
+    String? caption,
+    bool? shareToFeed,
+    String? audioUrl,
+  }) async {
+    final token = await _getToken();
+    final body = <String, dynamic>{
+      'mediaType': mediaType,
+      'mediaUrl': mediaUrl,
+    };
+
+    if (caption != null && caption.trim().isNotEmpty) {
+      body['caption'] = caption.trim();
+    }
+    if (shareToFeed != null) {
+      body['shareToFeed'] = shareToFeed;
+    }
+    if (audioUrl != null) {
+      body['audioUrl'] = audioUrl;
+    }
+
+    final res = await http.post(
+      Uri.parse(ApiConfig.instagramPublishUrl),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      throw Exception(_errorMessage(res));
+    }
+
+    final map = _tryDecode(res.body) as Map<String, dynamic>? ?? {};
+    final permalink = map['permalink']?.toString();
+    return permalink != null && permalink.isNotEmpty ? permalink : null;
+  }
+
+  Future<String?> publishUpload({
+    required String filePath,
+    required String mediaType,
+    String? caption,
+    bool? shareToFeed,
+    String? audioUrl,
+  }) async {
+    final token = await _getToken();
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse(ApiConfig.instagramPublishUploadUrl),
+    );
+
+    request.headers['Authorization'] = 'Bearer $token';
+    request.fields['mediaType'] = mediaType;
+    if (caption != null && caption.trim().isNotEmpty) {
+      request.fields['caption'] = caption.trim();
+    }
+    if (shareToFeed != null) {
+      request.fields['shareToFeed'] = shareToFeed.toString();
+    }
+    if (audioUrl != null) {
+      request.fields['audioUrl'] = audioUrl;
+    }
+
+    request.files.add(await http.MultipartFile.fromPath('media', filePath));
+
+    final streamedRes = await request.send();
+    final body = await streamedRes.stream.bytesToString();
+    if (streamedRes.statusCode != 200 && streamedRes.statusCode != 201) {
+      throw Exception(_errorMessageFromRaw(body));
+    }
+
+    final map = _tryDecode(body) as Map<String, dynamic>? ?? {};
+    final permalink = map['permalink']?.toString();
+    return permalink != null && permalink.isNotEmpty ? permalink : null;
+  }
+
+  Future<String> _getToken() async {
+    final authService = AuthService();
+    await authService.isLoggedIn();
+    final token = authService.accessToken;
+    if (token == null || token.isEmpty) {
+      throw Exception('Not logged in');
+    }
+    return token;
+  }
+
+  String _errorMessage(http.Response res) {
+    return _errorMessageFromRaw(res.body);
+  }
+
+  String _errorMessageFromRaw(String body) {
+    final decoded = _tryDecode(body);
+    if (decoded is Map<String, dynamic>) {
+      final message = decoded['message'];
+      if (message is List && message.isNotEmpty) return message.join(' ');
+      if (message is String && message.isNotEmpty) return message;
+      final error = decoded['error'];
+      if (error is String && error.isNotEmpty) return error;
+    }
+    return body.isNotEmpty ? body : 'Request failed';
+  }
+
+  dynamic _tryDecode(String raw) {
+    try {
+      return jsonDecode(raw);
+    } catch (_) {
+      return raw;
+    }
+  }
+}
+

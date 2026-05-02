@@ -29,9 +29,15 @@ import 'package:ideaspark/views/generators/slogans_form_screen.dart';
 import 'package:ideaspark/views/generators/slogans_results_screen.dart';
 import 'package:ideaspark/views/library/saved_ideas_library_screen.dart';
 import 'package:ideaspark/views/trends/trends_analysis_screen.dart';
+import 'package:ideaspark/views/trends/social_video_trends_screen.dart';
 import 'package:ideaspark/views/profile/edit_profile_screen.dart';
 import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
 import 'package:ideaspark/modules/camera_coach/camera_coach_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/professional_dashboard_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/views_analytics_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/interactions_analytics_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/followers_analytics_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/trending_audio_screen.dart';
 
 import 'package:ideaspark/views/strategic_content_manager/brands_list_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brand_workspace_screen.dart';
@@ -251,6 +257,13 @@ GoRouter createAppRouter() {
         ),
       ),
       GoRoute(
+        path: '/social-video-trends',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const SocialVideoTrendsScreen()),
+        ),
+      ),
+      GoRoute(
         path: '/criteria',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
@@ -359,6 +372,31 @@ GoRouter createAppRouter() {
         path: '/camera-coach',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const CameraCoachScreen(),
+      ),
+      GoRoute(
+        path: '/professional-dashboard',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProfessionalDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/professional-dashboard/views',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ViewsAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/professional-dashboard/interactions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const InteractionsAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/professional-dashboard/followers',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const FollowersAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/professional-dashboard/trending-audio',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TrendingAudioScreen(),
       ),
       GoRoute(
         path: '/image-generator',

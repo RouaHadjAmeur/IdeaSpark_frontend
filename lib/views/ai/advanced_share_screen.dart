@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../models/scheduled_post.dart';
 import '../../services/advanced_share_service.dart';
+import '../../services/instagram_insights_service.dart';
 
 class AdvancedShareScreen extends StatefulWidget {
   final String contentUrl;
@@ -33,11 +34,15 @@ class _AdvancedShareScreenState extends State<AdvancedShareScreen> {
   bool _isScheduled = false;
   bool _isLoading = false;
   bool _isGeneratingHashtags = false;
+  bool _isLoadingAudio = false;
+  List<TrendingAudioItem> _trendingAudios = [];
+  String? _selectedAudioUrl;
 
   @override
   void initState() {
     super.initState();
     _loadConnectedAccounts();
+    _loadTrendingAudios();
   }
 
   @override
@@ -66,6 +71,19 @@ class _AdvancedShareScreenState extends State<AdvancedShareScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _loadTrendingAudios() async {
+    setState(() => _isLoadingAudio = true);
+    try {
+      final audios = await InstagramInsightsService().fetchTrendingAudio();
+      setState(() {
+        _trendingAudios = audios;
+        _isLoadingAudio = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingAudio = false);
     }
   }
 
@@ -138,6 +156,7 @@ class _AdvancedShareScreenState extends State<AdvancedShareScreen> {
           platforms: _selectedPlatforms,
           accountIds: _selectedAccountIds,
           scheduledTime: _scheduledDateTime!,
+          audioUrl: _selectedAudioUrl,
         );
 
         if (mounted) {
@@ -156,6 +175,7 @@ class _AdvancedShareScreenState extends State<AdvancedShareScreen> {
           caption: _captionController.text.trim(),
           platforms: _selectedPlatforms,
           accountIds: _selectedAccountIds,
+          audioUrl: _selectedAudioUrl,
         );
 
         if (mounted) {
@@ -248,6 +268,12 @@ class _AdvancedShareScreenState extends State<AdvancedShareScreen> {
                     _buildPlatformsSection(cs),
                     
                     const SizedBox(height: 24),
+
+                    // Trending Audio
+                    if (widget.contentType == 'video' || widget.contentType == 'image') ...[
+                      _buildAudioSection(cs),
+                      const SizedBox(height: 24),
+                    ],
                     
                     // Comptes
                     _buildAccountsSection(cs),
@@ -613,6 +639,104 @@ class _AdvancedShareScreenState extends State<AdvancedShareScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAudioSection(ColorScheme cs) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Musique (Trending Audio)',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: cs.onSurface,
+          ),
+        ),
+        if (widget.contentType == 'image') ...[
+          const SizedBox(height: 4),
+          Text(
+            'L\'image sera convertie en vidéo pour inclure la musique.',
+            style: TextStyle(
+              fontSize: 12,
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+        ],
+        const SizedBox(height: 12),
+        if (_isLoadingAudio)
+          const Center(child: CircularProgressIndicator())
+        else if (_trendingAudios.isEmpty)
+          Text('Aucune musique disponible', style: TextStyle(color: cs.onSurfaceVariant))
+        else
+          SizedBox(
+            height: 110,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _trendingAudios.length,
+              itemBuilder: (context, index) {
+                final audio = _trendingAudios[index];
+                final audioUrl = audio.previewUrl ?? '';
+                final isSelected = _selectedAudioUrl == audioUrl;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (isSelected) {
+                        _selectedAudioUrl = null;
+                      } else {
+                        _selectedAudioUrl = audioUrl;
+                      }
+                    });
+                  },
+                  child: Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: Column(
+                      children: [
+                        Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                audio.imageUrl,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            if (isSelected)
+                              Positioned.fill(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: cs.primary.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(Icons.check, color: Colors.white),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          audio.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isSelected ? cs.primary : cs.onSurface,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 

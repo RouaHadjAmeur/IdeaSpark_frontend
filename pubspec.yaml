@@ -57,6 +57,7 @@ dependencies:
   intl: ^0.19.0
   path_provider: ^2.1.1
   video_player: ^2.11.1
+  just_audio: ^0.10.5
   # Nouvelles dépendances pour l'éditeur
   image: ^4.0.0                    # Traitement d'images
   flutter_image_compress: ^2.0.0   # Compression d'images
