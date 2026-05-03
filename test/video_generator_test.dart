@@ -1,13 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ideaspark/models/video_generator_models.dart';
 import 'package:ideaspark/services/video_generator_service.dart';
+<<<<<<< HEAD
+=======
+import 'package:ideaspark/services/video_idea_generator_service.dart';
+>>>>>>> wassim
 
 void main() {
   group('VideoIdeaGeneratorService Tests', () {
     late VideoIdeaGeneratorService service;
 
     setUp(() {
+<<<<<<< HEAD
       service = VideoIdeaGeneratorService();
+=======
+      service =   VideoIdeaGeneratorService();
+>>>>>>> wassim
     });
 
     test('Should generate requested number of ideas (batch)', () async {

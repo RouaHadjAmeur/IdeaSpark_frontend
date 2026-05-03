@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+<<<<<<< HEAD
     <string name="facebook_app_id">000000000000000</string>
+=======
+    <string name="facebook_app_id">1644012957026490</string>
+>>>>>>> wassim
     <string name="facebook_client_token">000000000000000</string>
 </resources>

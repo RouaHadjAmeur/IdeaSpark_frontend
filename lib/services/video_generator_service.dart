@@ -4,8 +4,61 @@ import '../core/api_config.dart';
 import '../services/auth_service.dart';
 import '../models/video.dart';
 
+<<<<<<< HEAD
 class VideoGeneratorService {
   /// Générer une vidéo via Pexels Videos API
+=======
+import '../models/video_generator_models.dart';
+
+class VideoGeneratorService {
+  /// Génère une idée de vidéo (script) à partir d'un prompt (Agent Full Access)
+  static Future<VideoIdea> generateVideoIdeaFromPrompt({
+    required String prompt,
+  }) async {
+    try {
+      final token = AuthService().accessToken;
+      if (token == null) throw Exception('Not authenticated');
+
+      final url = Uri.parse(ApiConfig.generateVideoIdeasUrl);
+
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'platform': 'InstagramReels',
+          'duration': '30s',
+          'goal': 'ViralEngagement',
+          'creatorType': 'Influencer',
+          'tone': 'Trendy',
+          'language': 'French',
+          'productName': 'Agent AI',
+          'productCategory': 'Marketing',
+          'keyBenefits': ['Orchestration AI'],
+          'targetAudience': 'Entrepreneurs',
+          'productDescription': prompt, // Corrected field name to match backend DTO
+        }),
+      ).timeout(const Duration(seconds: 45));
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // The backend returns an array of ideas, we take the first one
+        final List<dynamic> ideasJson = data is List ? data : (data['ideas'] ?? [data]);
+        if (ideasJson.isEmpty) throw Exception('No video ideas generated');
+        return VideoIdea.fromJson(ideasJson.first);
+      } else {
+        throw Exception('Failed to generate video idea: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ [VideoGenerator] Error in generateVideoIdeaFromPrompt: $e');
+      rethrow;
+    }
+  }
+
+  /// Rechercher une vidéo via Pexels Videos API (Backend search)
+>>>>>>> wassim
   static Future<Video> generateVideo({
     required String description,
     String? category,
@@ -17,7 +70,11 @@ class VideoGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
+<<<<<<< HEAD
       final url = Uri.parse('${ApiConfig.baseUrl}/video-generator/generate');
+=======
+      final url = Uri.parse(ApiConfig.searchVideoUrl);
+>>>>>>> wassim
 
       // Construire la query optimale - priorité: objet spécifique > description
       String query = '';
@@ -45,9 +102,14 @@ class VideoGeneratorService {
         }
       }
 
+<<<<<<< HEAD
       print('🎬 [VideoGenerator] Generating video...');
       print('🎬 [VideoGenerator] Query: $query');
       print('🎬 [VideoGenerator] Duration: $duration');
+=======
+      print('🎬 [VideoGenerator] Searching stock video...');
+      print('🎬 [VideoGenerator] Query: $query');
+>>>>>>> wassim
       print('🎬 [VideoGenerator] Orientation: $orientation');
 
       final response = await http.post(
@@ -57,9 +119,13 @@ class VideoGeneratorService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
+<<<<<<< HEAD
           'description': query,
           'category': category,
           'duration': duration,
+=======
+          'query': query,
+>>>>>>> wassim
           'orientation': orientation,
         }),
       ).timeout(const Duration(seconds: 30));
@@ -68,10 +134,16 @@ class VideoGeneratorService {
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         final data = jsonDecode(response.body);
+<<<<<<< HEAD
         final video = Video.fromJson(data);
         print('✅ [VideoGenerator] Video generated: ${video.id}');
         print('✅ [VideoGenerator] Duration: ${video.durationFormatted}');
         print('✅ [VideoGenerator] Resolution: ${video.resolution}');
+=======
+        if (data == null) throw Exception('No video found for this query');
+        final video = Video.fromJson(data);
+        print('✅ [VideoGenerator] Video found: ${video.id}');
+>>>>>>> wassim
         return video;
       } else {
         print('❌ [VideoGenerator] Error: ${response.statusCode}');
