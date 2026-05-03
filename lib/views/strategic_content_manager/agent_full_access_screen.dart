@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
+import 'package:google_fonts/google_fonts.dart';
+=======
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +13,7 @@ import '../../models/product_idea_model.dart';
 import '../../models/video.dart';
 import 'package:ideaspark/models/slogan_model.dart';
 import 'package:ideaspark/views/generators/components/video_result_card.dart';
+>>>>>>> wassim
 
 class AgentFullAccessScreen extends StatefulWidget {
   const AgentFullAccessScreen({super.key});
@@ -20,6 +24,45 @@ class AgentFullAccessScreen extends StatefulWidget {
 
 class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
   final TextEditingController _promptController = TextEditingController();
+<<<<<<< HEAD
+  bool _isProcessing = false;
+  bool _showResults = false;
+
+  final List<Map<String, String>> _agents = [
+    {
+      'name': 'Video Agent',
+      'icon': '🎬',
+      'prompt': 'Générer 3 scripts de vidéos courtes basés sur l\'idée principale.',
+    },
+    {
+      'name': 'Slogan Agent',
+      'icon': '✍️',
+      'prompt': 'Créer 5 slogans percutants et mémorables.',
+    },
+    {
+      'name': 'Product Agent',
+      'icon': '🚀',
+      'prompt': 'Définir les caractéristiques clés du produit et son positionnement.',
+    },
+  ];
+
+  void _processPrompt() async {
+    if (_promptController.text.isEmpty) return;
+
+    setState(() {
+      _isProcessing = true;
+      _showResults = false;
+    });
+
+    // Simulation d'un traitement IA
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (mounted) {
+      setState(() {
+        _isProcessing = false;
+        _showResults = true;
+      });
+=======
 
   @override
   void dispose() {
@@ -161,11 +204,80 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
           backgroundColor: Colors.green,
         ),
       );
+>>>>>>> wassim
     }
   }
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Agent Full Access',
+          style: GoogleFonts.syne(fontWeight: FontWeight.w700),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildInfoCard(colorScheme),
+            const SizedBox(height: 24),
+            Text(
+              'Votre Prompt Principal',
+              style: GoogleFonts.syne(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _promptController,
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: 'Décrivez votre vision globale ici...',
+                fillColor: colorScheme.surfaceContainerHighest,
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isProcessing ? null : _processPrompt,
+                child: _isProcessing
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Analyser & Déléguer'),
+              ),
+            ),
+            if (_showResults) ...[
+              const SizedBox(height: 32),
+              Text(
+                'Délégation aux Agents IA',
+                style: GoogleFonts.syne(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ..._agents.map((agent) => _buildAgentPromptCard(agent, colorScheme)),
+              const SizedBox(height: 32),
+              _buildFinalPlanCard(colorScheme),
+            ],
+          ],
+        ),
+      ),
+=======
     return ChangeNotifierProvider(
       create: (_) => AgentFullAccessViewModel(),
       child: Consumer<AgentFullAccessViewModel>(
@@ -355,6 +467,7 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
           ),
         ),
       ],
+>>>>>>> wassim
     );
   }
 
@@ -368,11 +481,19 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
       ),
       child: Row(
         children: [
+<<<<<<< HEAD
+          const Text('🛡️', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Cet agent possède un accès complet à tous les moteurs IA de l\'application pour orchestrer votre stratégie.',
+=======
           const Text('🤖', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'L\'Agent Full Access décompose votre idée et mobilise simultanément nos experts IA spécialisés.',
+>>>>>>> wassim
               style: TextStyle(
                 fontSize: 13,
                 color: colorScheme.onSurfaceVariant,
@@ -385,6 +506,9 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
     );
   }
 
+<<<<<<< HEAD
+  Widget _buildAgentPromptCard(Map<String, String> agent, ColorScheme colorScheme) {
+=======
   Widget _buildErrorCard(String error, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -408,32 +532,46 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
   }
 
   Widget _buildAgentPromptCard(String name, String icon, String prompt, ColorScheme colorScheme, {bool isLoading = false}) {
+>>>>>>> wassim
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
+<<<<<<< HEAD
+        border: Border.all(color: colorScheme.outlineVariant),
+=======
         border: Border.all(
           color: isLoading ? colorScheme.primary : colorScheme.outlineVariant,
           width: isLoading ? 2 : 1,
         ),
+>>>>>>> wassim
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+<<<<<<< HEAD
+              Text(agent['icon']!, style: const TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Text(
+                agent['name']!,
+=======
               Text(icon, style: const TextStyle(fontSize: 20)),
               const SizedBox(width: 8),
               Text(
                 name,
+>>>>>>> wassim
                 style: GoogleFonts.syne(
                   fontWeight: FontWeight.w700,
                   fontSize: 15,
                   color: colorScheme.primary,
                 ),
               ),
+<<<<<<< HEAD
+=======
               const Spacer(),
               if (isLoading)
                 const SizedBox(
@@ -443,11 +581,16 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
                 )
               else
                 Icon(Icons.check_circle, color: colorScheme.primary, size: 16),
+>>>>>>> wassim
             ],
           ),
           const SizedBox(height: 8),
           Text(
+<<<<<<< HEAD
+            'Prompt délégué :',
+=======
             'Mission déléguée :',
+>>>>>>> wassim
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -456,7 +599,11 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
           ),
           const SizedBox(height: 4),
           Text(
+<<<<<<< HEAD
+            agent['prompt']!,
+=======
             prompt,
+>>>>>>> wassim
             style: TextStyle(
               fontSize: 13,
               color: colorScheme.onSurface,
@@ -468,6 +615,8 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
     );
   }
 
+<<<<<<< HEAD
+=======
   Widget _buildSlogansResult(List<SloganModel> slogans, ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,12 +746,21 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
     );
   }
 
+>>>>>>> wassim
   Widget _buildFinalPlanCard(ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
+<<<<<<< HEAD
+            colorScheme.primary.withOpacity(0.2),
+            colorScheme.secondary.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.5)),
+=======
             colorScheme.primary,
             colorScheme.secondary,
           ],
@@ -615,12 +773,23 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
             offset: const Offset(0, 5),
           ),
         ],
+>>>>>>> wassim
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+<<<<<<< HEAD
+              const Text('📝', style: TextStyle(fontSize: 24)),
+              const SizedBox(width: 12),
+              Text(
+                'Plan Stratégique Final',
+                style: GoogleFonts.syne(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface,
+=======
               const Text('✅', style: TextStyle(fontSize: 24)),
               const SizedBox(width: 12),
               Text(
@@ -629,11 +798,25 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: Colors.white,
+>>>>>>> wassim
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
+<<<<<<< HEAD
+          _buildPlanItem('1. Phase d\'Attraction', 'Lancement des vidéos virales via Video Agent.'),
+          _buildPlanItem('2. Phase d\'Engagement', 'Diffusion des slogans via Slogan Agent.'),
+          _buildPlanItem('3. Phase de Conversion', 'Présentation des détails via Product Agent.'),
+          const SizedBox(height: 20),
+          Center(
+            child: Text(
+              'Stratégie prête à être déployée !',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.primary,
+              ),
+=======
           const Text(
             'Votre stratégie IA est maintenant prête. Vous pouvez retrouver chaque élément dans ses rubriques respectives pour approfondir.',
             style: TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
@@ -647,12 +830,29 @@ class _AgentFullAccessScreenState extends State<AgentFullAccessScreen> {
                 foregroundColor: colorScheme.primary,
               ),
               child: const Text('Terminer'),
+>>>>>>> wassim
             ),
           ),
         ],
       ),
     );
   }
+<<<<<<< HEAD
+
+  Widget _buildPlanItem(String title, String desc) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          Text(
+            desc,
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
+=======
 }
 
 class _SloganCard extends StatelessWidget {
@@ -736,12 +936,15 @@ class _SloganCard extends StatelessWidget {
                 ),
               ),
             ],
+>>>>>>> wassim
           ),
         ],
       ),
     );
   }
 }
+<<<<<<< HEAD
+=======
 
 class _ActualVideoCard extends StatefulWidget {
   final Video video;
@@ -1006,3 +1209,4 @@ class _FeatureRow extends StatelessWidget {
     );
   }
 }
+>>>>>>> wassim

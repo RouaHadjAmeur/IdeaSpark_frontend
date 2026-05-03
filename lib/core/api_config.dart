@@ -25,6 +25,10 @@ class ApiConfig {
 
   // Video Generator Endpoints
   static String get videoGeneratorBase => '$baseUrl/video-generator';
+<<<<<<< HEAD
+=======
+  static String get searchVideoUrl => '$videoGeneratorBase/search';
+>>>>>>> wassim
   static String get generateVideoIdeasUrl => '$videoGeneratorBase/generate';
   static String get analyzeVideoImageUrl => '$videoGeneratorBase/analyze-image';
   static String get refineVideoIdeaUrl => '$videoGeneratorBase/refine';
@@ -51,7 +55,10 @@ class ApiConfig {
   // Product Generator (IA Finetuning) Endpoints
   static String get iaFinetuningBase => '$baseUrl/ia-finetuning';
   static String get generateProductIdeaUrl => '$iaFinetuningBase/generate';
+<<<<<<< HEAD
+=======
   static String get decomposePromptUrl => '$iaFinetuningBase/decompose';
+>>>>>>> wassim
   static String get saveProductIdeaUrl => '$iaFinetuningBase/product-ideas/save';
   static String get getProductIdeasHistoryUrl => '$iaFinetuningBase/product-ideas/history';
   static String get getProductIdeasFavoritesUrl => '$iaFinetuningBase/product-ideas/favorites';
