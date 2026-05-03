@@ -34,6 +34,11 @@ import 'package:ideaspark/views/trends/social_video_trends_screen.dart';
 import 'package:ideaspark/views/profile/edit_profile_screen.dart';
 import 'package:ideaspark/views/onboarding/persona_onboarding_screen.dart';
 import 'package:ideaspark/modules/camera_coach/camera_coach_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/professional_dashboard_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/views_analytics_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/interactions_analytics_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/followers_analytics_screen.dart';
+import 'package:ideaspark/views/professional_dashboard/trending_audio_screen.dart';
 
 import 'package:ideaspark/modules/contacts/contacts_screen.dart';
 import 'package:ideaspark/modules/chat/chat_screen.dart';
@@ -68,6 +73,8 @@ import 'package:ideaspark/views/ai/creative_ai_test_screen.dart';
 import 'package:ideaspark/views/ai/video_generator_screen.dart';
 import 'package:ideaspark/views/ai/video_history_screen.dart';
 import 'package:ideaspark/views/ai/image_editor_screen.dart';
+import 'package:ideaspark/views/ai/video_editor_screen_safe.dart';
+import 'package:ideaspark/views/ai/edited_videos_history_screen.dart';
 import 'package:ideaspark/views/ai/advanced_share_screen.dart';
 
 import '../models/video_generator_models.dart';
@@ -269,7 +276,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/social-video-trends',
-        parentNavigatorKey: rootNavigatorKey,
+        parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => PageShell(
           child: LocaleRebuilder(builder: (_) => const SocialVideoTrendsScreen()),
         ),
@@ -401,32 +408,29 @@ GoRouter createAppRouter() {
         builder: (context, state) => const CameraCoachScreen(),
       ),
       GoRoute(
-        path: '/subscription-upgrade',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => PageShell(
-          child: LocaleRebuilder(
-            builder: (_) => const SubscriptionScreen(),
-          ),
-        ),
+        path: '/professional-dashboard',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ProfessionalDashboardScreen(),
       ),
       GoRoute(
-        path: '/agent-full-access',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const AgentFullAccessScreen(),
+        path: '/professional-dashboard/views',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const ViewsAnalyticsScreen(),
       ),
       GoRoute(
-        path: '/chat/:receiverId',
-        parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) {
-          final receiverId = state.pathParameters['receiverId']!;
-          final receiverName = state.extra is String ? state.extra as String : 'Utilisateur';
-          return LocaleRebuilder(
-            builder: (_) => ChatScreen(
-              receiverId: receiverId,
-              receiverName: receiverName,
-            ),
-          );
-        },
+        path: '/professional-dashboard/interactions',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const InteractionsAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/professional-dashboard/followers',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const FollowersAnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/professional-dashboard/trending-audio',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const TrendingAudioScreen(),
       ),
       GoRoute(
         path: '/image-generator',
@@ -468,6 +472,7 @@ GoRouter createAppRouter() {
           child: LocaleRebuilder(builder: (_) => const VideoHistoryScreen()),
         ),
       ),
+      // ⚡ OPTIMISATION: Éditeurs avec chargement optimisé
       GoRoute(
         path: '/image-editor',
         parentNavigatorKey: rootNavigatorKey,
@@ -484,6 +489,30 @@ GoRouter createAppRouter() {
             ),
           );
         },
+      ),
+      GoRoute(
+        path: '/video-editor',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final videoUrl = extra?['videoUrl'] as String? ?? '';
+          final videoId = extra?['videoId'] as String?;
+          return PageShell(
+            child: LocaleRebuilder(
+              builder: (_) => VideoEditorScreen(
+                videoUrl: videoUrl,
+                videoId: videoId,
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/edited-videos-history',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => PageShell(
+          child: LocaleRebuilder(builder: (_) => const EditedVideosHistoryScreen()),
+        ),
       ),
       GoRoute(
         path: '/advanced-share',

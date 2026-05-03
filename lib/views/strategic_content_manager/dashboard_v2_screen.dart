@@ -694,10 +694,9 @@ class _DashboardContentState extends State<DashboardContent>
             ),
             TextButton(
               onPressed: () => _showTrendsMenuSheet(context),
-              child: Text(
-                context.tr('see_all'),
-                style: TextStyle(color: colorScheme.primary, fontSize: 13),
-              ),
+              child: Text(context.tr('see_all'),
+                  style:
+                      TextStyle(color: colorScheme.primary, fontSize: 13)),
             ),
           ],
         ),
@@ -765,22 +764,14 @@ class _DashboardContentState extends State<DashboardContent>
                           const baseMid = 124.0;
                           const baseBottom = 176.0;
                           final baseTotal =
-                              baseTop +
-                              baseMid +
-                              baseMid +
-                              baseBottom +
-                              (gap * 3);
+                              baseTop + baseMid + baseMid + baseBottom + (gap * 3);
                           final scale = (constraints.maxHeight / baseTotal)
                               .clamp(0.82, 1.2);
 
                           final topHeight = baseTop * scale;
                           final midHeight = baseMid * scale;
                           final bottomHeight =
-                              constraints.maxHeight -
-                              topHeight -
-                              midHeight -
-                              midHeight -
-                              (gap * 3);
+                              constraints.maxHeight - topHeight - midHeight - midHeight - (gap * 3);
 
                           return Column(
                             children: [
@@ -788,13 +779,11 @@ class _DashboardContentState extends State<DashboardContent>
                                 height: topHeight,
                                 child: _TrendsPanelSection(
                                   title: 'YouTube Trends',
-                                  subtitle:
-                                      'Explore viral videos\nand channels',
+                                  subtitle: 'Explore viral videos\nand channels',
                                   background: trendColors[0].background,
                                   titleColor: trendColors[0].title,
                                   subtitleColor: trendColors[0].subtitle,
-                                  logoUrl:
-                                      'assets/images/Youtube_logo-removebg-preview.png',
+                                  logoUrl: 'assets/images/Youtube_logo-removebg-preview.png',
                                   onTap: () {
                                     Navigator.of(sheetContext).pop();
                                     context.push('/social-video-trends');
@@ -805,14 +794,12 @@ class _DashboardContentState extends State<DashboardContent>
                               SizedBox(
                                 height: midHeight,
                                 child: _TrendsPanelSection(
-                                  title: 'TikTok Trends',
-                                  subtitle:
-                                      'Discover new creative\nshort videos',
+                                  title: 'Instagram Trends',
+                                  subtitle: 'Explore viral photos\nand reels',
                                   background: trendColors[1].background,
                                   titleColor: trendColors[1].title,
                                   subtitleColor: trendColors[1].subtitle,
-                                  logoUrl:
-                                      'assets/images/tiktok_logo-removebg-preview.png',
+                                  logoUrl: 'assets/images/insta_logo-removebg-preview.png',
                                   onTap: () {
                                     Navigator.of(sheetContext).pop();
                                     context.push('/trends');
@@ -823,13 +810,12 @@ class _DashboardContentState extends State<DashboardContent>
                               SizedBox(
                                 height: midHeight,
                                 child: _TrendsPanelSection(
-                                  title: 'Instagram\nTrends',
-                                  subtitle: 'Explore viral photos\nand reels',
+                                  title: 'Facebook Trends',
+                                  subtitle: 'Discover social buzz\nand communities',
                                   background: trendColors[2].background,
                                   titleColor: trendColors[2].title,
                                   subtitleColor: trendColors[2].subtitle,
-                                  logoUrl:
-                                      'assets/images/insta_logo-removebg-preview.png',
+                                  logoIcon: Icons.facebook,
                                   onTap: () {
                                     Navigator.of(sheetContext).pop();
                                     context.push('/trends');
@@ -840,13 +826,12 @@ class _DashboardContentState extends State<DashboardContent>
                               SizedBox(
                                 height: bottomHeight,
                                 child: _TrendsPanelSection(
-                                  title: 'News Trends',
-                                  subtitle: 'Stay updated on\ncurrent events',
+                                  title: 'TikTok Trends',
+                                  subtitle: 'Discover new creative\nshort videos',
                                   background: trendColors[3].background,
                                   titleColor: trendColors[3].title,
                                   subtitleColor: trendColors[3].subtitle,
-                                  logoUrl:
-                                      'assets/images/news_logo-removebg-preview.png',
+                                  logoUrl: 'assets/images/tiktok_logo-removebg-preview.png',
                                   showCta: true,
                                   onTap: () {
                                     Navigator.of(sheetContext).pop();
@@ -1212,6 +1197,138 @@ class _TrendingChip extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
+    );
+  }
+}
+
+class _TrendSectionColors {
+  final Color background;
+  final Color title;
+  final Color subtitle;
+
+  const _TrendSectionColors({
+    required this.background,
+    required this.title,
+    required this.subtitle,
+  });
+}
+
+class _TrendsPanelSection extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Color background;
+  final Color titleColor;
+  final Color subtitleColor;
+  final String? logoUrl;
+  final IconData? logoIcon;
+  final VoidCallback onTap;
+  final VoidCallback? onCtaTap;
+  final bool showCta;
+
+  const _TrendsPanelSection({
+    required this.title,
+    required this.subtitle,
+    required this.background,
+    required this.titleColor,
+    required this.subtitleColor,
+    this.logoUrl,
+    this.logoIcon,
+    required this.onTap,
+    this.onCtaTap,
+    this.showCta = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxHeight < 118;
+        final contentPadding = EdgeInsets.fromLTRB(
+          16,
+          isCompact ? 10 : 14,
+          16,
+          isCompact ? 8 : 12,
+        );
+        final logoSize = (constraints.maxHeight * (showCta ? 0.42 : 0.72))
+            .clamp(isCompact ? 84.0 : 96.0, 132.0);
+        final titleSize = isCompact ? 16.0 : 18.0;
+        final subtitleSize = isCompact ? 11.0 : 12.0;
+
+        return Material(
+          color: background,
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: contentPadding,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          title,
+                          style: GoogleFonts.syne(
+                            fontSize: titleSize,
+                            fontWeight: FontWeight.w800,
+                            height: 1.0,
+                            color: titleColor,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: subtitleSize,
+                            height: 1.25,
+                            color: subtitleColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (showCta) ...[
+                          const SizedBox(height: 10),
+                          TextButton(
+                            onPressed: onCtaTap ?? onTap,
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 0),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              foregroundColor: titleColor,
+                            ),
+                            child: const Text('Explore'),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    width: logoSize,
+                    height: logoSize,
+                    child: logoIcon != null
+                        ? Icon(
+                            logoIcon,
+                            size: logoSize * 0.48,
+                            color: titleColor,
+                          )
+                        : Image.asset(
+                            logoUrl ?? '',
+                            fit: BoxFit.contain,
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

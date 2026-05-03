@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../services/video_generator_service.dart';
 import '../../services/video_download_service.dart';
@@ -246,9 +247,14 @@ class _VideoHistoryScreenState extends State<VideoHistoryScreen> {
                                   children: [
                                     Expanded(
                                       child: OutlinedButton.icon(
-                                        onPressed: () => VideoDownloadService.saveToGallery(video.videoUrl),
-                                        icon: const Icon(Icons.download, size: 16),
-                                        label: const Text('Sauvegarder'),
+                                        onPressed: () {
+                                          context.push('/video-editor', extra: {
+                                            'videoUrl': video.videoUrl,
+                                            'videoId': video.id,
+                                          });
+                                        },
+                                        icon: const Icon(Icons.edit, size: 16),
+                                        label: const Text('Éditer'),
                                         style: OutlinedButton.styleFrom(
                                           padding: const EdgeInsets.symmetric(vertical: 8),
                                         ),

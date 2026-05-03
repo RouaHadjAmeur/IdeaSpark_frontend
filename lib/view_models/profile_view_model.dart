@@ -22,7 +22,8 @@ class ProfileViewModel extends ChangeNotifier {
         _personaService = personaService ?? PersonaService(),
         _socialService = socialService ?? SocialService(),
         _youtubeUploadService = youtubeUploadService ?? YoutubeUploadService(),
-        _instagramUploadService = instagramUploadService ?? InstagramUploadService() {
+        _instagramUploadService =
+            instagramUploadService ?? InstagramUploadService() {
     _loadPersona();
     _loadSocialStats();
     checkYouTubeConnection();
@@ -45,7 +46,7 @@ class ProfileViewModel extends ChangeNotifier {
   int _followersCount = 0;
   int _followingCount = 0;
 
-  // Linked account state (YouTube for now)
+  // Linked account state
   bool _isYoutubeChecking = true;
   bool _isYoutubeConnecting = false;
   bool _isYoutubeDisconnecting = false;
@@ -164,7 +165,7 @@ class ProfileViewModel extends ChangeNotifier {
   List<String> get skills => _authService.currentUser?.skills ?? [];
   String? get role => _authService.currentUser?.role.name;
   List<String> get interests => _authService.currentUser?.interests ?? [];
-  bool get isPremium => _authService.currentUser?.isPremium ?? false;
+  bool get isPremium => false;
 
   void refresh() {
     _selectedImage = null;
@@ -183,71 +184,7 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 
-  /// Real Stripe upgrade: creates PaymentIntent, presents PaymentSheet,
-  /// then confirms with the backend. Returns true on success.
-  Future<bool> stripeUpgradeAccount() async {
-    _isUpgradeLoading = true;
-    _upgradeErrorMessage = null;
-    notifyListeners();
-    try {
-      // Step 1 — backend creates PaymentIntent, returns clientSecret
-      final data = await _authService.createStripeSubscription();
-      final clientSecret = data['clientSecret'] as String;
-      final paymentIntentId = data['paymentIntentId'] as String;
-
-      // Step 2 — initialise & present the native PaymentSheet
-      // Apply the publishable key from the backend before initialising
-      final publishableKey = data['publishableKey'] as String?;
-      if (publishableKey != null && publishableKey.isNotEmpty) {
-        Stripe.publishableKey = publishableKey;
-        await Stripe.instance.applySettings();
-      }
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: 'IdeaSpark',
-        ),
-      );
-      await Stripe.instance.presentPaymentSheet();
-
-      // Step 3 — tell the backend to verify and unlock isPremium
-      await _authService.confirmSubscription(paymentIntentId);
-
-      _isUpgradeLoading = false;
-      notifyListeners();
-      return true;
-    } on StripeException catch (e) {
-      // User cancelled or card was declined
-      _upgradeErrorMessage =
-          e.error.localizedMessage ?? e.error.message ?? 'Payment cancelled.';
-      _isUpgradeLoading = false;
-      notifyListeners();
-      return false;
-    } catch (e) {
-      _upgradeErrorMessage = e.toString();
-      _isUpgradeLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
-
-  /// Legacy mock upgrade — kept for development without Stripe keys.
-  Future<bool> upgradeAccount() async {
-    _isUpgradeLoading = true;
-    _upgradeErrorMessage = null;
-    notifyListeners();
-    try {
-      await _authService.upgradeToPremium();
-      _isUpgradeLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _upgradeErrorMessage = e.toString();
-      _isUpgradeLoading = false;
-      notifyListeners();
-      return false;
-    }
-  }
+  // Premium upgrade flow is not enabled in this branch.
 
   Future<void> signOut() async {
     await _authService.signOut();
@@ -387,6 +324,7 @@ class ProfileViewModel extends ChangeNotifier {
     required String mediaUrl,
     String? caption,
     bool? shareToFeed,
+    String? audioUrl,
   }) async {
     _isInstagramPublishing = true;
     _instagramErrorMessage = null;
@@ -398,6 +336,7 @@ class ProfileViewModel extends ChangeNotifier {
         mediaUrl: mediaUrl,
         caption: caption,
         shareToFeed: shareToFeed,
+        audioUrl: audioUrl,
       );
     } catch (e) {
       _instagramErrorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -413,6 +352,7 @@ class ProfileViewModel extends ChangeNotifier {
     required String mediaType,
     String? caption,
     bool? shareToFeed,
+    String? audioUrl,
   }) async {
     _isInstagramPublishing = true;
     _instagramErrorMessage = null;
@@ -424,6 +364,7 @@ class ProfileViewModel extends ChangeNotifier {
         mediaType: mediaType,
         caption: caption,
         shareToFeed: shareToFeed,
+        audioUrl: audioUrl,
       );
     } catch (e) {
       _instagramErrorMessage = e.toString().replaceFirst('Exception: ', '');

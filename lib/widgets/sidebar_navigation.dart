@@ -31,8 +31,34 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
               children: [
                 _buildSectionHeader(context, 'Menu'),
                 _SidebarItem(
-                  icon: Icons.rocket_launch_outlined,
-                  label: 'Projects',
+                  icon: Icons.home_rounded,
+                  label: context.tr('nav_dashboard'),
+                  isActive: location == '/home',
+                  onTap: () => context.go('/home'),
+                ),
+                _SidebarItem(
+                  icon: Icons.label_important_outline_rounded,
+                  label: context.tr('nav_brands'),
+                  isActive: location.startsWith('/brands-list') ||
+                      location.startsWith('/brand-workspace'),
+                  onTap: () => context.push('/brands-list'),
+                ),
+                _SidebarItem(
+                  icon: Icons.calendar_month_rounded,
+                  label: context.tr('nav_calendar'),
+                  badge: '3',
+                  isActive: location.startsWith('/calendar'),
+                  onTap: () => context.push('/calendar'),
+                ),
+                _SidebarItem(
+                  icon: Icons.speed_rounded,
+                  label: 'Professional Dashboard',
+                  isActive: location.startsWith('/professional-dashboard'),
+                  onTap: () => context.push('/professional-dashboard'),
+                ),
+                _SidebarItem(
+                  icon: Icons.dashboard_customize_rounded,
+                  label: 'Execution Hub',
                   isActive: location.startsWith('/projects') ||
                       location.startsWith('/project-board') ||
                       location.startsWith('/plan-project'),

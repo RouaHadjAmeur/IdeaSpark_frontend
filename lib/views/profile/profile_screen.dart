@@ -209,7 +209,7 @@ void _showChangePasswordDialog(BuildContext context, ProfileViewModel vm) {
     context: context,
     builder: (dialogContext) => ListenableBuilder(
       listenable: vm,
-      builder: (_, child) {
+      builder: (_, state) {
         return AlertDialog(
           title: Text(tr('change_password_title')),
           content: SingleChildScrollView(
@@ -823,7 +823,8 @@ class _LinkedAccountsSection extends StatelessWidget {
   Future<void> _showInstagramPublishDialog(BuildContext context) async {
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => _InstagramPublishDialog(vm: vm, colorScheme: colorScheme),
+      builder: (dialogContext) =>
+          _InstagramPublishDialog(vm: vm, colorScheme: colorScheme),
     );
   }
 
@@ -832,7 +833,8 @@ class _LinkedAccountsSection extends StatelessWidget {
     if (!context.mounted) return;
 
     if (authUrl == null || authUrl.isEmpty) {
-      final msg = vm.instagramErrorMessage ?? 'Could not start Instagram connection.';
+      final msg =
+          vm.instagramErrorMessage ?? 'Could not start Instagram connection.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg),
@@ -988,7 +990,8 @@ class _LinkedAccountsSection extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Link another channel?'),
-        content: const Text('Your current YouTube channel will be unlinked first.'),
+        content:
+            const Text('Your current YouTube channel will be unlinked first.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1019,7 +1022,9 @@ class _LinkedAccountsSection extends StatelessWidget {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Previous channel unlinked. Connect the new one.')),
+      const SnackBar(
+        content: Text('Previous channel unlinked. Connect the new one.'),
+      ),
     );
     await _startYouTubeConnectFlow(context);
   }
@@ -1029,7 +1034,9 @@ class _LinkedAccountsSection extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Link another Instagram account?'),
-        content: const Text('Your current Instagram account will be unlinked first.'),
+        content: const Text(
+          'Your current Instagram account will be unlinked first.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1060,7 +1067,11 @@ class _LinkedAccountsSection extends StatelessWidget {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Previous Instagram account unlinked. Connect the new one.')),
+      const SnackBar(
+        content: Text(
+          'Previous Instagram account unlinked. Connect the new one.',
+        ),
+      ),
     );
     await _startInstagramConnectFlow(context);
   }
@@ -1068,8 +1079,12 @@ class _LinkedAccountsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final instagramBusy =
-        vm.isInstagramChecking || vm.isInstagramConnecting || vm.isInstagramDisconnecting || vm.isInstagramPublishing;
-    final youtubeBusy = vm.isYoutubeChecking || vm.isYoutubeConnecting || vm.isYoutubeDisconnecting;
+        vm.isInstagramChecking ||
+        vm.isInstagramConnecting ||
+        vm.isInstagramDisconnecting ||
+        vm.isInstagramPublishing;
+    final youtubeBusy =
+        vm.isYoutubeChecking || vm.isYoutubeConnecting || vm.isYoutubeDisconnecting;
     final anyBusy = instagramBusy || youtubeBusy;
 
     final youtubeStatusColor = vm.isYoutubeConnected
@@ -1083,13 +1098,17 @@ class _LinkedAccountsSection extends StatelessWidget {
         ? 'Checking YouTube connection...'
         : vm.isYoutubeDisconnecting
             ? 'Disconnecting YouTube...'
-            : (vm.isYoutubeConnected ? 'YouTube connected' : 'YouTube not connected');
+            : (vm.isYoutubeConnected
+                ? 'YouTube connected'
+                : 'YouTube not connected');
 
     final instagramStatusLabel = vm.isInstagramChecking
         ? 'Checking Instagram connection...'
         : vm.isInstagramDisconnecting
             ? 'Disconnecting Instagram...'
-            : (vm.isInstagramConnected ? 'Instagram connected' : 'Instagram not connected');
+            : (vm.isInstagramConnected
+                ? 'Instagram connected'
+                : 'Instagram not connected');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1118,7 +1137,9 @@ class _LinkedAccountsSection extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _LinkedAccountButton(
-                      label: vm.isInstagramConnected ? 'Unlink Instagram' : 'Connect Instagram',
+                      label: vm.isInstagramConnected
+                          ? 'Unlink Instagram'
+                          : 'Connect Instagram',
                       icon: Icons.camera_alt_outlined,
                       colorScheme: colorScheme,
                       isActive: vm.isInstagramConnected,
@@ -1136,7 +1157,9 @@ class _LinkedAccountsSection extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: _LinkedAccountButton(
-                      label: vm.isYoutubeConnected ? 'Unlink YouTube' : 'Connect YouTube',
+                      label: vm.isYoutubeConnected
+                          ? 'Unlink YouTube'
+                          : 'Connect YouTube',
                       icon: Icons.ondemand_video,
                       colorScheme: colorScheme,
                       isActive: vm.isYoutubeConnected,
@@ -1159,7 +1182,9 @@ class _LinkedAccountsSection extends StatelessWidget {
                       colorScheme: colorScheme,
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('TikTok link is coming soon.')),
+                          const SnackBar(
+                            content: Text('TikTok link is coming soon.'),
+                          ),
                         );
                       },
                     ),
@@ -1170,7 +1195,9 @@ class _LinkedAccountsSection extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    vm.isInstagramConnected ? Icons.check_circle : Icons.info_outline,
+                    vm.isInstagramConnected
+                        ? Icons.check_circle
+                        : Icons.info_outline,
                     size: 15,
                     color: instagramStatusColor,
                   ),
@@ -1192,7 +1219,9 @@ class _LinkedAccountsSection extends StatelessWidget {
                   ),
                   if (vm.isInstagramConnected)
                     TextButton(
-                      onPressed: anyBusy ? null : () => _relinkAnotherInstagram(context),
+                      onPressed: anyBusy
+                          ? null
+                          : () => _relinkAnotherInstagram(context),
                       child: const Text('Link another'),
                     ),
                 ],
@@ -1202,7 +1231,9 @@ class _LinkedAccountsSection extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
-                    onPressed: anyBusy ? null : () => _showInstagramPublishDialog(context),
+                    onPressed: anyBusy
+                        ? null
+                        : () => _showInstagramPublishDialog(context),
                     icon: const Icon(Icons.send_rounded, size: 16),
                     label: const Text('Publish Reel/Feed'),
                   ),
@@ -1225,17 +1256,20 @@ class _LinkedAccountsSection extends StatelessWidget {
                   ),
                   if (vm.isYoutubeConnected)
                     TextButton(
-                      onPressed: anyBusy ? null : () => _relinkAnotherChannel(context),
+                      onPressed:
+                          anyBusy ? null : () => _relinkAnotherChannel(context),
                       child: const Text('Link another'),
                     ),
                 ],
               ),
-              if (vm.instagramErrorMessage != null && vm.instagramErrorMessage!.isNotEmpty)
+              if (vm.instagramErrorMessage != null &&
+                  vm.instagramErrorMessage!.isNotEmpty)
                 Text(
                   vm.instagramErrorMessage!,
                   style: TextStyle(fontSize: 12, color: colorScheme.error),
                 ),
-              if (vm.youtubeErrorMessage != null && vm.youtubeErrorMessage!.isNotEmpty)
+              if (vm.youtubeErrorMessage != null &&
+                  vm.youtubeErrorMessage!.isNotEmpty)
                 Text(
                   vm.youtubeErrorMessage!,
                   style: TextStyle(fontSize: 12, color: colorScheme.error),
@@ -1308,16 +1342,24 @@ class _InstagramPublishDialogState extends State<_InstagramPublishDialog> {
                 ),
                 const SizedBox(height: 10),
                 OutlinedButton.icon(
-                  onPressed: widget.vm.isInstagramPublishing ? null : _pickFromPhone,
+                  onPressed:
+                      widget.vm.isInstagramPublishing ? null : _pickFromPhone,
                   icon: const Icon(Icons.perm_media_rounded, size: 16),
-                  label: Text(_selectedMedia == null
-                      ? (_mediaType == 'image' ? 'Choose image from phone' : 'Choose video from phone')
-                      : 'Selected: ${_selectedMedia!.name}'),
+                  label: Text(
+                    _selectedMedia == null
+                        ? (_mediaType == 'image'
+                            ? 'Choose image from phone'
+                            : 'Choose video from phone')
+                        : 'Selected: ${_selectedMedia!.name}',
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Tip: pick from phone OR paste public URL below.',
-                  style: TextStyle(fontSize: 11, color: widget.colorScheme.onSurfaceVariant),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: widget.colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -1421,7 +1463,8 @@ class _InstagramPublishDialogState extends State<_InstagramPublishDialog> {
       return;
     }
 
-    if (widget.vm.instagramErrorMessage != null && widget.vm.instagramErrorMessage!.isNotEmpty) {
+    if (widget.vm.instagramErrorMessage != null &&
+        widget.vm.instagramErrorMessage!.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(widget.vm.instagramErrorMessage!),
@@ -1478,7 +1521,8 @@ class _LinkedAccountButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = isActive ? const Color(0xFFEF4444) : colorScheme.onSurfaceVariant;
+    final activeColor =
+        isActive ? const Color(0xFFEF4444) : colorScheme.onSurfaceVariant;
     return OutlinedButton.icon(
       onPressed: isLoading ? null : onTap,
       style: OutlinedButton.styleFrom(

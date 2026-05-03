@@ -153,7 +153,7 @@ class ScheduledPost {
       };
 
   factory ScheduledPost.fromJson(Map<String, dynamic> json) => ScheduledPost(
-        id: json['id'] as String,
+        id: (json['id'] ?? json['_id']) as String,
         contentId: json['contentId'] as String,
         contentType: json['contentType'] as String,
         contentUrl: json['contentUrl'] as String,

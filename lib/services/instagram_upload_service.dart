@@ -64,6 +64,7 @@ class InstagramUploadService {
     required String mediaUrl,
     String? caption,
     bool? shareToFeed,
+    String? audioUrl,
   }) async {
     final token = await _getToken();
     final body = <String, dynamic>{
@@ -76,6 +77,9 @@ class InstagramUploadService {
     }
     if (shareToFeed != null) {
       body['shareToFeed'] = shareToFeed;
+    }
+    if (audioUrl != null) {
+      body['audioUrl'] = audioUrl;
     }
 
     final res = await http.post(
@@ -101,6 +105,7 @@ class InstagramUploadService {
     required String mediaType,
     String? caption,
     bool? shareToFeed,
+    String? audioUrl,
   }) async {
     final token = await _getToken();
 
@@ -116,6 +121,9 @@ class InstagramUploadService {
     }
     if (shareToFeed != null) {
       request.fields['shareToFeed'] = shareToFeed.toString();
+    }
+    if (audioUrl != null) {
+      request.fields['audioUrl'] = audioUrl;
     }
 
     request.files.add(await http.MultipartFile.fromPath('media', filePath));

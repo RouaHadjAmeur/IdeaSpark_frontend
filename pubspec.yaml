@@ -60,17 +60,12 @@ dependencies:
   intl: ^0.19.0
   flutter_stripe: ^11.1.0
   video_player: ^2.11.1
-  sensors_plus: ^4.0.2
-  flutter_webrtc: ^0.12.3
-  audioplayers: ^6.1.0
-  record: ^6.0.0
-  just_audio: ^0.9.40
-  dio: ^5.0.0
-  path_provider: ^2.1.1
-  path: ^1.9.0
-  image: ^4.0.0
-  flutter_image_compress: ^2.0.0
-  uuid: ^4.0.0
+  just_audio: ^0.10.5
+  # Nouvelles dépendances pour l'éditeur
+  image: ^4.0.0                    # Traitement d'images
+  flutter_image_compress: ^2.0.0   # Compression d'images
+  uuid: ^4.0.0                     # Génération d'IDs uniques
+  audioplayers: ^6.1.0             # Lecture audio pour musique
 dev_dependencies:
   flutter_test:
     sdk: flutter

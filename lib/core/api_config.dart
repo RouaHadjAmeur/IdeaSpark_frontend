@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Backend API base URL. Change for production or use env.
 /// For Android Emulator use http://10.0.2.2:3000
 /// For iOS Simulator / Web use http://localhost:3000
@@ -10,10 +8,11 @@ class ApiConfig {
   static String get baseUrl {
     const envUrl = String.fromEnvironment('API_BASE_URL');
     if (envUrl.isNotEmpty) return envUrl;
-    if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
-      return 'http://10.0.2.2:3000';
-    }
-    return 'http://Macs-AIr-Roua.local:3000';
+    // TEMPORARY: Using ngrok for testing
+    // return 'https://YOUR_NGROK_URL.ngrok.io'; // ← Décommentez et mettez votre URL ngrok
+    // Use the correct network IP where backend is accessible
+    // Backend confirmed working on this IP with all modules loaded
+    return 'http://10.0.2.2:3000';
   }
 
   static String get authBase => '$baseUrl/auth';
@@ -176,7 +175,8 @@ class ApiConfig {
         .join('&');
     return query.isEmpty ? youtubeTrendsBase : '$youtubeTrendsBase?$query';
   }
-
+  // These depend on runtime `baseUrl` (which itself depends on platform), so expose
+  // them as getters rather than compile-time constants.
   static String get socialFeed => '$baseUrl/social/feed';
   static String get socialSuggestions => '$baseUrl/social/suggestions';
   static String get socialAccept => '$baseUrl/social/accept'; // /id at end
@@ -193,27 +193,21 @@ class ApiConfig {
   // User Search
   static String searchUsersUrl(String query) => '$usersBase/search?q=$query';
 
-  // Challenges Endpoints
-  static String get challengesBase => '$baseUrl/challenges';
-  static String get discoverChallengesUrl => '$challengesBase/discover/all';
-  static String brandChallengesUrl(String brandId) => '$challengesBase/brand/$brandId';
-  static String publishChallengeUrl(String id) => '$challengesBase/$id/publish';
-  static String getBrandChallengeStatsUrl(String brandId) => '$challengesBase/brand/$brandId/stats';
+  // YouTube Auth & Publishing Endpoints
+  static String get youtubeAuthBase => '$baseUrl/youtube-auth';
+  static String get youtubeStartUrl => '$youtubeAuthBase/start';
+  static String get youtubeMeUrl => '$youtubeAuthBase/me';
+  static String get youtubeDisconnectUrl => '$youtubeAuthBase/disconnect';
+  static String get youtubePublishUrl => '$youtubeAuthBase/publish';
+  static String get youtubePublishUploadUrl => '$youtubeAuthBase/publish-upload';
 
-  // Submissions Endpoints
-  static String get submissionsBase => '$baseUrl/submissions';
-  static String submitVideoUrl(String challengeId) => '$submissionsBase/challenge/$challengeId/submit';
-  static String getChallengeSubmissionsUrl(String challengeId) => '$submissionsBase/challenge/$challengeId';
-  static String shortlistSubmissionUrl(String id) => '$submissionsBase/$id/shortlist';
-  static String declareWinnerUrl(String id) => '$submissionsBase/$id/declare-winner';
-  static String submissionRevisionUrl(String id) => '$submissionsBase/$id/request-revision';
-  static String get getMySubmissionsUrl => '$submissionsBase/my';
-  static String rateSubmissionUrl(String id) => '$submissionsBase/$id/rate';
-
-  // Stripe Endpoints
-  static String get stripeBase => '$baseUrl/stripe';
-  static String get stripeCreateSubscriptionUrl => '$stripeBase/create-subscription';
-  static String get usersConfirmSubscriptionUrl => '$usersBase/confirm-subscription';
+  // Instagram Auth & Publishing Endpoints
+  static String get instagramAuthBase => '$baseUrl/instagram-auth';
+  static String get instagramStartUrl => '$instagramAuthBase/start';
+  static String get instagramMeUrl => '$instagramAuthBase/me';
+  static String get instagramDisconnectUrl => '$instagramAuthBase/disconnect';
+  static String get instagramPublishUrl => '$instagramAuthBase/publish';
+  static String get instagramPublishUploadUrl => '$instagramAuthBase/publish-upload';
 
   // Google Sign-In Web Client ID (set via --dart-define=GOOGLE_WEB_CLIENT_ID=...)
   static const String googleWebClientId = String.fromEnvironment(

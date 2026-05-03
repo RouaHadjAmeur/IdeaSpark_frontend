@@ -51,13 +51,21 @@ class _SocialVideoTrendsScreenState extends State<SocialVideoTrendsScreen> {
     });
 
     try {
-      final url = ApiConfig.youtubeTrendsUrl(
-        sort: _sortForTab,
-        search: _searchController.text.trim().isEmpty
-            ? null
-            : _searchController.text.trim(),
-        limit: 50,
-      );
+      final params = <String, String>{
+        'sort': _sortForTab,
+        'limit': '50',
+      };
+      final search = _searchController.text.trim();
+      if (search.isNotEmpty) {
+        params['search'] = search;
+      }
+      final query = params.entries
+          .map(
+            (e) =>
+                '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}',
+          )
+          .join('&');
+      final url = '${ApiConfig.youtubeTrendsBase}?$query';
 
       final res = await http.get(Uri.parse(url));
       if (res.statusCode != 200) {
@@ -152,7 +160,8 @@ class _SocialVideoTrendsScreenState extends State<SocialVideoTrendsScreen> {
                   children: List.generate(_tabs.length, (index) {
                     final active = index == _activeTab;
                     return Padding(
-                      padding: EdgeInsets.only(right: index == _tabs.length - 1 ? 0 : 8),
+                      padding:
+                          EdgeInsets.only(right: index == _tabs.length - 1 ? 0 : 8),
                       child: ChoiceChip(
                         label: Text(_tabs[index]),
                         selected: active,
@@ -190,8 +199,10 @@ class _SocialVideoTrendsScreenState extends State<SocialVideoTrendsScreen> {
                                 child: ListView.separated(
                                   physics: const AlwaysScrollableScrollPhysics(),
                                   itemCount: _items.length,
-                                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                                  itemBuilder: (context, index) => _SocialTrendCard(item: _items[index]),
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(height: 12),
+                                  itemBuilder: (context, index) =>
+                                      _SocialTrendCard(item: _items[index]),
                                 ),
                               ),
               ),
@@ -240,7 +251,9 @@ class _SocialTrendCard extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      isYoutube ? Icons.play_circle_fill_rounded : Icons.music_note_rounded,
+                      isYoutube
+                          ? Icons.play_circle_fill_rounded
+                          : Icons.music_note_rounded,
                       size: 12,
                       color: Colors.white,
                     ),
@@ -264,7 +277,10 @@ class _SocialTrendCard extends StatelessWidget {
                     children: [
                       Text('🔥', style: TextStyle(fontSize: 10)),
                       SizedBox(width: 3),
-                      Text('Rising', style: TextStyle(color: Colors.white, fontSize: 10)),
+                      Text(
+                        'Rising',
+                        style: TextStyle(color: Colors.white, fontSize: 10),
+                      ),
                     ],
                   ),
                 ),
@@ -287,7 +303,11 @@ class _SocialTrendCard extends StatelessWidget {
                     color: Colors.black.withValues(alpha: 0.45),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.play_arrow_rounded, size: 30, color: Colors.white),
+                  child: const Icon(
+                    Icons.play_arrow_rounded,
+                    size: 30,
+                    color: Colors.white,
+                  ),
                 ),
                 Positioned(
                   left: 8,
@@ -309,7 +329,11 @@ class _SocialTrendCard extends StatelessWidget {
                         const Spacer(),
                         Text(
                           item.durationText,
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -334,7 +358,8 @@ class _SocialTrendCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 backgroundImage: NetworkImage(item.creatorAvatar),
-                onBackgroundImageError: (Object exception, StackTrace? stackTrace) {},
+                onBackgroundImageError:
+                    (Object exception, StackTrace? stackTrace) {},
                 radius: 12,
               ),
               const SizedBox(width: 8),
@@ -366,7 +391,8 @@ class _Metric extends StatelessWidget {
         Container(
           width: 8,
           height: 8,
-          decoration: const BoxDecoration(color: Color(0xFF36CFC9), shape: BoxShape.circle),
+          decoration:
+              const BoxDecoration(color: Color(0xFF36CFC9), shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
         Text(text, style: const TextStyle(color: Colors.white, fontSize: 11)),
@@ -443,5 +469,4 @@ class _VideoTrendCardData {
     return '$m:${s.toString().padLeft(2, '0')}';
   }
 }
-
 
