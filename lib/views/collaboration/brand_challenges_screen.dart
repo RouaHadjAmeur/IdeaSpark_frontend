@@ -730,7 +730,7 @@ class _BrandChallengesScreenState extends State<BrandChallengesScreen> with Sing
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Creator ${submission.creatorId.substring(0, 4)}',
+                      'Creator ${(submission.creatorId ?? 'XXXX').substring(0, 4)}',
                       style: GoogleFonts.syne(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -766,9 +766,9 @@ class _BrandChallengesScreenState extends State<BrandChallengesScreen> with Sing
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildTagChip(colorScheme, submission.status.toUpperCase()),
-              if (submission.revisions.isNotEmpty)
-                _buildTagChip(colorScheme, '${submission.revisions.length} Revisions'),
+              _buildTagChip(colorScheme, submission.status.label.toUpperCase()),
+              if ((submission.revisions?.isNotEmpty) ?? false)
+                _buildTagChip(colorScheme, '${submission.revisions?.length ?? 0} Revisions'),
             ],
           ),
           const SizedBox(height: 16),
@@ -780,7 +780,7 @@ class _BrandChallengesScreenState extends State<BrandChallengesScreen> with Sing
                   child: FilledButton(
                     onPressed: () {
                       final brandId = brandVm.brands.first.id!;
-                      challengeVm.declareWinner(submission.id, challenge.id, brandId);
+                      challengeVm.declareWinner(submission.id ?? '', challenge.id, brandId);
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.amber.shade600,
@@ -795,7 +795,7 @@ class _BrandChallengesScreenState extends State<BrandChallengesScreen> with Sing
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => challengeVm.shortlist(submission.id, challenge.id, submission.status != 'shortlisted'),
+                    onPressed: () => challengeVm.shortlist(submission.id ?? '', challenge.id, submission.status != SubmissionStatus.shortlisted),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: colorScheme.outlineVariant),
                       padding: const EdgeInsets.symmetric(vertical: 12),

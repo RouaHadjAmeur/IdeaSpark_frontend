@@ -910,7 +910,7 @@ class _BrandChallengeHubScreenState extends State<BrandChallengeHubScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Creator #${winner.creatorId.substring(0, 8)}',
+                      'Creator #${(winner.creatorId ?? 'XXXXXXXX').substring(0, 8)}',
                       style: GoogleFonts.syne(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -1002,7 +1002,7 @@ class _BrandChallengeHubScreenState extends State<BrandChallengeHubScreen> {
             child: Column(
               children: [
                 Text(
-                  '#${sub.creatorId.substring(0, 6)}',
+                  '#${(sub.creatorId ?? 'XXXXXX').substring(0, 6)}',
                   style: GoogleFonts.spaceMono(
                     fontSize: 9,
                     color: isDark ? AppColors.textSecondary : const Color(0xFF5A6578),
@@ -1086,7 +1086,7 @@ class _BrandChallengeHubScreenState extends State<BrandChallengeHubScreen> {
                       _buildStatusPill(statusLabel, statusColor),
                       const SizedBox(height: 6),
                       Text(
-                        'Creator #${sub.creatorId.substring(0, 8)}',
+                        'Creator #${(sub.creatorId ?? 'XXXXXXXX').substring(0, 8)}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1146,7 +1146,7 @@ class _BrandChallengeHubScreenState extends State<BrandChallengeHubScreen> {
                       label: isShortlisted ? 'UNLIST' : 'SHORTLIST',
                       icon: isShortlisted ? Icons.star : Icons.star_border,
                       color: AppColors.accent,
-                      onTap: vm.isLoading ? null : () => vm.shortlist(sub.id, challenge.id, !isShortlisted),
+                      onTap: vm.isLoading ? null : () => vm.shortlist(sub.id ?? '', challenge.id, !isShortlisted),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -1226,7 +1226,7 @@ class _BrandChallengeHubScreenState extends State<BrandChallengeHubScreen> {
       ),
     );
     if (confirmed != null && confirmed.isNotEmpty && context.mounted) {
-      await vm.requestRevision(sub.id, challenge.id, confirmed);
+      await vm.requestRevision(sub.id ?? '', challenge.id, confirmed);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Revision requested successfully')),
@@ -1256,7 +1256,7 @@ class _BrandChallengeHubScreenState extends State<BrandChallengeHubScreen> {
       ),
     );
     if (confirmed == true && context.mounted) {
-      await vm.declareWinner(sub.id, challenge.id, brandId);
+      await vm.declareWinner(sub.id ?? '', challenge.id, brandId);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('🏆 Winner declared! Challenge closed.')),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../view_models/auth_view_model.dart';
 
 class BottomNavV2 extends StatelessWidget {
   final int currentIndex;
@@ -13,19 +15,19 @@ class BottomNavV2 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    // 5 main tabs: Home, Brands, Calendar, Projects, Contacts
+    final colorScheme = Theme.of(context).colorScheme;
+    // Read auth directly — never rely on a parent passing a flag
+    final isBrandOwner = context.watch<AuthViewModel>().isBrandOwner;
+
     final List<Map<String, dynamic>> tabs = [
       {'icon': Icons.home_outlined, 'label': 'Accueil', 'index': 0},
       {'icon': Icons.bookmark_outline, 'label': 'Marques', 'index': 1},
-      {'icon': Icons.insights_outlined, 'label': 'Stratégies', 'index': 2},
+      // Stratégies is ONLY visible to brand owners
+      if (isBrandOwner)
+        {'icon': Icons.insights_outlined, 'label': 'Stratégies', 'index': 2},
       {'icon': Icons.rocket_launch_outlined, 'label': 'Projects', 'index': 3},
       {'icon': Icons.contacts_outlined, 'label': 'Contacts', 'index': 6},
     ];
-
-    final activeColor = colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
@@ -44,7 +46,6 @@ class BottomNavV2 extends StatelessWidget {
                 isSelected: currentIndex == tab['index'],
                 onTap: () => onTap(tab['index'] as int),
                 colorScheme: colorScheme,
-                activeColor: activeColor,
               ),
             ).toList(),
           ),
@@ -60,7 +61,6 @@ class _NavItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
   final ColorScheme colorScheme;
-  final Color activeColor;
 
   const _NavItem({
     required this.icon,
@@ -68,7 +68,6 @@ class _NavItem extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
     required this.colorScheme,
-    required this.activeColor,
   });
 
   @override
@@ -94,7 +93,7 @@ class _NavItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: GoogleFonts.syne(
                 fontSize: 10,
-                color: isSelected ? activeColor : colorScheme.onSurfaceVariant,
+                color: isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),

@@ -83,10 +83,27 @@ class PlanService {
       headers: _headers(token),
       body: jsonEncode(data),
     );
+    debugPrint('[PlanService] updatePlan $id → ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 200))}');
     if (response.statusCode == 200) {
       return Plan.fromJson(jsonDecode(response.body));
     }
     throw Exception('Failed to update plan: ${response.statusCode} - ${response.body}');
+  }
+
+  /// Notifies all collaborators of a plan update (e.g. phases changed).
+  /// Calls POST /collaboration/plans/:planId/notify
+  static Future<void> notifyCollaborators(String planId, String eventType) async {
+    final token = await _getToken();
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConfig.notifyCollaboratorsUrl(planId)),
+        headers: _headers(token),
+        body: jsonEncode({'eventType': eventType}),
+      );
+      debugPrint('[PlanService] notifyCollaborators $planId/$eventType → ${response.statusCode}');
+    } catch (e) {
+      debugPrint('[PlanService] notifyCollaborators error (non-fatal): $e');
+    }
   }
 
   static Future<Plan> updateCampaignCopy(String id, String copy) async {
@@ -262,5 +279,30 @@ class PlanService {
       return Plan.fromJson(jsonDecode(response.body));
     }
     throw Exception('Failed to generate caption: ${response.statusCode} - ${response.body}');
+  }
+
+  static Future<Plan> updateBlockStatus(String planId, String blockId, ContentBlockStatus status) async {
+    final token = await _getToken();
+    final response = await http.patch(
+      Uri.parse(ApiConfig.updatePlanBlockStatusUrl(planId, blockId)),
+      headers: _headers(token),
+      body: jsonEncode({'status': status.name}),
+    );
+    if (response.statusCode == 200) {
+      return Plan.fromJson(jsonDecode(response.body));
+    }
+    throw Exception('Failed to update block status: ${response.statusCode} - ${response.body}');
+  }
+
+  static Future<Plan> generateVideoIdea(String planId, String blockId) async {
+    final token = await _getToken();
+    final response = await http.post(
+      Uri.parse('${ApiConfig.generateAiVideoIdeaUrl}?planId=$planId&blockId=$blockId'),
+      headers: _headers(token),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Plan.fromJson(jsonDecode(response.body));
+    }
+    throw Exception('Failed to generate video idea: ${response.statusCode} - ${response.body}');
   }
 }

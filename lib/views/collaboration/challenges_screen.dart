@@ -1183,7 +1183,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> with SingleTickerPr
                     _buildMiniStat(colorScheme, isDark, '${wins.length}', 'Won'),
                     const SizedBox(width: 10),
                     _buildMiniStat(colorScheme, isDark,
-                      '${active.where((s) => s.status == 'revision_requested').length}',
+                      '${active.where((s) => s.status == SubmissionStatus.revisionRequested).length}',
                       'Revisions'),
                   ],
                 ),
@@ -1256,28 +1256,30 @@ class _ChallengesScreenState extends State<ChallengesScreen> with SingleTickerPr
   }) {
     Color statusColor = Colors.blue;
     IconData statusIcon = Icons.hourglass_empty;
-    String statusText = submission.status.toUpperCase();
+    String statusText = submission.status.label.toUpperCase();
 
     switch (submission.status) {
-      case 'shortlisted':
+      case SubmissionStatus.shortlisted:
         statusColor = Colors.amber;
         statusIcon = Icons.star;
         break;
-      case 'winner':
+      case SubmissionStatus.winner:
         statusColor = const Color(0xFFF59E0B);
         statusIcon = Icons.emoji_events;
-        statusText = submission.challengeReward.isNotEmpty
+        statusText = (submission.challengeReward ?? '').isNotEmpty
             ? '🏆 WINNER — ${submission.challengeReward}'
             : '🏆 WINNER';
         break;
-      case 'revision_requested':
+      case SubmissionStatus.revisionRequested:
         statusColor = Colors.orange;
         statusIcon = Icons.refresh;
         statusText = 'REVISION NEEDED';
         break;
-      case 'rejected':
+      case SubmissionStatus.rejected:
         statusColor = Colors.red;
         statusIcon = Icons.close;
+        break;
+      default:
         break;
     }
 
@@ -1324,9 +1326,9 @@ class _ChallengesScreenState extends State<ChallengesScreen> with SingleTickerPr
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      submission.challengeTitle.isNotEmpty
-                          ? submission.challengeTitle
-                          : 'Challenge #${submission.challengeId.substring(0, 8)}',
+                      (submission.challengeTitle ?? '').isNotEmpty
+                          ? submission.challengeTitle!
+                          : 'Challenge #${(submission.challengeId ?? 'XXXXXXXX').substring(0, 8)}',
                       style: GoogleFonts.syne(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -1473,7 +1475,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> with SingleTickerPr
                       ),
                     );
                     if (confirmed == true && context.mounted) {
-                      await context.read<ChallengeViewModel>().updateSubmission(submission.id, File(path));
+                      await context.read<ChallengeViewModel>().updateSubmission(submission.id ?? '', File(path));
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Revision uploaded successfully!')),

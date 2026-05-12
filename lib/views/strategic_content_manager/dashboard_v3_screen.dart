@@ -13,6 +13,7 @@ import '../../models/brand.dart';
 import '../../core/app_localizations.dart';
 import '../../services/dashboard_alert_service.dart';
 import '../../view_models/collaboration_view_model.dart';
+import '../../views/execution_hub/collaborator_plan_screen.dart';
 
 class DashboardV3Screen extends StatelessWidget {
   const DashboardV3Screen({super.key});
@@ -152,6 +153,14 @@ class _DashboardContentState extends State<DashboardContent>
 
   @override
   Widget build(BuildContext context) {
+    // ── Role-based routing ────────────────────────────────────────────────
+    // Collaborators land directly on their personal Execution Hub.
+    // Brand owners see the full strategy dashboard below.
+    final authVm = context.watch<AuthViewModel>();
+    if (!authVm.isBrandOwner) {
+      return const CollaboratorPlanScreen();
+    }
+
     return Consumer2<BrandViewModel, PlanViewModel>(
       builder: (context, brandVm, planVm, _) {
         final brands = brandVm.brands;

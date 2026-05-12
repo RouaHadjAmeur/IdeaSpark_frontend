@@ -338,12 +338,10 @@ class CallService {
     _peerConnection = await createPeerConnection(configuration);
 
     _peerConnection!.onIceCandidate = (candidate) {
-      if (candidate != null) {
-        _socket!.emit('ice-candidate', {
-          'candidate': candidate.toMap(),
-          'receiverId': _remoteUserId,
-        });
-      }
+      _socket!.emit('ice-candidate', {
+        'candidate': candidate.toMap(),
+        'receiverId': _remoteUserId,
+      });
     };
 
     _peerConnection!.onTrack = (event) {

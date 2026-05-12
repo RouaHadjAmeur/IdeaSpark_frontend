@@ -11,9 +11,9 @@ class ApiConfig {
     const envUrl = String.fromEnvironment('API_BASE_URL');
     if (envUrl.isNotEmpty) return envUrl;
     if (defaultTargetPlatform == TargetPlatform.android && !kIsWeb) {
-      return 'http://10.0.2.2:3000';
+      return 'http://192.168.100.13:3000';
     }
-    return 'http://Macs-AIr-Roua.local:3000';
+    return 'http://192.168.100.13:3000';
   }
 
   static String get authBase => '$baseUrl/auth';
@@ -25,15 +25,15 @@ class ApiConfig {
 
   // Video Generator Endpoints
   static String get videoGeneratorBase => '$baseUrl/video-generator';
-  static String get generateVideoIdeasUrl => '$videoGeneratorBase/generate';
-  static String get analyzeVideoImageUrl => '$videoGeneratorBase/analyze-image';
+  static String get generateVideoIdeasUrl => '$baseUrl/ai/video-ideas/generate';
+  static String get analyzeVideoImageUrl => '$baseUrl/ai/video-ideas/analyze-image';
   static String get refineVideoIdeaUrl => '$videoGeneratorBase/refine';
   static String get approveVersionUrl => '$videoGeneratorBase/approve';
-  static String get saveVideoIdeaUrl => '$videoGeneratorBase/save';
-  static String get getHistoryUrl => '$videoGeneratorBase/history';
-  static String get getFavoritesUrl => '$videoGeneratorBase/favorites';
-  static String get toggleFavoriteUrl => '$videoGeneratorBase/toggle-favorite'; // Needs /id
-  static String get deleteVideoIdeaUrl => videoGeneratorBase; // Needs /id
+  static String get saveVideoIdeaUrl => '$aiVideoIdeasBase/save';
+  static String get getHistoryUrl => '$aiVideoIdeasBase/history';
+  static String get getFavoritesUrl => '$aiVideoIdeasBase/favorites';
+  static String toggleFavoriteUrl(String id) => '$aiVideoIdeasBase/$id/favorite';
+  static String deleteVideoIdeaUrl(String id) => '$aiVideoIdeasBase'; // Needs /id
   static String get searchVideoUrl => '$videoGeneratorBase/search';
 
   // Persona Endpoints
@@ -99,6 +99,7 @@ class ApiConfig {
   static String aiProjectInsightsUrl(String id) => '$plansBase/$id/ai-insights';
   static String generateHookUrl(String planId, String blockId) => '$plansBase/$planId/generate-hook/$blockId';
   static String generateCaptionUrl(String planId, String blockId) => '$plansBase/$planId/generate-caption/$blockId';
+  static String updatePlanBlockStatusUrl(String planId, String blockId) => '$plansBase/$planId/blocks/$blockId/status';
 
   // Content Blocks Endpoints
   static String get contentBlocksBase => '$baseUrl/content-blocks';
@@ -135,6 +136,7 @@ class ApiConfig {
   static String listCollaboratorsUrl(String planId) => '$collaborationBase/plans/$planId/collaborators';
   static String removeCollaboratorUrl(String planId, String userId) => '$collaborationBase/plans/$planId/collaborators/$userId';
   static String getActivityLogUrl(String planId) => '$collaborationBase/plans/$planId/activity';
+  static String notifyCollaboratorsUrl(String planId) => '$collaborationBase/plans/$planId/notify';
   static String get notificationsUrl => '$collaborationBase/notifications';
   static String markNotificationReadUrl(String id) => '$collaborationBase/notifications/$id/read';
   static String sharedPlansUrl(String targetId) => '$collaborationBase/shared/$targetId';
@@ -184,7 +186,7 @@ class ApiConfig {
   static String socialFriendsByIdUrl(String id) => '$socialBase/friends/$id';
 
   // User Search
-  static String searchUsersUrl(String query) => '$usersBase/search?q=$query';
+  static String searchUsersUrl(String query) => '$usersBase/search?query=$query';
 
   // Challenges Endpoints
   static String get challengesBase => '$baseUrl/challenges';

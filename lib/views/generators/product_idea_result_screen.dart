@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:ideaspark/view_models/product_idea_view_model.dart';
-import 'package:ideaspark/models/product_idea_model.dart';
 import 'product_ideas_history_screen.dart';
 
 class ProductIdeaResultScreen extends StatelessWidget {

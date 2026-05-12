@@ -112,7 +112,12 @@ class _GoogleCalendarConnectButtonState
           children: [
             Icon(Icons.info_outline, color: Colors.blue),
             SizedBox(width: 8),
-            Text('Autorisation Google Calendar'),
+            Flexible(
+              child: Text(
+                'Autorisation Google Calendar',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         content: const Column(

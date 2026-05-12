@@ -39,7 +39,6 @@ import 'package:ideaspark/modules/contacts/contacts_screen.dart';
 import 'package:ideaspark/modules/chat/chat_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brands_list_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/brand_workspace_screen.dart';
-import 'package:ideaspark/views/strategic_content_manager/calendar_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/plan_project_flow.dart';
 import 'package:ideaspark/views/strategic_content_manager/ai_campaign_roadmap_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/insights_screen.dart';
@@ -47,10 +46,13 @@ import 'package:ideaspark/views/strategic_content_manager/create_edit_brand_scre
 import 'package:ideaspark/views/strategic_content_manager/agent_full_access_screen.dart';
 import 'package:ideaspark/views/execution_hub/execution_hub_screen.dart';
 import 'package:ideaspark/views/execution_hub/project_board_screen.dart';
-import '../views/strategic_content_manager/campaign_workspace_screen.dart';
+import '../views/strategic_content_manager/campaign_strategy_hub_screen.dart';
+import '../views/execution_hub/collaborator_plan_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/campaign_manager_hub_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/campaign_planner_screen.dart';
 import 'package:ideaspark/views/strategic_content_manager/marketing_strategy_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/phase_detail_screen.dart';
+import 'package:ideaspark/views/strategic_content_manager/content_block_detail_screen.dart';
 
 import 'package:ideaspark/widgets/bottom_nav_v2.dart';
 import 'package:ideaspark/widgets/sidebar_navigation.dart';
@@ -74,6 +76,7 @@ import '../models/video_generator_models.dart';
 import '../models/brand.dart';
 import '../models/plan.dart';
 import '../services/auth_service.dart';
+import '../view_models/auth_view_model.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -383,8 +386,36 @@ GoRouter createAppRouter() {
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) {
           final plan = state.extra as Plan;
-          return CampaignWorkspaceScreen(plan: plan);
+          final authVm = context.read<AuthViewModel>();
+          // Brand owner → Strategy Hub (5-tab oversight view)
+          // Collaborator → their personal execution hub
+          return authVm.isBrandOwner
+              ? CampaignStrategyHubScreen(plan: plan)
+              : const CollaboratorPlanScreen();
         },
+      ),
+      GoRoute(
+        path: '/campaign-strategy-hub',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final plan = state.extra as Plan;
+          return CampaignStrategyHubScreen(plan: plan);
+        },
+      ),
+      GoRoute(
+        path: '/my-plan',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const CollaboratorPlanScreen(),
+      ),
+      GoRoute(
+        path: '/marketing-strategy',
+        parentNavigatorKey: rootNavigatorKey,
+        redirect: (context, state) {
+          final authVm = context.read<AuthViewModel>();
+          if (!authVm.isBrandOwner) return '/home';
+          return null;
+        },
+        builder: (context, state) => const MarketingStrategyScreen(),
       ),
       GoRoute(
         path: '/edit-profile',
@@ -399,6 +430,32 @@ GoRouter createAppRouter() {
         path: '/camera-coach',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const CameraCoachScreen(),
+      ),
+      GoRoute(
+        path: '/phase-detail',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return PhaseDetailScreen(
+            plan: extra['plan'] as Plan,
+            phase: extra['phase'] as Phase,
+            phaseIndex: extra['phaseIndex'] as int,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/content-block-detail',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return ContentBlockDetailScreen(
+            plan: extra['plan'] as Plan,
+            phase: extra['phase'] as Phase,
+            block: extra['block'] as ContentBlock,
+            phaseIndex: extra['phaseIndex'] as int,
+            blockIndex: extra['blockIndex'] as int,
+          );
+        },
       ),
       GoRoute(
         path: '/subscription-upgrade',
@@ -534,21 +591,15 @@ GoRouter createAppRouter() {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/calendar',
+                path: '/projects',
+                redirect: (context, state) {
+                  final authVm = context.read<AuthViewModel>();
+                  if (!authVm.isBrandOwner) return '/home';
+                  return null;
+                },
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
                   child: const MarketingStrategyScreen(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/projects',
-                pageBuilder: (context, state) => NoTransitionPage(
-                  key: state.pageKey,
-                  child: const ExecutionHubScreen(),
                 ),
                 routes: [
                   GoRoute(
@@ -569,7 +620,7 @@ GoRouter createAppRouter() {
                 path: '/insights',
                 pageBuilder: (context, state) => NoTransitionPage(
                   key: state.pageKey,
-                  child: const InsightsScreen(),
+                  child: const ExecutionHubScreen(),
                 ),
               ),
             ],

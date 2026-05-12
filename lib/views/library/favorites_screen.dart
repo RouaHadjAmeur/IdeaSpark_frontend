@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:ideaspark/core/app_localizations.dart';
-import 'package:ideaspark/services/favorites_storage_service.dart';
 
 import 'package:ideaspark/models/slogan_model.dart';
 

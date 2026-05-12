@@ -272,13 +272,14 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   AppUser? get currentUser => _authService.currentUser;
-  UserRole get userRole => _authService.currentUser?.role ?? UserRole.brandOwner;
+  UserRole get userRole => _authService.currentUser?.role ?? UserRole.collaborator;
   bool get isBrandOwner => userRole == UserRole.brandOwner;
   String? get displayName => _authService.currentUser?.displayName;
   String? get email => _authService.currentUser?.email;
   String? get userId => _authService.currentUser?.id;
   bool get isPremium => _authService.currentUser?.isPremium ?? false;
   bool get isPremiumBrandOwner => isBrandOwner && isPremium;
+  String? get accessToken => _authService.accessToken;
 
   void _setLoading(bool value) {
     if (_isLoading != value) {

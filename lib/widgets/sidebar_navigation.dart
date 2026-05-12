@@ -30,14 +30,15 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
               padding: EdgeInsets.zero,
               children: [
                 _buildSectionHeader(context, 'Menu'),
-                _SidebarItem(
-                  icon: Icons.rocket_launch_outlined,
-                  label: 'Projects',
-                  isActive: location.startsWith('/projects') ||
-                      location.startsWith('/project-board') ||
-                      location.startsWith('/plan-project'),
-                  onTap: () => context.go('/projects'),
-                ),
+                if (authVm.isBrandOwner)
+                  _SidebarItem(
+                    icon: Icons.rocket_launch_outlined,
+                    label: 'Projects',
+                    isActive: location.startsWith('/projects') ||
+                        location.startsWith('/project-board') ||
+                        location.startsWith('/plan-project'),
+                    onTap: () => context.go('/projects'),
+                  ),
                 _SidebarItem(
                   icon: Icons.groups_outlined,
                   label: 'Communauté',

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../models/brand.dart';
@@ -80,5 +81,36 @@ class BrandService {
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw Exception('Failed to delete brand: ${response.statusCode} - ${response.body}');
     }
+  }
+
+  /// Returns the brands the current user collaborates on (not owns).
+  /// Calls GET /brands/my/collaborations
+  static Future<List<Brand>> getMyCollaborationBrands() async {
+    final token = await _getToken();
+    final response = await http.get(
+      Uri.parse(ApiConfig.myBrandCollaborationsUrl),
+      headers: _headers(token),
+    );
+    debugPrint('[BrandService] getMyCollaborationBrands → ${response.statusCode}: ${response.body.substring(0, response.body.length.clamp(0, 300))}');
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      final List<dynamic> list = body is List ? body : (body['data'] ?? []);
+      final brands = <Brand>[];
+      for (final item in list) {
+        if (item == null) continue;
+        try {
+          // Backend may return the brand directly, or a collaborator record { brand: {...} }
+          final Map<String, dynamic> map = item is Map<String, dynamic> ? item : {};
+          final brandMap = (map['brand'] ?? map['brandId'] ?? map) as Map<String, dynamic>?;
+          if (brandMap != null && brandMap.isNotEmpty) {
+            brands.add(Brand.fromJson(brandMap));
+          }
+        } catch (e) {
+          debugPrint('[BrandService] skipping item: $e');
+        }
+      }
+      return brands;
+    }
+    return [];
   }
 }

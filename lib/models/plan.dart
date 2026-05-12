@@ -15,7 +15,7 @@ enum ContentFormat { reel, carousel, story, post }
 
 enum CtaType { soft, hard, educational }
 
-enum ContentBlockStatus { draft, scheduled, edited }
+enum ContentBlockStatus { empty, draft, submitted, approved, scheduled, published, revisionRequested }
 
 enum CalendarEntryStatus { scheduled, published, cancelled }
 
@@ -662,5 +662,43 @@ extension CalendarEntryStatusDisplay on CalendarEntryStatus {
       CalendarEntryStatus.cancelled: 'Cancelled',
     };
     return m[this] ?? name;
+  }
+}
+
+extension ContentBlockStatusDisplay on ContentBlockStatus {
+  String get label {
+    switch (this) {
+      case ContentBlockStatus.empty: return 'Empty';
+      case ContentBlockStatus.draft: return 'Draft';
+      case ContentBlockStatus.submitted: return 'Submitted';
+      case ContentBlockStatus.approved: return 'Approved';
+      case ContentBlockStatus.scheduled: return 'Scheduled';
+      case ContentBlockStatus.published: return 'Published';
+      case ContentBlockStatus.revisionRequested: return 'Revision Requested';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case ContentBlockStatus.empty: return 'No content yet';
+      case ContentBlockStatus.draft: return 'Hook/caption written';
+      case ContentBlockStatus.submitted: return 'Awaiting review';
+      case ContentBlockStatus.approved: return 'Ready to publish';
+      case ContentBlockStatus.scheduled: return 'Auto-post set';
+      case ContentBlockStatus.published: return 'Live on platform';
+      case ContentBlockStatus.revisionRequested: return 'Changes needed';
+    }
+  }
+
+  dynamic get color {
+    switch (this) {
+      case ContentBlockStatus.empty: return 0xFF9090B0;
+      case ContentBlockStatus.draft: return 0xFFF59E0B;
+      case ContentBlockStatus.submitted: return 0xFF3B82F6;
+      case ContentBlockStatus.approved: return 0xFF22C55E;
+      case ContentBlockStatus.scheduled: return 0xFF6D4ED3;
+      case ContentBlockStatus.published: return 0xFF10B981;
+      case ContentBlockStatus.revisionRequested: return 0xFFEF4444;
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 
 import '../../core/app_theme.dart';
 import '../../models/brand_collaborator.dart';
@@ -33,6 +34,7 @@ class BrandTeamSheet extends StatefulWidget {
 
 class _BrandTeamSheetState extends State<BrandTeamSheet> {
   final _searchCtrl = TextEditingController();
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -44,8 +46,20 @@ class _BrandTeamSheetState extends State<BrandTeamSheet> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged(String val, CollaborationViewModel vm) {
+    _debounce?.cancel();
+    if (val.trim().isEmpty) {
+      vm.clearSearchResults();
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      vm.searchUsers(val.trim());
+    });
   }
 
   @override
@@ -162,8 +176,29 @@ class _BrandTeamSheetState extends State<BrandTeamSheet> {
                     color: isDark ? AppColors.textTertiary : const Color(0xFF8B95B0),
                     fontSize: 13,
                   ),
-                  prefixIcon: Icon(Icons.search, size: 18,
-                      color: isDark ? AppColors.textTertiary : const Color(0xFF8B95B0)),
+                  prefixIcon: vm.isSearching
+                      ? Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        )
+                      : Icon(Icons.search, size: 18,
+                          color: isDark ? AppColors.textTertiary : const Color(0xFF8B95B0)),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            vm.clearSearchResults();
+                          },
+                        )
+                      : null,
                   filled: true,
                   fillColor: isDark ? AppColors.bgElevated : const Color(0xFFF5F6FA),
                   border: OutlineInputBorder(
@@ -180,17 +215,21 @@ class _BrandTeamSheetState extends State<BrandTeamSheet> {
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
-                onChanged: (val) {
-                  if (val.trim().length >= 2) {
-                    vm.searchUsers(val.trim());
-                  }
-                },
+                onChanged: (val) => _onSearchChanged(val, vm),
               ),
             ),
           ],
         ),
         // Search results
-        if (vm.searchResults.isNotEmpty) ...[
+        if (vm.isSearching && vm.searchResults.isEmpty) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              'Searching…',
+              style: TextStyle(fontSize: 12, color: isDark ? AppColors.textTertiary : const Color(0xFF8B95B0)),
+            ),
+          ),
+        ] else if (vm.searchResults.isNotEmpty) ...[
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -240,6 +279,14 @@ class _BrandTeamSheetState extends State<BrandTeamSheet> {
                         ),
                 );
               },
+            ),
+          ),
+        ] else if (_searchCtrl.text.isNotEmpty && !vm.isSearching) ...[
+          const SizedBox(height: 12),
+          Center(
+            child: Text(
+              'No users found for "${_searchCtrl.text}"',
+              style: TextStyle(fontSize: 12, color: isDark ? AppColors.textTertiary : const Color(0xFF8B95B0)),
             ),
           ),
         ],
@@ -385,17 +432,26 @@ class _BrandTeamSheetState extends State<BrandTeamSheet> {
 
   Future<void> _invite(BuildContext context, CollaborationViewModel vm, String userId, String userName) async {
     _searchCtrl.clear();
+    vm.clearSearchResults();
     try {
       await vm.inviteToBrand(widget.brandId, userId);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invitation sent to $userName')),
+          SnackBar(
+            content: Text('✅ Invitation sent to $userName'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }

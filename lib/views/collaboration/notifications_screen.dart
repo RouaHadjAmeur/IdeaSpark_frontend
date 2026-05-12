@@ -61,7 +61,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     itemCount: vm.notifications.length,
                     itemBuilder: (context, index) {
                       final notification = vm.notifications[index];
-                      final type = notification['type'] as String;
+                      final type = (notification['type'] as String?) ?? '';
                       final isInvite = type == 'invite_received';
                       final isFollowRequest = type == 'follow_request';
                       final isFollowAccepted = type == 'follow_accepted';
@@ -69,8 +69,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       final isRead = notification['read'] ?? false;
                       final notificationId = notification['_id']?.toString() ?? notification['id']?.toString() ?? '';
                       final isHandled = vm.handledNotifications.contains(notificationId);
-                      final dateStr = notification['createdAt'] as String;
-                      final date = DateTime.parse(dateStr).toLocal();
+                      
+                      // Safe date parsing — createdAt can be null or non-String
+                      final rawDate = notification['createdAt'];
+                      DateTime date;
+                      try {
+                        date = rawDate != null
+                            ? DateTime.parse(rawDate.toString()).toLocal()
+                            : DateTime.now();
+                      } catch (_) {
+                        date = DateTime.now();
+                      }
                       
                       final relatedUser = notification['relatedUserId'];
                       final relatedUserName = relatedUser != null ? (relatedUser['name'] ?? relatedUser['username'] ?? 'Quelqu\'un') : 'Quelqu\'un';

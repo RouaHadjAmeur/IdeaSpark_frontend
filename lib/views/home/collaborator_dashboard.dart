@@ -237,8 +237,7 @@ class _ProjectCard extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: () {
-        // Find plan in PlanViewModel if needed, or navigate by ID
-        context.push('/projects');
+        context.push('/my-plan');
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),

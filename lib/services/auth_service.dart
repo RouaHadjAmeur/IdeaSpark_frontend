@@ -16,8 +16,8 @@ enum UserRole {
   const UserRole(this.value);
 
   static UserRole fromString(String? val) {
-    if (val == 'collaborator') return UserRole.collaborator;
-    return UserRole.brandOwner;
+    if (val == 'brand_owner') return UserRole.brandOwner;
+    return UserRole.collaborator; // anything else (collaborator, creator, null) → not a brand owner
   }
 }
 
@@ -101,6 +101,9 @@ class AuthService {
   static const _keyOnboardingDone = 'onboarding_done';
   static const _keyAccessToken = 'auth_access_token';
   static const _keyUser = 'auth_user';
+  // Bump this when the cached user schema changes to force a re-fetch
+  static const _keyCacheVersion = 'auth_cache_version';
+  static const _currentCacheVersion = 2; // bumped: role default fix
 
   AppUser? _currentUser;
   String? _accessToken;
@@ -115,6 +118,15 @@ class AuthService {
   Future<void> _loadStored() async {
     if (_currentUser != null && _accessToken != null) return;
     final prefs = await SharedPreferences.getInstance();
+
+    // If cache version is outdated, clear the cached user to force a re-fetch
+    final cachedVersion = prefs.getInt(_keyCacheVersion) ?? 0;
+    if (cachedVersion < _currentCacheVersion) {
+      await prefs.remove(_keyUser);
+      await prefs.setInt(_keyCacheVersion, _currentCacheVersion);
+      // Keep the token so fetchProfile can still run — just clear the stale user
+    }
+
     _accessToken = prefs.getString(_keyAccessToken);
     final userJson = prefs.getString(_keyUser);
     if (userJson != null && _accessToken != null) {
@@ -133,6 +145,7 @@ class AuthService {
     _currentUser = user;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyAccessToken, token);
+    await prefs.setInt(_keyCacheVersion, _currentCacheVersion);
     await prefs.setString(_keyUser, jsonEncode({
       'id': user.id,
       'email': user.email,

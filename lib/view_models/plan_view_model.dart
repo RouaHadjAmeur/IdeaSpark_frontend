@@ -2,7 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/plan.dart';
 import '../models/brand.dart';
+import '../models/content_block.dart' as cb;
 import '../services/plan_service.dart';
+import '../services/auth_service.dart';
+import '../services/socket_service.dart';
+import '../services/content_block_service.dart';
 import '../services/dashboard_alert_service.dart';
 
 class PlanViewModel extends ChangeNotifier {
@@ -66,6 +70,207 @@ class PlanViewModel extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Fetches plans for a brandId and MERGES them into the existing list (no replace).
+  Future<void> mergeCollaboratorPlans(String brandId) async {
+    try {
+      final fetched = await PlanService.getPlans(brandId: brandId);
+      debugPrint('[PlanViewModel] mergeCollaboratorPlans($brandId) → ${fetched.length} plans');
+      for (final plan in fetched) {
+        final idx = _plans.indexWhere((p) => p.id == plan.id);
+        if (idx >= 0) {
+          _plans[idx] = plan; // update existing
+        } else {
+          _plans.add(plan);   // add new
+        }
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[PlanViewModel] mergeCollaboratorPlans($brandId) error: $e');
+    }
+  }
+
+  /// Fetches a single plan by ID (full detail including phases + content blocks)
+  /// and updates it in the local list.
+  Future<void> loadPlanById(String planId) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final plan = await PlanService.getPlanById(planId);
+      _currentPlan = plan;
+      _updatePlanInList(plan);
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Cache of phase metadata (name, productIds, description) keyed by planId+phaseIdx
+  // Used to restore data that the backend strips on PATCH responses
+  final Map<String, List<Phase>> _phaseMetaCache = {};
+
+  /// Call before updatePhases to cache phase metadata
+  void _cachePhasesMeta(String planId, List<Phase> phases) {
+    _phaseMetaCache[planId] = List.of(phases);
+  }
+
+  /// Fetches content blocks from the dedicated endpoint and injects them
+  /// into the matching plan phases. Call this when the plan's phases show 0 blocks.
+  Future<void> loadAndInjectBlocks(String planId) async {
+    try {
+      final blockService = ContentBlockService();
+      final rawBlocks = await blockService.list(planId: planId);
+      debugPrint('[PlanViewModel] loadAndInjectBlocks($planId) → ${rawBlocks.length} blocks');
+      if (rawBlocks.isEmpty) return;
+
+      final planIdx = _plans.indexWhere((p) => p.id == planId);
+      if (planIdx < 0) return;
+      final plan = _plans[planIdx];
+
+      // Use cached phase metadata if available (backend strips names/products on PATCH)
+      final cachedPhases = _phaseMetaCache[planId] ?? plan.phases;
+      final originalPhases = cachedPhases;
+
+      debugPrint('[PlanViewModel] phases: ${plan.phases.map((p) => 'id=${p.id} name=${p.name} products=${p.productIds.length}').toList()}');
+      debugPrint('[PlanViewModel] block phaseIds: ${rawBlocks.map((b) => 'phaseId=${b.planPhaseId} label=${b.phaseLabel}').toSet().toList()}');
+
+      // Group blocks by planPhaseId first, then by phaseLabel as fallback
+      final byPhaseId    = <String, List<cb.ContentBlock>>{};
+      final byPhaseLabel = <String, List<cb.ContentBlock>>{};
+      for (final b in rawBlocks) {
+        if (b.planPhaseId != null && b.planPhaseId!.isNotEmpty) {
+          byPhaseId.putIfAbsent(b.planPhaseId!, () => []).add(b);
+        } else if (b.phaseLabel != null && b.phaseLabel!.isNotEmpty) {
+          byPhaseLabel.putIfAbsent(b.phaseLabel!, () => []).add(b);
+        } else {
+          // No phase info — put in unassigned bucket (will go to phase 0)
+          byPhaseId.putIfAbsent('__unassigned__', () => []).add(b);
+        }
+      }
+
+      // Rebuild phases with injected blocks
+      final updatedPhases = plan.phases.asMap().entries.map((entry) {
+        final idx   = entry.key;
+        final phase = entry.value;
+
+        // Match by phase ID first, then by phase name/label, then unassigned to first phase
+        List<cb.ContentBlock> phaseBlocks = [];
+        if (phase.id != null && phase.id!.isNotEmpty) {
+          phaseBlocks = byPhaseId[phase.id] ?? [];
+        }
+        if (phaseBlocks.isEmpty && phase.name.isNotEmpty) {
+          phaseBlocks = byPhaseLabel[phase.name] ?? [];
+        }
+        // Last resort: put all unmatched blocks in first phase
+        if (phaseBlocks.isEmpty && idx == 0) {
+          phaseBlocks = [
+            ...byPhaseId['__unassigned__'] ?? [],
+            // Also include blocks whose phaseId doesn't match any current phase
+            ...byPhaseId.entries
+                .where((e) => e.key != '__unassigned__' &&
+                    !plan.phases.any((p) => p.id == e.key))
+                .expand((e) => e.value),
+          ];
+        }
+        debugPrint('[PlanViewModel] phase[$idx] "${phase.name}" id=${phase.id} → ${phaseBlocks.length} blocks matched');
+
+        if (phaseBlocks.isEmpty) return phase;
+
+        // Restore original phase metadata if backend stripped it
+        final original = idx < originalPhases.length ? originalPhases[idx] : phase;
+        // Also try to get name from the blocks' phaseLabel as last resort
+        final labelFromBlocks = phaseBlocks.firstWhere(
+          (b) => b.phaseLabel != null && b.phaseLabel!.isNotEmpty,
+          orElse: () => phaseBlocks.first,
+        ).phaseLabel ?? '';
+        final restoredName = phase.name.isNotEmpty ? phase.name
+            : original.name.isNotEmpty ? original.name
+            : labelFromBlocks;
+        final restoredProducts = phase.productIds.isNotEmpty ? phase.productIds : original.productIds;
+        final restoredDesc = phase.description?.isNotEmpty == true ? phase.description : original.description;
+
+        // Convert cb.ContentBlock → plan.ContentBlock
+        final planBlocks = phaseBlocks.map((b) => ContentBlock(
+          id: b.id,
+          title: b.title,
+          pillar: b.contentType.toJson(),
+          format: _mapFormat(b.format),
+          ctaType: CtaType.soft,
+          status: _mapStatus(b.status),
+          hook: b.hooks.isNotEmpty ? b.hooks.first : '',
+          caption: b.scriptOutline ?? '',
+        )).toList();
+
+        // Merge: avoid duplicates by ID
+        final existingIds = phase.contentBlocks.map((b) => b.id).toSet();
+        final newBlocks = planBlocks.where((b) => !existingIds.contains(b.id)).toList();
+
+        return Phase(
+          id: phase.id,
+          name: restoredName,
+          weekNumber: phase.weekNumber,
+          description: restoredDesc,
+          contentBlocks: [...phase.contentBlocks, ...newBlocks],
+          status: phase.status,
+          productIds: restoredProducts,
+        );
+      }).toList();
+
+      _plans[planIdx] = Plan(
+        id: plan.id,
+        brandId: plan.brandId,
+        name: plan.name,
+        objective: plan.objective,
+        startDate: plan.startDate,
+        endDate: plan.endDate,
+        durationWeeks: plan.durationWeeks,
+        promotionIntensity: plan.promotionIntensity,
+        postingFrequency: plan.postingFrequency,
+        platforms: plan.platforms,
+        productIds: plan.productIds,
+        contentMixPreference: plan.contentMixPreference,
+        status: plan.status,
+        userId: plan.userId,
+        phases: updatedPhases,
+        projectDNA: plan.projectDNA,
+        notes: plan.notes,
+        notesSeen: plan.notesSeen,
+        lastNoteAuthorId: plan.lastNoteAuthorId,
+        collaboratorIds: plan.collaboratorIds,
+        linkedStrategyId: plan.linkedStrategyId,
+        linkedPhaseId: plan.linkedPhaseId,
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+      );
+      final totalInjected = updatedPhases.expand((p) => p.contentBlocks).length;
+      debugPrint('[PlanViewModel] loadAndInjectBlocks injected — total blocks now: $totalInjected');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[PlanViewModel] loadAndInjectBlocks error: $e');
+    }
+  }
+
+  ContentFormat _mapFormat(cb.ContentFormat? f) {
+    switch (f) {
+      case cb.ContentFormat.reel:     return ContentFormat.reel;
+      case cb.ContentFormat.story:    return ContentFormat.story;
+      case cb.ContentFormat.carousel: return ContentFormat.carousel;
+      default:                        return ContentFormat.post;
+    }
+  }
+
+  ContentBlockStatus _mapStatus(cb.ContentBlockStatus? s) {
+    switch (s) {
+      case cb.ContentBlockStatus.approved:   return ContentBlockStatus.approved;
+      case cb.ContentBlockStatus.scheduled:  return ContentBlockStatus.scheduled;
+      case cb.ContentBlockStatus.terminated: return ContentBlockStatus.published;
+      case cb.ContentBlockStatus.inProcess:  return ContentBlockStatus.draft;
+      default:                               return ContentBlockStatus.empty;
     }
   }
 
@@ -396,7 +601,13 @@ class PlanViewModel extends ChangeNotifier {
     try {
       final updated = await PlanService.generateHook(planId, blockId);
       _updatePlanInList(updated);
-      if (_currentPlan?.id == planId) _currentPlan = updated;
+      if (_currentPlan?.id == planId) {
+        _currentPlan = updated;
+        final block = updated.findBlock(blockId);
+        if (block != null && block.status == ContentBlockStatus.empty) {
+          await updateBlockStatus(blockId, ContentBlockStatus.draft);
+        }
+      }
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -411,7 +622,34 @@ class PlanViewModel extends ChangeNotifier {
     try {
       final updated = await PlanService.generateCaption(planId, blockId);
       _updatePlanInList(updated);
-      if (_currentPlan?.id == planId) _currentPlan = updated;
+      if (_currentPlan?.id == planId) {
+        _currentPlan = updated;
+        final block = updated.findBlock(blockId);
+        if (block != null && block.status == ContentBlockStatus.empty) {
+          await updateBlockStatus(blockId, ContentBlockStatus.draft);
+        }
+      }
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isGenerating = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> generateVideoIdea(String planId, String blockId) async {
+    _isGenerating = true;
+    notifyListeners();
+    try {
+      final updated = await PlanService.generateVideoIdea(planId, blockId);
+      _updatePlanInList(updated);
+      if (_currentPlan?.id == planId) {
+        _currentPlan = updated;
+        final block = updated.findBlock(blockId);
+        if (block != null && block.status == ContentBlockStatus.empty) {
+          await updateBlockStatus(blockId, ContentBlockStatus.draft);
+        }
+      }
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
     } finally {
@@ -440,4 +678,101 @@ class PlanViewModel extends ChangeNotifier {
       _plans.insert(0, updated);
     }
   }
+
+  Future<void> scheduleBlock(String blockId, DateTime scheduledAt) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      debugPrint('Scheduling block $blockId for $scheduledAt');
+      // In a real implementation, you'd call:
+      // await ContentBlockService().schedule(blockId, scheduledAt);
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateBlockStatus(String blockId, ContentBlockStatus status) async {
+    if (_currentPlan?.id == null) return;
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      debugPrint('Updating block $blockId status to ${status.name}');
+      final updated = await PlanService.updateBlockStatus(_currentPlan!.id!, blockId, status);
+      _updatePlanInList(updated);
+      _currentPlan = updated;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updatePhases(String planId, List<Phase> phases) async {
+    _isSaving = true;
+    _error = null;
+    notifyListeners();
+    try {
+      debugPrint('[PlanViewModel] updatePhases planId=$planId phases=${phases.length}');
+      final phaseBlockCounts = phases.map((p) => '${p.name}:${p.contentBlocks.length}').join(', ');
+      debugPrint('[PlanViewModel] updatePhases blocks per phase: $phaseBlockCounts');
+      // Cache phase metadata before backend strips it
+      _cachePhasesMeta(planId, phases);
+      final payload = {'phases': phases.map((p) => p.toJson()).toList()};
+      debugPrint('[PlanViewModel] first phase toJson: ${payload['phases']?.first}');
+      final updated = await PlanService.updatePlan(planId, payload);
+      final returnedBlockCounts = updated.phases.map((p) => '${p.name}:${p.contentBlocks.length}').join(', ');
+      debugPrint('[PlanViewModel] updatePhases success — phases returned: ${updated.phases.length}, blocks: $returnedBlockCounts');
+      debugPrint('[PlanViewModel] returned phase IDs: ${updated.phases.map((p) => p.id).toList()}');
+      _updatePlanInList(updated);
+      if (_currentPlan?.id == planId) _currentPlan = updated;
+      // Fetch fresh plan then inject content blocks
+      await loadPlanById(planId);
+      await loadAndInjectBlocks(planId);
+      await _notifyCollaboratorsPhaseUpdate(planId);
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      debugPrint('[PlanViewModel] updatePhases error: $_error');
+    } finally {
+      _isSaving = false;
+      notifyListeners();
+    }
+  }
+
+  /// Sends a notification to all collaborators that the plan phases were updated.
+  Future<void> _notifyCollaboratorsPhaseUpdate(String planId) async {
+    try {
+      final socket = SocketService();
+      socket.emit('plan_updated', {'planId': planId, 'eventType': 'phases_updated'});
+      socket.emit('notify_collaborators', {'planId': planId, 'eventType': 'post_assigned'});
+
+      // Emit directly to each collaborator's user room
+      try {
+        final plan = _plans.firstWhere((p) => p.id == planId, orElse: () => _plans.first);
+        for (final collaboratorId in plan.collaboratorIds) {
+          socket.emitToRoom('user:$collaboratorId', 'notification', {
+            'type': 'post_assigned',
+            'planId': planId,
+            'relatedPlanId': planId,
+            'message': 'De nouveaux posts vous ont été assignés',
+            'read': false,
+          });
+        }
+      } catch (_) {}
+      debugPrint('[PlanViewModel] emitted plan_updated socket event for $planId');
+    } catch (e) {
+      debugPrint('[PlanViewModel] socket emit error (non-fatal): $e');
+    }
+    try {
+      await PlanService.notifyCollaborators(planId, 'phases_updated');
+    } catch (e) {
+      debugPrint('[PlanViewModel] notifyCollaborators REST error (non-fatal): $e');
+    }
+  }
+
 }

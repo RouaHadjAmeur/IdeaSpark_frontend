@@ -25,6 +25,9 @@ class _CampaignPlannerScreenState extends State<CampaignPlannerScreen> {
   final int _totalSteps = 4;
   String? _selectedBrandId;
   List<String> _selectedProductIds = [];
+  List<String> _selectedPlatforms = ['TikTok', 'Instagram'];
+  int _durationWeeks = 4;
+  int _phaseCount = 4;
 
   double _totalBudget = 2500.0;
   List<Map<String, dynamic>> _budgetAllocation = [
@@ -244,8 +247,9 @@ class _CampaignPlannerScreenState extends State<CampaignPlannerScreen> {
         'objective': 'brand_awareness',
         'startDate': DateTime.now().toIso8601String(),
         'endDate': DateTime.now().add(const Duration(days: 90)).toIso8601String(),
-        'durationWeeks': 12,
-        'platforms': ['Instagram', 'Facebook', 'TikTok'],
+        'durationWeeks': _durationWeeks,
+        'phaseCount': _phaseCount,
+        'platforms': _selectedPlatforms,
         'productIds': _selectedProductIds,
         'projectDNA': {
           'budget': {
@@ -352,7 +356,22 @@ class _CampaignPlannerScreenState extends State<CampaignPlannerScreen> {
                 const SizedBox(height: 11),
 
                 _buildDropdownField('Objectif principal', ['🚀 Notoriété', '📈 Leads', '💰 Ventes', '❤️ Engagement']),
-                _buildDropdownField('Durée cible', ['4 semaines', '6 semaines', '8 semaines', '12 semaines']),
+                _buildDropdownField('Durée cible (Semaines)', ['4 semaines', '6 semaines', '8 semaines', '12 semaines'], 
+                  initialValue: '$_durationWeeks semaines',
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => _durationWeeks = int.parse(v.split(' ').first));
+                    }
+                  }
+                ),
+                _buildDropdownField('Nombre de phases', ['2 phases', '3 phases', '4 phases', '5 phases', '6 phases'],
+                  initialValue: '$_phaseCount phases',
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => _phaseCount = int.parse(v.split(' ').first));
+                    }
+                  }
+                ),
               ],
             ),
             _buildCard(
@@ -364,10 +383,10 @@ class _CampaignPlannerScreenState extends State<CampaignPlannerScreen> {
                   spacing: 7,
                   runSpacing: 7,
                   children: [
-                    _buildChip('TikTok', const Color(0xFF010101), true),
-                    _buildChip('Instagram', const Color(0xFFE1306C), true),
-                    _buildChip('YouTube', const Color(0xFFFF0000), false),
-                    _buildChip('Facebook', const Color(0xFF1877F2), false),
+                    _buildChip('TikTok', const Color(0xFF010101)),
+                    _buildChip('Instagram', const Color(0xFFE1306C)),
+                    _buildChip('YouTube', const Color(0xFFFF0000)),
+                    _buildChip('Facebook', const Color(0xFF1877F2)),
                   ],
                 ),
               ],
@@ -819,7 +838,7 @@ class _CampaignPlannerScreenState extends State<CampaignPlannerScreen> {
     );
   }
 
-  Widget _buildDropdownField(String label, List<String> items) {
+  Widget _buildDropdownField(String label, List<String> items, {String? initialValue, ValueChanged<String?>? onChanged}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 11),
       child: Column(
@@ -828,9 +847,9 @@ class _CampaignPlannerScreenState extends State<CampaignPlannerScreen> {
           Text(label.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF6B5F85))),
           const SizedBox(height: 5),
           DropdownButtonFormField<String>(
-            value: items.first,
+            value: initialValue ?? items.first,
             items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 13)))).toList(),
-            onChanged: (v) {},
+            onChanged: onChanged ?? (v) {},
             decoration: InputDecoration(
               filled: true,
               fillColor: const Color(0xFFF9F8FF),
@@ -844,21 +863,33 @@ class _CampaignPlannerScreenState extends State<CampaignPlannerScreen> {
     );
   }
 
-  Widget _buildChip(String label, Color color, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF6D4ED3).withValues(alpha: 0.1) : const Color(0xFFF9F8FF),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: isSelected ? const Color(0xFF6D4ED3) : const Color(0xFF6D4ED3).withValues(alpha: 0.12), width: 1.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(width: 7, height: 7, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-          const SizedBox(width: 5),
-          Text(label, style: TextStyle(fontSize: 12, color: isSelected ? const Color(0xFF6D4ED3) : const Color(0xFF6B5F85))),
-        ],
+  Widget _buildChip(String label, Color color) {
+    final isSelected = _selectedPlatforms.contains(label);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _selectedPlatforms.remove(label);
+          } else {
+            _selectedPlatforms.add(label);
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF6D4ED3).withValues(alpha: 0.1) : const Color(0xFFF9F8FF),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? const Color(0xFF6D4ED3) : const Color(0xFF6D4ED3).withValues(alpha: 0.12), width: 1.5),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 7, height: 7, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(fontSize: 12, color: isSelected ? const Color(0xFF6D4ED3) : const Color(0xFF6B5F85))),
+          ],
+        ),
       ),
     );
   }

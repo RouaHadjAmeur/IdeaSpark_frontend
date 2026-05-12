@@ -209,6 +209,27 @@ class ContentBlockService {
     }
   }
 
+  // ─── Update Content (hook, caption, script) ──────────────────────────────
+
+  Future<ContentBlock> updateContent(String id, {String? hook, String? caption, String? scriptOutline}) async {
+    final headers = await _authHeaders();
+    final body = <String, dynamic>{};
+    if (hook != null) body['hooks'] = [hook];
+    if (caption != null) body['scriptOutline'] = caption;
+    if (scriptOutline != null) body['scriptOutline'] = scriptOutline;
+    final response = await http.patch(
+      Uri.parse(ApiConfig.contentBlockByIdUrl(id)),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+    if (response.statusCode == 200) {
+      return ContentBlock.fromJson(jsonDecode(response.body));
+    }
+    // Non-fatal — return a mock updated block
+    debugPrint('[ContentBlockService] updateContent ${response.statusCode}: ${response.body}');
+    throw Exception('Update content failed: ${response.statusCode}');
+  }
+
   // ─── Update Assignment ──────────────────────────────────────────────────
 
   Future<ContentBlock> updateAssignment(String id, {String? userId, String? userName}) async {

@@ -17,11 +17,17 @@ class _PostWithComments {
 class CollaborationScreen extends StatefulWidget {
   final String planId;
   final String planName;
+  /// The userId of the plan owner — used to show the owner in the members list
+  /// and to correctly gate the invite button.
+  final String? planOwnerId;
+  final String? planOwnerName;
 
   const CollaborationScreen({
     super.key,
     required this.planId,
     required this.planName,
+    this.planOwnerId,
+    this.planOwnerName,
   });
 
   @override
@@ -36,11 +42,13 @@ class _CollaborationScreenState extends State<CollaborationScreen>
   List<HistoryEntry> _history = [];
   List<ContentBlock> _blocks = [];
   bool _loading = true;
+  // Owner info injected from outside (passed via widget or fetched separately)
+  CollabMember? _ownerMember;
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 4, vsync: this);
+    _tabs = TabController(length: 3, vsync: this);
     _load();
   }
 
@@ -54,9 +62,29 @@ class _CollaborationScreenState extends State<CollaborationScreen>
     final members = await _service.getMembers(widget.planId);
     final history = await _service.getHistory(widget.planId);
     final blocks = await ContentBlockService().list(planId: widget.planId);
+
+    // Inject the plan owner at the top of the list if not already present.
+    // We use widget.planOwnerId (the plan's userId field) — NOT the current user.
+    CollabMember? owner;
+    if (mounted) {
+      final ownerId = widget.planOwnerId ?? '';
+      final alreadyInList = members.any((m) => m.id == ownerId);
+      if (!alreadyInList && ownerId.isNotEmpty) {
+        owner = CollabMember(
+          id: ownerId,
+          email: '',
+          name: widget.planOwnerName ?? 'Brand Owner',
+          role: CollabRole.admin,
+          status: CollabStatus.accepted,
+          invitedAt: DateTime.now(),
+        );
+      }
+    }
+
     if (mounted) {
       setState(() {
         _members = members;
+        _ownerMember = owner;
         _history = history;
         _blocks = blocks;
         _loading = false;
@@ -98,13 +126,15 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                         Text('Collaboration',
                             style: GoogleFonts.syne(
                                 fontSize: 16, fontWeight: FontWeight.w700, color: cs.onSurface)),
-                        Text(widget.planName,
-                            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant)),
+                        Text(
+                          '${widget.planName} · ${_members.length + (_ownerMember != null ? 1 : 0)} membre${(_members.length + (_ownerMember != null ? 1 : 0)) > 1 ? 's' : ''}',
+                          style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
+                        ),
                       ],
                     ),
                   ),
-                  // Invite button
-                  if (context.watch<AuthViewModel>().isBrandOwner)
+                  // Invite button — only the plan owner can invite
+                  if (_isCurrentUserPlanOwner(context))
                     GestureDetector(
                       onTap: _showInviteDialog,
                       child: Container(
@@ -136,7 +166,6 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                 tabs: const [
                   Tab(text: '📋 Mes Tâches'),
                   Tab(text: '👥 Membres'),
-                  Tab(text: '💬 Commentaires'),
                   Tab(text: '🕒 Activité'),
                 ],
                 labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
@@ -153,7 +182,6 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                       children: [
                         _buildActiveTasksTab(cs),
                         _buildMembersTab(cs),
-                        _buildCommentsTab(cs),
                         _buildHistoryTab(cs),
                       ],
                     ),
@@ -260,7 +288,13 @@ class _CollaborationScreenState extends State<CollaborationScreen>
   // ── Members Tab ───────────────────────────────────────────────────────────
 
   Widget _buildMembersTab(ColorScheme cs) {
-    if (_members.isEmpty) {
+    // Build the full list: owner first, then all collaborators
+    final allMembers = <CollabMember>[
+      if (_ownerMember != null) _ownerMember!,
+      ..._members,
+    ];
+
+    if (allMembers.isEmpty) {
       return _buildEmpty(
         cs,
         Icons.group_outlined,
@@ -269,11 +303,51 @@ class _CollaborationScreenState extends State<CollaborationScreen>
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: _members.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => _buildMemberCard(_members[i], cs),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+          child: Row(
+            children: [
+              Text(
+                '${allMembers.length} membre${allMembers.length > 1 ? 's' : ''}',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              const Spacer(),
+              // Pending count badge
+              if (_members.any((m) => m.status == CollabStatus.pending))
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${_members.where((m) => m.status == CollabStatus.pending).length} en attente',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.orange,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            itemCount: allMembers.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (_, i) => _buildMemberCard(allMembers[i], cs),
+          ),
+        ),
+      ],
     );
   }
 
@@ -284,13 +358,20 @@ class _CollaborationScreenState extends State<CollaborationScreen>
         : member.status == CollabStatus.pending
             ? Colors.orange
             : Colors.red;
+    final isOwner = member.role == CollabRole.admin && member == _ownerMember;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
+        color: isOwner
+            ? cs.primaryContainer.withValues(alpha: 0.15)
+            : cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: isOwner
+              ? cs.primary.withValues(alpha: 0.3)
+              : cs.outlineVariant.withValues(alpha: 0.5),
+        ),
         boxShadow: [
           BoxShadow(
             color: cs.shadow.withValues(alpha: 0.05),
@@ -339,17 +420,40 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                           fontSize: 15, fontWeight: FontWeight.w700, color: cs.onSurface)),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: roleColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: roleColor.withValues(alpha: 0.3)),
+                // Owner crown badge
+                if (isOwner)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: cs.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.star_rounded, size: 10, color: cs.primary),
+                        const SizedBox(width: 3),
+                        Text('PROPRIÉTAIRE',
+                            style: TextStyle(
+                                fontSize: 9, fontWeight: FontWeight.w900,
+                                color: cs.primary, letterSpacing: 0.5)),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: roleColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: roleColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(member.roleLabel.toUpperCase(),
+                        style: TextStyle(
+                            fontSize: 9, fontWeight: FontWeight.w900,
+                            color: roleColor, letterSpacing: 0.5)),
                   ),
-                  child: Text(member.roleLabel.toUpperCase(),
-                      style: TextStyle(
-                          fontSize: 9, fontWeight: FontWeight.w900, color: roleColor, letterSpacing: 0.5)),
-                ),
               ],
             ),
             const SizedBox(height: 4),
@@ -357,14 +461,23 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                 style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
             Text(
-              member.status == CollabStatus.accepted ? 'Membre actif'
-                  : member.status == CollabStatus.pending ? 'Invitation en attente'
-                  : 'Invitation refusée',
-              style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600),
+              isOwner
+                  ? 'Brand Owner'
+                  : member.status == CollabStatus.accepted
+                      ? 'Membre actif'
+                      : member.status == CollabStatus.pending
+                          ? 'Invitation en attente'
+                          : 'Invitation refusée',
+              style: TextStyle(
+                fontSize: 11,
+                color: isOwner ? cs.primary : statusColor,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ]),
         ),
-        if (context.read<AuthViewModel>().isBrandOwner)
+        // Settings gear — plan owner only, and not on the owner card itself
+        if (_isCurrentUserPlanOwner(context) && !isOwner)
           Container(
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
@@ -794,7 +907,7 @@ class _CollaborationScreenState extends State<CollaborationScreen>
                   if (!mounted) return;
                   final messenger = ScaffoldMessenger.of(context);
                   await _load();
-                  _tabs.animateTo(3);
+                  _tabs.animateTo(1); // Go to Members tab (index 1)
                   
                   messenger.showSnackBar(
                     SnackBar(
@@ -824,6 +937,17 @@ class _CollaborationScreenState extends State<CollaborationScreen>
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  /// Returns true if the currently logged-in user is the plan owner.
+  /// Uses planOwnerId if provided, otherwise falls back to isBrandOwner.
+  bool _isCurrentUserPlanOwner(BuildContext context) {
+    final authVm = context.read<AuthViewModel>();
+    if (widget.planOwnerId != null && widget.planOwnerId!.isNotEmpty) {
+      return authVm.userId == widget.planOwnerId;
+    }
+    // Fallback: use global role
+    return authVm.isBrandOwner;
+  }
 
   Color _roleColor(CollabRole role) {
     switch (role) {

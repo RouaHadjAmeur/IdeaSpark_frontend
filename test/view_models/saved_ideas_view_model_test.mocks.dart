@@ -34,39 +34,41 @@ class MockSavedVideoIdeasRepository extends _i1.Mock
   }
 
   @override
-  _i3.Future<void> saveIdea(_i4.VideoIdea? idea) =>
-      (super.noSuchMethod(
-            Invocation.method(#saveIdea, [idea]),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
+  _i3.Future<void> saveIdea(_i4.VideoIdea? idea) => (super.noSuchMethod(
+        Invocation.method(
+          #saveIdea,
+          [idea],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i3.Future<List<_i4.VideoIdea>> getSavedIdeas() =>
-      (super.noSuchMethod(
-            Invocation.method(#getSavedIdeas, []),
-            returnValue: _i3.Future<List<_i4.VideoIdea>>.value(
-              <_i4.VideoIdea>[],
-            ),
-          )
-          as _i3.Future<List<_i4.VideoIdea>>);
+  _i3.Future<List<_i4.VideoIdea>> getSavedIdeas() => (super.noSuchMethod(
+        Invocation.method(
+          #getSavedIdeas,
+          [],
+        ),
+        returnValue: _i3.Future<List<_i4.VideoIdea>>.value(<_i4.VideoIdea>[]),
+      ) as _i3.Future<List<_i4.VideoIdea>>);
 
   @override
-  _i3.Future<void> removeIdea(String? id) =>
-      (super.noSuchMethod(
-            Invocation.method(#removeIdea, [id]),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
+  _i3.Future<void> removeIdea(String? id) => (super.noSuchMethod(
+        Invocation.method(
+          #removeIdea,
+          [id],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 
   @override
-  _i3.Future<void> clearAll() =>
-      (super.noSuchMethod(
-            Invocation.method(#clearAll, []),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
-          )
-          as _i3.Future<void>);
+  _i3.Future<void> clearAll() => (super.noSuchMethod(
+        Invocation.method(
+          #clearAll,
+          [],
+        ),
+        returnValue: _i3.Future<void>.value(),
+        returnValueForMissingStub: _i3.Future<void>.value(),
+      ) as _i3.Future<void>);
 }

@@ -12,6 +12,11 @@ class CollaborationViewModel extends ChangeNotifier {
   final SocketService _socketService = SocketService();
   bool _isSocketInitialized = false;
   
+  /// Set when a socket plan_updated event arrives — CollaboratorPlanScreen watches this.
+  String? _pendingPlanReloadId;
+  String? get pendingPlanReloadId => _pendingPlanReloadId;
+  void clearPendingPlanReload() { _pendingPlanReloadId = null; }
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
   
@@ -183,8 +188,12 @@ class CollaborationViewModel extends ChangeNotifier {
     if (token != null) {
       _socketService.connect(token);
       _socketService.onNotification((notification) {
-        // Add new notification to the top of the list
         _notifications.insert(0, notification);
+        notifyListeners();
+      });
+      _socketService.onPlanUpdated((planId) {
+        debugPrint('[CollaborationViewModel] plan_updated for $planId — triggering reload');
+        _pendingPlanReloadId = planId;
         notifyListeners();
       });
       _isSocketInitialized = true;
@@ -249,17 +258,40 @@ class CollaborationViewModel extends ChangeNotifier {
     await loadMembers(planId);
   }
 
+  bool _isSearching = false;
+  bool get isSearching => _isSearching;
+
   Future<void> searchUsers(String query) async {
-    if (query.isEmpty) {
+    if (query.trim().isEmpty) {
       _searchResults = [];
       notifyListeners();
       return;
     }
+    _isSearching = true;
+    notifyListeners();
     try {
-      _searchResults = await _socialService.searchUsers(query);
+      debugPrint('[CollaborationVM] searchUsers("$query")');
+      final raw = await _service.searchUsers(query.trim());
+      _searchResults = raw.map((json) => AppUser.fromJson(json)).toList();
+      debugPrint('[CollaborationVM] searchUsers → ${_searchResults.length} results');
     } catch (e) {
-      debugPrint('Search error: $e');
+      debugPrint('[CollaborationVM] searchUsers error: $e');
+      // Fallback to SocialService
+      try {
+        _searchResults = await _socialService.searchUsers(query.trim());
+        debugPrint('[CollaborationVM] searchUsers fallback → ${_searchResults.length} results');
+      } catch (e2) {
+        debugPrint('[CollaborationVM] searchUsers fallback error: $e2');
+        _searchResults = [];
+      }
+    } finally {
+      _isSearching = false;
+      notifyListeners();
     }
+  }
+
+  void clearSearchResults() {
+    _searchResults = [];
     notifyListeners();
   }
 

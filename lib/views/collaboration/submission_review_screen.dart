@@ -29,21 +29,21 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
   bool _initialized = false;
   bool _controlsVisible = true;
   int _hoverStar = 0;
-  late int _currentRating;
-  late String _currentStatus;
+  late double _currentRating;
+  late SubmissionStatus _currentStatus;
   bool _actionBusy = false;
 
   @override
   void initState() {
     super.initState();
-    _currentRating = widget.submission.rating ?? 0;
+    _currentRating = (widget.submission.rating ?? 0).toDouble();
     _currentStatus = widget.submission.status;
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.submission.videoUrl))
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.submission.videoUrl ?? ''))
       ..initialize().then((_) {
         if (mounted) setState(() => _initialized = true);
       });
@@ -66,9 +66,9 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
   }
 
   Future<void> _rate(int stars) async {
-    setState(() { _actionBusy = true; _currentRating = stars; });
+    setState(() { _actionBusy = true; _currentRating = stars.toDouble(); });
     final vm = context.read<ChallengeViewModel>();
-    await vm.rateSubmission(widget.submission.id, widget.challenge.id, stars);
+    await vm.rateSubmission(widget.submission.id ?? '', widget.challenge.id, stars);
     if (mounted) setState(() => _actionBusy = false);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,12 +82,12 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
 
   Future<void> _shortlist() async {
     final vm = context.read<ChallengeViewModel>();
-    final isShortlisted = _currentStatus == 'shortlisted';
+    final isShortlisted = _currentStatus == SubmissionStatus.shortlisted;
     setState(() => _actionBusy = true);
-    await vm.shortlist(widget.submission.id, widget.challenge.id, !isShortlisted);
+    await vm.shortlist(widget.submission.id ?? '', widget.challenge.id, !isShortlisted);
     if (mounted) {
       setState(() {
-        _currentStatus = isShortlisted ? 'pending' : 'shortlisted';
+        _currentStatus = isShortlisted ? SubmissionStatus.submitted : SubmissionStatus.shortlisted;
         _actionBusy = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -142,9 +142,9 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
     if (feedback == null || feedback.isEmpty || !mounted) return;
     setState(() => _actionBusy = true);
     final vm = context.read<ChallengeViewModel>();
-    await vm.requestRevision(widget.submission.id, widget.challenge.id, feedback);
+    await vm.requestRevision(widget.submission.id ?? '', widget.challenge.id, feedback);
     if (mounted) {
-      setState(() { _currentStatus = 'revision_requested'; _actionBusy = false; });
+      setState(() { _currentStatus = SubmissionStatus.revisionRequested; _actionBusy = false; });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Revision requested — creator notified'), backgroundColor: AppColors.secondary),
       );
@@ -175,7 +175,7 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
     if (confirmed != true || !mounted) return;
     setState(() => _actionBusy = true);
     final vm = context.read<ChallengeViewModel>();
-    await vm.declareWinner(widget.submission.id, widget.challenge.id, '');
+    await vm.declareWinner(widget.submission.id ?? '', widget.challenge.id, '');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('🏆 Winner declared! Creator notified.'), backgroundColor: AppColors.accent),
@@ -186,9 +186,9 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isShortlisted = _currentStatus == 'shortlisted';
-    final isRevision = _currentStatus == 'revision_requested';
-    final isWinner = _currentStatus == 'winner';
+    final isShortlisted = _currentStatus == SubmissionStatus.shortlisted;
+    final isRevision = _currentStatus == SubmissionStatus.revisionRequested;
+    final isWinner = _currentStatus == SubmissionStatus.winner;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -372,7 +372,7 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
                               ),
                               child: Center(
                                 child: Text(
-                                  widget.submission.creatorId.substring(0, 2).toUpperCase(),
+                                  (widget.submission.creatorId ?? 'XX').substring(0, 2).toUpperCase(),
                                   style: GoogleFonts.syne(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black),
                                 ),
                               ),
@@ -383,7 +383,7 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Creator #${widget.submission.creatorId.substring(0, 8)}',
+                                    'Creator #${(widget.submission.creatorId ?? 'XXXXXXXX').substring(0, 8)}',
                                     style: GoogleFonts.syne(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
                                   ),
                                   Text(
@@ -393,7 +393,7 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
                                 ],
                               ),
                             ),
-                            if (widget.submission.challengeReward.isNotEmpty)
+                            if ((widget.submission.challengeReward ?? '').isNotEmpty)
                               Text(
                                 '🏆 ${widget.submission.challengeReward}',
                                 style: GoogleFonts.spaceMono(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.bold),
@@ -533,13 +533,13 @@ class _SubmissionReviewScreenState extends State<SubmissionReviewScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(SubmissionStatus status) {
     Color color;
     String label;
     switch (status) {
-      case 'shortlisted': color = AppColors.success; label = 'SHORTLISTED'; break;
-      case 'winner': color = AppColors.accent; label = 'WINNER'; break;
-      case 'revision_requested': color = AppColors.secondary; label = 'REVISION'; break;
+      case SubmissionStatus.shortlisted: color = AppColors.success; label = 'SHORTLISTED'; break;
+      case SubmissionStatus.winner: color = AppColors.accent; label = 'WINNER'; break;
+      case SubmissionStatus.revisionRequested: color = AppColors.secondary; label = 'REVISION'; break;
       default: color = AppColors.primary; label = 'UNDER REVIEW';
     }
     return Container(

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
-import 'package:http_parser/http_parser.dart';
+import 'package:http_parser/http_parser.dart' as http_parser;
 import '../core/api_config.dart';
 import '../models/challenge.dart';
 import '../models/submission.dart';
@@ -110,7 +110,7 @@ class ChallengeService {
       await http.MultipartFile.fromPath(
         'video',
         videoPath,
-        contentType: MediaType('video', 'mp4'),
+        contentType: http_parser.MediaType('video', 'mp4'),
       ),
     );
 

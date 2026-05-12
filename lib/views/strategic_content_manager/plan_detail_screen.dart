@@ -513,6 +513,7 @@ class _PlanDetailScreenState extends State<PlanDetailScreen> {
                 builder: (_) => CollaborationScreen(
                   planId: _plan.id ?? '',
                   planName: _plan.name,
+                  planOwnerId: _plan.userId,
                 ),
               ),
             ),

@@ -48,12 +48,25 @@ class SocketService {
       if (data is Map<String, dynamic>) {
         callback(data);
       } else {
-        // Sometimes socket-io-client doesn't automatically cast to Map
         try {
           callback(Map<String, dynamic>.from(data));
         } catch (e) {
           debugPrint('Error parsing socket notification: $e');
         }
+      }
+    });
+  }
+
+  /// Listen for plan update events (phases changed, posts assigned, etc.)
+  void onPlanUpdated(Function(String planId) callback) {
+    _socket?.on('plan_updated', (data) {
+      debugPrint('plan_updated socket event: $data');
+      try {
+        final map = data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
+        final planId = (map['planId'] ?? map['id'] ?? '').toString();
+        if (planId.isNotEmpty) callback(planId);
+      } catch (e) {
+        debugPrint('Error parsing plan_updated event: $e');
       }
     });
   }
@@ -69,5 +82,12 @@ class SocketService {
   /// Emit an event (if needed in the future)
   void emit(String event, dynamic data) {
     _socket?.emit(event, data);
+  }
+
+  /// Emit an event to a specific room (e.g. 'user:userId')
+  void emitToRoom(String room, String event, dynamic data) {
+    _socket?.emit('emit_to_room', {'room': room, 'event': event, 'data': data});
+    // Also try direct emit with room targeting
+    _socket?.emit(event, {'...': data, 'targetRoom': room});
   }
 }

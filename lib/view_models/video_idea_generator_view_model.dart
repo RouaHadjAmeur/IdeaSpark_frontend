@@ -222,8 +222,9 @@ class VideoIdeaGeneratorViewModel extends ChangeNotifier {
       VideoIdea? targetIdea = getIdeaById(ideaId);
       if (targetIdea == null) return;
 
-      // Handle mock IDs
-      if (ideaId.contains('_')) {
+      // Handle mock IDs (contains '_') or invalid MongoDB ObjectIds (not 24 hex chars)
+      final isValidObjectId = RegExp(r'^[a-f\d]{24}$', caseSensitive: false).hasMatch(ideaId);
+      if (ideaId.contains('_') || !isValidObjectId) {
         debugPrint('Saving local idea to backend before toggling favorite: $ideaId');
         final savedIdea = await _service.saveIdea(targetIdea);
         // IMPORTANT: update local references first so _updateIdeaInLists works with new ID

@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../core/api_config.dart';
 import '../services/auth_service.dart';
 import '../models/video_generator_models.dart';
@@ -12,9 +14,82 @@ class VideoIdeaGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/generate');
+      final url = Uri.parse(ApiConfig.generateVideoIdeasUrl);
 
       debugPrint('💡 [VideoIdeaGenerator] Generating ideas...');
+
+      // If we have an image, use multipart/form-data
+      if (request.productImagePath != null) {
+        final multipartRequest = http.MultipartRequest('POST', url);
+        
+        // Add auth header
+        multipartRequest.headers['Authorization'] = 'Bearer $token';
+        
+        // Add text fields
+        multipartRequest.fields['platform'] = _mapPlatform(request.platform);
+        multipartRequest.fields['duration'] = request.duration.seconds.toString();
+        multipartRequest.fields['goal'] = _mapGoal(request.goal);
+        multipartRequest.fields['creatorType'] = _mapCreatorType(request.creatorType);
+        multipartRequest.fields['tone'] = _mapTone(request.tone);
+        multipartRequest.fields['language'] = _mapLanguage(request.language);
+        multipartRequest.fields['productName'] = request.productName;
+        multipartRequest.fields['productCategory'] = request.productCategory;
+        multipartRequest.fields['targetAudience'] = request.targetAudience;
+        multipartRequest.fields['batchSize'] = request.batchSize.toString();
+        
+        if (request.price != null) multipartRequest.fields['price'] = request.price!;
+        if (request.offer != null) multipartRequest.fields['offer'] = request.offer!;
+        if (request.painPoint != null) multipartRequest.fields['painPoint'] = request.painPoint!;
+        
+        // Add keyBenefits
+        for (var benefit in request.keyBenefits) {
+          multipartRequest.fields['keyBenefits[]'] = benefit;
+        }
+
+        // Add image
+        final file = File(request.productImagePath!);
+        if (await file.exists()) {
+          multipartRequest.files.add(
+            await http.MultipartFile.fromPath(
+              'productImage',
+              file.path,
+              contentType: MediaType('image', 'jpeg'),
+            ),
+          );
+        }
+
+        final streamedResponse = await multipartRequest.send().timeout(const Duration(seconds: 60));
+        final response = await http.Response.fromStream(streamedResponse);
+
+        debugPrint('💡 [VideoIdeaGenerator] Status: ${response.statusCode}');
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          final List<dynamic> data = jsonDecode(response.body);
+          final ideas = data.map((json) => VideoIdea.fromJson(json)).toList();
+          debugPrint('✅ [VideoIdeaGenerator] Generated ${ideas.length} ideas');
+          return ideas;
+        } else {
+          throw Exception('Failed to generate ideas: ${response.statusCode} ${response.body}');
+        }
+      }
+
+      // Standard JSON request if no image
+      final body = {
+        'platform': _mapPlatform(request.platform),
+        'duration': request.duration.seconds,
+        'goal': _mapGoal(request.goal),
+        'creatorType': _mapCreatorType(request.creatorType),
+        'tone': _mapTone(request.tone),
+        'language': _mapLanguage(request.language),
+        'productName': request.productName,
+        'productCategory': request.productCategory,
+        'keyBenefits': request.keyBenefits,
+        'targetAudience': request.targetAudience,
+        'price': request.price,
+        'offer': request.offer,
+        'painPoint': request.painPoint,
+        'batchSize': request.batchSize,
+      };
 
       final response = await http.post(
         url,
@@ -22,27 +97,14 @@ class VideoIdeaGeneratorService {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'productName': request.productName,
-          'productCategory': request.productCategory,
-          'platform': request.platform.name,
-          'duration': request.duration.seconds,
-          'goal': request.goal.name,
-          'tone': request.tone.name,
-          'language': request.language.code,
-          'targetAudience': request.targetAudience,
-          'keyBenefits': request.keyBenefits,
-          'batchSize': request.batchSize,
-        }),
+        body: jsonEncode(body),
       ).timeout(const Duration(seconds: 30));
 
       debugPrint('💡 [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        final ideas = (data['ideas'] as List?)
-            ?.map((json) => VideoIdea.fromJson(json))
-            .toList() ?? [];
+        final List<dynamic> data = jsonDecode(response.body);
+        final ideas = data.map((json) => VideoIdea.fromJson(json)).toList();
         debugPrint('✅ [VideoIdeaGenerator] Generated ${ideas.length} ideas');
         return ideas;
       } else {
@@ -60,7 +122,7 @@ class VideoIdeaGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/save');
+      final url = Uri.parse(ApiConfig.saveVideoIdeaUrl);
 
       debugPrint('💾 [VideoIdeaGenerator] Saving idea...');
 
@@ -95,7 +157,7 @@ class VideoIdeaGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/$ideaId/refine');
+      final url = Uri.parse(ApiConfig.refineVideoIdeaUrl);
 
       debugPrint('✨ [VideoIdeaGenerator] Refining idea...');
 
@@ -106,7 +168,8 @@ class VideoIdeaGeneratorService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'instruction': instruction,
+          'ideaId': ideaId,
+          'customInstruction': instruction,
         }),
       ).timeout(const Duration(seconds: 30));
 
@@ -132,7 +195,7 @@ class VideoIdeaGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/$ideaId/approve');
+      final url = Uri.parse(ApiConfig.approveVersionUrl);
 
       debugPrint('👍 [VideoIdeaGenerator] Approving version...');
 
@@ -143,13 +206,14 @@ class VideoIdeaGeneratorService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
+          'ideaId': ideaId,
           'versionIndex': versionIndex,
         }),
       ).timeout(const Duration(seconds: 10));
 
       debugPrint('👍 [VideoIdeaGenerator] Status: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final approvedIdea = VideoIdea.fromJson(data);
         debugPrint('✅ [VideoIdeaGenerator] Version approved');
@@ -169,7 +233,7 @@ class VideoIdeaGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/history');
+      final url = Uri.parse(ApiConfig.getHistoryUrl);
 
       debugPrint('📚 [VideoIdeaGenerator] Fetching history...');
 
@@ -183,10 +247,8 @@ class VideoIdeaGeneratorService {
       debugPrint('📚 [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final ideas = (data['ideas'] as List?)
-            ?.map((json) => VideoIdea.fromJson(json))
-            .toList() ?? [];
+        final List<dynamic> data = jsonDecode(response.body);
+        final ideas = data.map((json) => VideoIdea.fromJson(json)).toList();
         debugPrint('✅ [VideoIdeaGenerator] Found ${ideas.length} ideas');
         return ideas;
       } else {
@@ -204,7 +266,7 @@ class VideoIdeaGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/favorites');
+      final url = Uri.parse(ApiConfig.getFavoritesUrl);
 
       debugPrint('⭐ [VideoIdeaGenerator] Fetching favorites...');
 
@@ -218,10 +280,8 @@ class VideoIdeaGeneratorService {
       debugPrint('⭐ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final favorites = (data['favorites'] as List?)
-            ?.map((json) => VideoIdea.fromJson(json))
-            .toList() ?? [];
+        final List<dynamic> data = jsonDecode(response.body);
+        final favorites = data.map((json) => VideoIdea.fromJson(json)).toList();
         debugPrint('✅ [VideoIdeaGenerator] Found ${favorites.length} favorites');
         return favorites;
       } else {
@@ -239,7 +299,7 @@ class VideoIdeaGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/$ideaId/toggle-favorite');
+      final url = Uri.parse(ApiConfig.toggleFavoriteUrl(ideaId));
 
       debugPrint('⭐ [VideoIdeaGenerator] Toggling favorite...');
 
@@ -252,7 +312,7 @@ class VideoIdeaGeneratorService {
 
       debugPrint('⭐ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final updatedIdea = VideoIdea.fromJson(data);
         debugPrint('✅ [VideoIdeaGenerator] Favorite toggled');
@@ -272,7 +332,7 @@ class VideoIdeaGeneratorService {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/$ideaId');
+      final url = Uri.parse(ApiConfig.deleteVideoIdeaUrl(ideaId));
 
       debugPrint('🗑️ [VideoIdeaGenerator] Deleting idea...');
 
@@ -285,7 +345,7 @@ class VideoIdeaGeneratorService {
 
       debugPrint('🗑️ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 204) {
         debugPrint('✅ [VideoIdeaGenerator] Idea deleted');
       } else {
         throw Exception('Failed to delete idea: ${response.statusCode}');
@@ -297,45 +357,105 @@ class VideoIdeaGeneratorService {
   }
 
   /// Analyser une image pour générer des idées
-  Future<List<VideoIdea>> analyzeImage({
-    required String imageUrl,
-    required String brandName,
-  }) async {
+  Future<Map<String, dynamic>> analyzeImage(String imagePath) async {
     try {
       final token = AuthService().accessToken;
       if (token == null) throw Exception('Not authenticated');
 
-      final url = Uri.parse('${ApiConfig.baseUrl}/video-ideas/analyze-image');
+      final url = Uri.parse(ApiConfig.analyzeVideoImageUrl);
+      final multipartRequest = http.MultipartRequest('POST', url);
+      
+      multipartRequest.headers['Authorization'] = 'Bearer $token';
+
+      final file = File(imagePath);
+      if (!await file.exists()) throw Exception('Image file not found');
+
+      multipartRequest.files.add(
+        await http.MultipartFile.fromPath(
+          'productImage',
+          file.path,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
 
       debugPrint('🖼️ [VideoIdeaGenerator] Analyzing image...');
 
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'imageUrl': imageUrl,
-          'brandName': brandName,
-        }),
-      ).timeout(const Duration(seconds: 30));
+      final streamedResponse = await multipartRequest.send().timeout(const Duration(seconds: 60));
+      final response = await http.Response.fromStream(streamedResponse);
 
       debugPrint('🖼️ [VideoIdeaGenerator] Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
-        final ideas = (data['ideas'] as List?)
-            ?.map((json) => VideoIdea.fromJson(json))
-            .toList() ?? [];
-        debugPrint('✅ [VideoIdeaGenerator] Generated ${ideas.length} ideas from image');
-        return ideas;
+        debugPrint('✅ [VideoIdeaGenerator] Image analyzed successfully');
+        return data;
       } else {
-        throw Exception('Failed to analyze image: ${response.statusCode}');
+        throw Exception('Image analysis failed: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('❌ [VideoIdeaGenerator] Analyze error: $e');
       rethrow;
     }
+  }
+
+  // Helper methods for enum mapping
+  String _mapPlatform(Platform platform) {
+    switch (platform) {
+      case Platform.tikTok:
+        return 'tiktok';
+      case Platform.instagramReels:
+        return 'instagram_reels';
+      case Platform.youTubeShorts:
+        return 'youtube_shorts';
+      case Platform.youTubeLong:
+        return 'youtube_long';
+    }
+  }
+
+  String _mapGoal(VideoGoal goal) {
+    switch (goal) {
+      case VideoGoal.sellProduct:
+        return 'sell_product';
+      case VideoGoal.brandAwareness:
+        return 'brand_awareness';
+      case VideoGoal.ugcReview:
+        return 'ugc_review';
+      case VideoGoal.education:
+        return 'education';
+      case VideoGoal.viralEngagement:
+        return 'viral_engagement';
+      case VideoGoal.offerPromo:
+        return 'offer_promo';
+    }
+  }
+
+  String _mapTone(VideoTone tone) {
+    switch (tone) {
+      case VideoTone.trendy:
+        return 'trendy';
+      case VideoTone.professional:
+        return 'professional';
+      case VideoTone.emotional:
+        return 'emotional';
+      case VideoTone.funny:
+        return 'funny';
+      case VideoTone.luxury:
+        return 'luxury';
+      case VideoTone.directResponse:
+        return 'direct_response';
+    }
+  }
+
+  String _mapCreatorType(CreatorType type) {
+    switch (type) {
+      case CreatorType.ecommerceBrand:
+        return 'ecommerce_brand';
+      case CreatorType.influencer:
+        return 'influencer';
+    }
+  }
+
+  String _mapLanguage(VideoLanguage language) {
+    return language.code;
   }
 }

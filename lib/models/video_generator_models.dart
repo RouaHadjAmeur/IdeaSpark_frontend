@@ -105,7 +105,8 @@ class VideoIdea {
     if (map['versions'] != null && (map['versions'] as List).isNotEmpty) {
       versions = List<VideoVersion>.from(
           (map['versions'] as List).map((x) => VideoVersion.fromJson(x)));
-    } else if (map['title'] != null || map['hook'] != null || map['script'] != null) {
+    } else if (map['title'] != null || map['hook'] != null || map['script'] != null
+               || map['hooks'] != null || map['scriptOutline'] != null) {
       // Flat format from backend — wrap into a single version
       versions = [VideoVersion.fromJson(map)];
     } else {
@@ -113,7 +114,7 @@ class VideoIdea {
     }
 
     return VideoIdea(
-      id: map['_id'] ?? (map['id'] ?? (map['id']?.toString() ?? '${DateTime.now().millisecondsSinceEpoch}')),
+      id: (map['_id'] ?? map['id'] ?? '').toString(),
       versions: versions,
       currentVersionIndex: map['currentVersionIndex'] ?? 0,
       productImageUrl: map['productImageUrl'],
@@ -178,23 +179,63 @@ class VideoVersion {
   }
 
   factory VideoVersion.fromJson(Map<String, dynamic> map) {
+    // Safely extract a string value
+    String str(dynamic v) {
+      if (v == null) return '';
+      if (v is String) return v;
+      if (v is List && v.isNotEmpty) return v.first?.toString() ?? '';
+      return v.toString();
+    }
+
+    // Extract hook from 'hook' (string) or 'hooks' (array)
+    String hook = '';
+    try {
+      if (map['hook'] is String && (map['hook'] as String).isNotEmpty) {
+        hook = map['hook'] as String;
+      } else if (map['hooks'] is List) {
+        final list = map['hooks'] as List;
+        if (list.isNotEmpty) {
+          final first = list.first;
+          hook = first is String ? first : (first is Map ? str(first['text'] ?? first['hook'] ?? first.values.first) : first.toString());
+        }
+      }
+    } catch (_) {}
+
+    // Extract hashtags safely
+    List<String> hashtags = [];
+    try {
+      final raw = map['hashtags'] ?? map['tags'];
+      if (raw is List) hashtags = raw.map((e) => e.toString()).toList();
+    } catch (_) {}
+
+    // Extract suggestedLocations safely
+    List<String> locations = [];
+    try {
+      final raw = map['suggestedLocations'];
+      if (raw is List) locations = raw.map((e) => e.toString()).toList();
+    } catch (_) {}
+
     return VideoVersion(
-      title: map['title'] ?? '',
-      hook: map['hook'] ?? '',
-      script: map['script'] ?? '',
-      scenes: List<VideoScene>.from(
-          map['scenes']?.map((x) => VideoScene.fromJson(x)) ?? []),
-      cta: map['cta'] ?? '',
-      caption: map['caption'] ?? '',
-      hashtags: List<String>.from(map['hashtags'] ?? []),
-      thumbnailText: map['thumbnailText'] ?? '',
-      filmingNotes: map['filmingNotes'] ?? '',
-      complianceNote: map['complianceNote'] ?? '',
-      suggestedLocations: List<String>.from(map['suggestedLocations'] ?? []),
-      locationHooks: List<LocationHook>.from(
-          map['locationHooks']?.map((x) => LocationHook.fromJson(x)) ?? []),
-      refinementInstruction: map['refinementInstruction'],
-      createdAt: DateTime.parse(map['createdAt'] ?? DateTime.now().toIso8601String()),
+      title: str(map['title']),
+      hook: hook,
+      script: str(map['script'] ?? map['scriptOutline']),
+      scenes: (() {
+        try { return List<VideoScene>.from((map['scenes'] as List? ?? []).map((x) => VideoScene.fromJson(x))); }
+        catch (_) { return <VideoScene>[]; }
+      })(),
+      cta: str(map['cta']),
+      caption: str(map['caption'] ?? map['description']),
+      hashtags: hashtags,
+      thumbnailText: str(map['thumbnailText']),
+      filmingNotes: str(map['filmingNotes']),
+      complianceNote: str(map['complianceNote']),
+      suggestedLocations: locations,
+      locationHooks: (() {
+        try { return List<LocationHook>.from((map['locationHooks'] as List? ?? []).map((x) => LocationHook.fromJson(x))); }
+        catch (_) { return <LocationHook>[]; }
+      })(),
+      refinementInstruction: map['refinementInstruction']?.toString(),
+      createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 }

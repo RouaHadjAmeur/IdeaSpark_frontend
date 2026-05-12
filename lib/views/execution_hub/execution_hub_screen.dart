@@ -5,9 +5,16 @@ import 'package:provider/provider.dart';
 
 import '../../models/plan.dart';
 import '../../models/brand.dart';
+import '../../models/brand.dart';
 import '../../view_models/plan_view_model.dart';
 import '../../view_models/brand_view_model.dart';
 import '../../view_models/auth_view_model.dart';
+import '../../services/pdf_export_service.dart';
+import '../templates/plan_templates_screen.dart';
+import '../google_calendar/google_calendar_settings_screen.dart';
+import '../plan-collaboration/collaboration_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import 'collaborator_plan_screen.dart';
 
 class ExecutionHubScreen extends StatefulWidget {
   const ExecutionHubScreen({super.key});
@@ -52,18 +59,33 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
     super.dispose();
   }
 
-  List<Plan> _filtered(List<Plan> plans) => plans.where((p) {
-        if (_brandFilter != null && p.brandId != _brandFilter) return false;
-        if (_statusFilter != null && p.status != _statusFilter) return false;
-        if (_searchQuery.isNotEmpty &&
-            !p.name.toLowerCase().contains(_searchQuery)) {
-          return false;
-        }
-        return true;
-      }).toList();
+  List<Plan> _filtered(List<Plan> plans) {
+    final authVm = context.read<AuthViewModel>();
+    final userId = authVm.userId;
+    final isBrandOwner = authVm.isBrandOwner;
+
+    return plans.where((p) {
+      // Collaborators only see plans they are explicitly assigned to
+      if (!isBrandOwner) {
+        final isAssigned = p.collaboratorIds.contains(userId) ||
+            p.userId == userId;
+        if (!isAssigned) return false;
+      }
+      if (_brandFilter != null && p.brandId != _brandFilter) return false;
+      if (_statusFilter != null && p.status != _statusFilter) return false;
+      if (_searchQuery.isNotEmpty &&
+          !p.name.toLowerCase().contains(_searchQuery)) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
+    // All users see the new Collaborator Plan Screen (Execution Hub)
+    return const CollaboratorPlanScreen();
+
     final cs = Theme.of(context).colorScheme;
     return Consumer2<PlanViewModel, BrandViewModel>(
       builder: (context, vm, brandVm, _) {
@@ -108,6 +130,32 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
                             strokeWidth: 2, color: cs.primary),
                       ),
                   ]),
+                ),
+
+                // ── Global Tools
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Row(
+                    children: [
+                      _GlobalToolChip(
+                        label: 'Bibliothèque Templates',
+                        icon: Icons.collections_bookmark_rounded,
+                        color: Colors.purple,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlanTemplatesScreen())),
+                      ),
+                      const SizedBox(width: 12),
+                      _GlobalToolChip(
+                        label: 'Google Calendar',
+                        icon: Icons.calendar_month_rounded,
+                        color: Colors.blue,
+                        onTap: () {
+                          final authVm = context.read<AuthViewModel>();
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => GoogleCalendarSettingsScreen(authToken: authVm.accessToken ?? '')));
+                        },
+                      ),
+                    ],
+                  ),
                 ),
 
                 // ── Search bar
@@ -242,6 +290,7 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
                             onViewDetail: () =>
                                 context.push('/plan-detail', extra: plan),
                             onDelete: () => _confirmDelete(vm, plan),
+                            onActivate: () => _confirmActivate(vm, plan),
                             isSaving: vm.isSaving,
                             isBrandOwner: context.read<AuthViewModel>().isBrandOwner,
                           );
@@ -252,11 +301,13 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
               ],
             ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => context.push('/projects/flow'),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('New Plan'),
-          ),
+          floatingActionButton: context.read<AuthViewModel>().isBrandOwner
+              ? FloatingActionButton.extended(
+                  onPressed: () => context.push('/projects/flow'),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('New Plan'),
+                )
+              : null,
         );
       },
     );
@@ -378,6 +429,44 @@ class _ExecutionHubScreenState extends State<ExecutionHubScreen> {
       }
     }
   }
+
+  Future<void> _confirmActivate(PlanViewModel vm, Plan plan) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Activate Plan'),
+        content: Text('Activate "${plan.name}"? It will move from Draft to Active.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('Activate'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) {
+      final authVm = context.read<AuthViewModel>();
+      await vm.activatePlan(
+        plan.id!,
+        currentUserId: authVm.userId,
+        isBrandOwner: authVm.isBrandOwner,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(vm.error != null
+                ? 'Erreur: ${vm.error}'
+                : '🚀 "${plan.name}" is now Active!'),
+            backgroundColor: vm.error != null ? Colors.redAccent : Colors.green,
+          ),
+        );
+      }
+    }
+  }
 }
 
 // ── Project Card ──────────────────────────────────────────────────────────────
@@ -389,6 +478,7 @@ class _ProjectCard extends StatelessWidget {
   final VoidCallback onOpenBoard;
   final VoidCallback onViewDetail;
   final VoidCallback onDelete;
+  final VoidCallback? onActivate;
   final bool isSaving;
   final bool isBrandOwner;
 
@@ -401,6 +491,7 @@ class _ProjectCard extends StatelessWidget {
     required this.onDelete,
     required this.isSaving,
     required this.isBrandOwner,
+    this.onActivate,
   });
 
   static const _statusColors = {
@@ -433,7 +524,7 @@ class _ProjectCard extends StatelessWidget {
         (s, p) =>
             s +
             p.contentBlocks
-                .where((b) => b.status == ContentBlockStatus.edited)
+                .where((b) => b.status == ContentBlockStatus.published)
                 .length);
 
     return Container(
@@ -584,6 +675,39 @@ class _ProjectCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      // Activate toggle — only for draft plans
+                      if (plan.status == PlanStatus.draft && onActivate != null) ...[
+                        GestureDetector(
+                          onTap: isSaving ? null : onActivate,
+                          child: Container(
+                            height: 36,
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color: Colors.green.withValues(alpha: 0.4)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.rocket_launch_rounded,
+                                    size: 14, color: Colors.green.shade700),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Activate',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       GestureDetector(
                         onTap: onViewDetail,
                         child: Container(
@@ -595,6 +719,30 @@ class _ProjectCard extends StatelessWidget {
                           ),
                           child: Icon(Icons.info_outline_rounded,
                               size: 17, color: cs.primary),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // More menu
+                      PopupMenuButton<String>(
+                        onSelected: (val) {
+                          if (val == 'pdf') PdfExportService.exportPlan(plan);
+                          if (val == 'share') Share.share('Check out my campaign plan: ${plan.name}');
+                          if (val == 'collab') Navigator.push(context, MaterialPageRoute(builder: (_) => CollaborationScreen(planId: plan.id!, planName: plan.name, planOwnerId: plan.userId)));
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 'pdf', child: Row(children: [Icon(Icons.picture_as_pdf_rounded, size: 18), SizedBox(width: 8), Text('Export PDF', style: TextStyle(fontSize: 13))])),
+                          const PopupMenuItem(value: 'share', child: Row(children: [Icon(Icons.share_rounded, size: 18), SizedBox(width: 8), Text('Partager', style: TextStyle(fontSize: 13))])),
+                          const PopupMenuItem(value: 'collab', child: Row(children: [Icon(Icons.group_rounded, size: 18), SizedBox(width: 8), Text('Collaboration', style: TextStyle(fontSize: 13))])),
+                        ],
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.more_vert_rounded,
+                              size: 17, color: cs.onSurfaceVariant),
                         ),
                       ),
                       if (isBrandOwner) ...[
@@ -742,6 +890,51 @@ class _HubChip extends StatelessWidget {
             ),
           ),
         ]),
+      ),
+    );
+  }
+}
+
+class _GlobalToolChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _GlobalToolChip({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: GoogleFonts.syne(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

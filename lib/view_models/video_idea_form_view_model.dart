@@ -158,14 +158,46 @@ class VideoIdeaFormViewModel extends ChangeNotifier {
     notifyListeners();
     
     try {
-      final suggestions = await _service.analyzeImage(
-        imageUrl: _productImagePath!,
-        brandName: _productName.isNotEmpty ? _productName : 'Product',
-      );
+      final result = await _service.analyzeImage(_productImagePath!);
       
-      // suggestions est une List<VideoIdea>
-      // Pour l'instant, on ignore les suggestions
-      
+      // Auto-fill form if data is returned
+      if (result.containsKey('productInfo')) {
+        final info = result['productInfo'] as Map<String, dynamic>;
+        
+        if (info.containsKey('productName') && info['productName'] != null) {
+          _productName = info['productName'].toString();
+        }
+        
+        if (info.containsKey('category') && info['category'] != null) {
+          _productCategory = info['category'].toString();
+        }
+        
+        if (info.containsKey('description') && info['description'] != null) {
+          _useCases = info['description'].toString();
+        }
+        
+        if (info.containsKey('keyBenefits') && info['keyBenefits'] is List) {
+          _keyBenefits = (info['keyBenefits'] as List).join(', ');
+        }
+        
+        if (info.containsKey('targetAudience') && info['targetAudience'] != null) {
+          _targetAudience = info['targetAudience'].toString();
+        }
+        
+        if (info.containsKey('ingredients') && info['ingredients'] != null) {
+          _ingredients = info['ingredients'].toString();
+        }
+        
+        if (info.containsKey('features') && info['features'] != null) {
+          _productFeatures = info['features'].toString();
+        }
+        
+        if (info.containsKey('usp') && info['usp'] != null) {
+          _uniqueSellingPoint = info['usp'].toString();
+        }
+        
+        _clearValidationError();
+      }
     } catch (e) {
       debugPrint('Error analyzing product image: $e');
     } finally {

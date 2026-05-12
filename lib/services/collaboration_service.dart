@@ -116,14 +116,18 @@ class CollaborationService {
   Future<List<Map<String, dynamic>>> searchUsers(String query) async {
     if (query.trim().isEmpty) return [];
     final token = await _getToken();
-    final response = await http.get(
-      Uri.parse(ApiConfig.searchUsersUrl(Uri.encodeComponent(query.trim()))),
-      headers: _headers(token),
+    final uri = Uri.parse(ApiConfig.usersBase).replace(
+      path: '${Uri.parse(ApiConfig.usersBase).path}/search',
+      queryParameters: {'query': query.trim()},
     );
+    final response = await http.get(uri, headers: _headers(token));
+    debugPrint('[CollaborationService] searchUsers → $uri (${response.statusCode})');
     if (response.statusCode == 200) {
       final List<dynamic> list = jsonDecode(response.body);
+      debugPrint('[CollaborationService] searchUsers found ${list.length} results');
       return list.cast<Map<String, dynamic>>();
     }
+    debugPrint('[CollaborationService] searchUsers failed: ${response.statusCode} ${response.body}');
     return [];
   }
 
@@ -185,6 +189,7 @@ class CollaborationService {
       Uri.parse(ApiConfig.listCollaboratorsUrl(planId)),
       headers: _headers(token),
     );
+    debugPrint('[CollaborationService] getMembers($planId) → ${response.statusCode}: ${response.body}');
     if (response.statusCode == 200) {
       final List<dynamic> list = jsonDecode(response.body);
       return list.map((e) => CollabMember.fromJson(_flattenCollaborator(e))).toList();
@@ -195,12 +200,19 @@ class CollaborationService {
   /// Flatten populated collaborator doc from backend into CollabMember-compatible map.
   Map<String, dynamic> _flattenCollaborator(Map<String, dynamic> e) {
     final user = e['userId'] is Map ? e['userId'] as Map<String, dynamic> : <String, dynamic>{};
+    // Map backend status values to CollabStatus enum names
+    final rawStatus = e['status']?.toString() ?? 'accepted';
+    final status = rawStatus == 'pending'
+        ? 'pending'
+        : rawStatus == 'declined' || rawStatus == 'rejected'
+            ? 'rejected'
+            : 'accepted';
     return {
       'id': (user['_id'] ?? user['id'] ?? e['userId'] ?? '').toString(),
       'email': user['email']?.toString() ?? '',
-      'name': (user['username'] ?? user['name'] ?? user['email'] ?? 'Unknown').toString(),
+      'name': (user['username'] ?? user['name'] ?? user['displayName'] ?? user['email'] ?? 'Unknown').toString(),
       'role': e['role']?.toString() ?? 'editor',
-      'status': 'accepted',
+      'status': status,
       'invitedAt': (e['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
     };
   }

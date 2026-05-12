@@ -25,8 +25,13 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: invalid_use_of_internal_member
 
 class _FakeVideoIdea_0 extends _i1.SmartFake implements _i2.VideoIdea {
-  _FakeVideoIdea_0(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+  _FakeVideoIdea_0(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
 }
 
 /// A class which mocks [VideoIdeaGeneratorService].
@@ -41,109 +46,135 @@ class MockVideoIdeaGeneratorService extends _i1.Mock
   @override
   _i4.Future<List<_i2.VideoIdea>> generateIdeas(
     _i2.VideoRequest? request, {
-    bool? useRemote,
+    bool? useRemote = false,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(
-              #generateIdeas,
-              [request],
-              {#useRemote: useRemote},
-            ),
-            returnValue: _i4.Future<List<_i2.VideoIdea>>.value(
-              <_i2.VideoIdea>[],
-            ),
-          )
-          as _i4.Future<List<_i2.VideoIdea>>);
-
-  @override
-  _i4.Future<List<_i2.VideoIdea>> analyzeImage({
-    required String? imageUrl,
-    required String? brandName,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(
-              #analyzeImage,
-              [],
-              {#imageUrl: imageUrl, #brandName: brandName},
-            ),
-            returnValue: _i4.Future<List<_i2.VideoIdea>>.value(
-              <_i2.VideoIdea>[],
-            ),
-          )
-          as _i4.Future<List<_i2.VideoIdea>>);
-
-  @override
-  _i4.Future<_i2.VideoIdea> refineIdea(String? ideaId, String? instruction) =>
-      (super.noSuchMethod(
-            Invocation.method(#refineIdea, [ideaId, instruction]),
-            returnValue: _i4.Future<_i2.VideoIdea>.value(
-              _FakeVideoIdea_0(
-                this,
-                Invocation.method(#refineIdea, [ideaId, instruction]),
-              ),
-            ),
-          )
-          as _i4.Future<_i2.VideoIdea>);
-
-  @override
-  _i4.Future<_i2.VideoIdea> approveVersion(String? ideaId, int? versionIndex) =>
-      (super.noSuchMethod(
-            Invocation.method(#approveVersion, [ideaId, versionIndex]),
-            returnValue: _i4.Future<_i2.VideoIdea>.value(
-              _FakeVideoIdea_0(
-                this,
-                Invocation.method(#approveVersion, [ideaId, versionIndex]),
-              ),
-            ),
-          )
-          as _i4.Future<_i2.VideoIdea>);
+        Invocation.method(
+          #generateIdeas,
+          [request],
+          {#useRemote: useRemote},
+        ),
+        returnValue: _i4.Future<List<_i2.VideoIdea>>.value(<_i2.VideoIdea>[]),
+      ) as _i4.Future<List<_i2.VideoIdea>>);
 
   @override
   _i4.Future<_i2.VideoIdea> saveIdea(_i2.VideoIdea? idea) =>
       (super.noSuchMethod(
-            Invocation.method(#saveIdea, [idea]),
-            returnValue: _i4.Future<_i2.VideoIdea>.value(
-              _FakeVideoIdea_0(this, Invocation.method(#saveIdea, [idea])),
-            ),
-          )
-          as _i4.Future<_i2.VideoIdea>);
+        Invocation.method(
+          #saveIdea,
+          [idea],
+        ),
+        returnValue: _i4.Future<_i2.VideoIdea>.value(_FakeVideoIdea_0(
+          this,
+          Invocation.method(
+            #saveIdea,
+            [idea],
+          ),
+        )),
+      ) as _i4.Future<_i2.VideoIdea>);
 
   @override
-  _i4.Future<List<_i2.VideoIdea>> getHistory() =>
+  _i4.Future<_i2.VideoIdea> refineIdea(
+    String? ideaId,
+    String? instruction,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#getHistory, []),
-            returnValue: _i4.Future<List<_i2.VideoIdea>>.value(
-              <_i2.VideoIdea>[],
-            ),
-          )
-          as _i4.Future<List<_i2.VideoIdea>>);
+        Invocation.method(
+          #refineIdea,
+          [
+            ideaId,
+            instruction,
+          ],
+        ),
+        returnValue: _i4.Future<_i2.VideoIdea>.value(_FakeVideoIdea_0(
+          this,
+          Invocation.method(
+            #refineIdea,
+            [
+              ideaId,
+              instruction,
+            ],
+          ),
+        )),
+      ) as _i4.Future<_i2.VideoIdea>);
 
   @override
-  _i4.Future<List<_i2.VideoIdea>> getFavorites() =>
+  _i4.Future<_i2.VideoIdea> approveVersion(
+    String? ideaId,
+    int? versionIndex,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#getFavorites, []),
-            returnValue: _i4.Future<List<_i2.VideoIdea>>.value(
-              <_i2.VideoIdea>[],
-            ),
-          )
-          as _i4.Future<List<_i2.VideoIdea>>);
+        Invocation.method(
+          #approveVersion,
+          [
+            ideaId,
+            versionIndex,
+          ],
+        ),
+        returnValue: _i4.Future<_i2.VideoIdea>.value(_FakeVideoIdea_0(
+          this,
+          Invocation.method(
+            #approveVersion,
+            [
+              ideaId,
+              versionIndex,
+            ],
+          ),
+        )),
+      ) as _i4.Future<_i2.VideoIdea>);
 
   @override
-  _i4.Future<_i2.VideoIdea> toggleFavorite(String? id) =>
-      (super.noSuchMethod(
-            Invocation.method(#toggleFavorite, [id]),
-            returnValue: _i4.Future<_i2.VideoIdea>.value(
-              _FakeVideoIdea_0(this, Invocation.method(#toggleFavorite, [id])),
-            ),
-          )
-          as _i4.Future<_i2.VideoIdea>);
+  _i4.Future<List<_i2.VideoIdea>> getHistory() => (super.noSuchMethod(
+        Invocation.method(
+          #getHistory,
+          [],
+        ),
+        returnValue: _i4.Future<List<_i2.VideoIdea>>.value(<_i2.VideoIdea>[]),
+      ) as _i4.Future<List<_i2.VideoIdea>>);
 
   @override
-  _i4.Future<void> deleteIdea(String? id) =>
+  _i4.Future<List<_i2.VideoIdea>> getFavorites() => (super.noSuchMethod(
+        Invocation.method(
+          #getFavorites,
+          [],
+        ),
+        returnValue: _i4.Future<List<_i2.VideoIdea>>.value(<_i2.VideoIdea>[]),
+      ) as _i4.Future<List<_i2.VideoIdea>>);
+
+  @override
+  _i4.Future<_i2.VideoIdea> toggleFavorite(String? ideaId) =>
       (super.noSuchMethod(
-            Invocation.method(#deleteIdea, [id]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
-          )
-          as _i4.Future<void>);
+        Invocation.method(
+          #toggleFavorite,
+          [ideaId],
+        ),
+        returnValue: _i4.Future<_i2.VideoIdea>.value(_FakeVideoIdea_0(
+          this,
+          Invocation.method(
+            #toggleFavorite,
+            [ideaId],
+          ),
+        )),
+      ) as _i4.Future<_i2.VideoIdea>);
+
+  @override
+  _i4.Future<void> deleteIdea(String? ideaId) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteIdea,
+          [ideaId],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<Map<String, dynamic>> analyzeImage(String? imagePath) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #analyzeImage,
+          [imagePath],
+        ),
+        returnValue:
+            _i4.Future<Map<String, dynamic>>.value(<String, dynamic>{}),
+      ) as _i4.Future<Map<String, dynamic>>);
 }
